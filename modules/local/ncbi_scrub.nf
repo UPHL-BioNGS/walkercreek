@@ -11,21 +11,26 @@ process NCBI_SCRUB {
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path("scrubbed/*.fastq.gz"), emit: reads
+    tuple val(meta), path('*.scrubbed.fastq.gz')           , emit: reads
+    tuple val(meta), path('*.log')                         , emit: log
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
-    """
-    # unzip fwd file as scrub tool does not take in .gz fastq files
-    if [[ "~{reads}" == *.gz ]]
-    then
-      gunzip -c ~{reads} > r1.fastq
-      read1_unzip=r1.fastq
-    else
-      read1_unzip=~{read1}
-    fi
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
 
-    # dehost reads
-    /opt/scrubber/scripts/scrub.sh -n ${read1_unzip} |& tail -n1 | awk -F" " '{print $1}' > FWD_SPOTS_REMOVED
+          [ ! -f  ${prefix}_1.fastq.gz ] && ln -s ${reads[0]} ${prefix}_1.fastq.gz
+        [ ! -f  ${prefix}_2.fastq.gz ] && ln -s ${reads[1]} ${prefix}_2.fastq.gz
+        """
+        [ ! -f  ${prefix}.fastq.gz ] && ln -s $reads ${prefix}.fastq.gz
+        
+        # unzip fwd file as scrub tool does not take in .gz fastq files
+        gunzip -c ${prefix}.fastq.gz
+
+        # dehost reads
+        scrub.sh -n ${prefix}.fastq |& tail -n1 | awk -F" " '{print $1}' > FWD_SPOTS_REMOVED
 
     # gzip dehosted reads
     gzip ${read1_unzip}.clean -c > ~{samplename}_R1_dehosted.fastq.gz
