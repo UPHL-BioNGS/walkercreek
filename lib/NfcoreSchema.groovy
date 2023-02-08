@@ -526,3 +526,4 @@ class NfcoreSchema {
         return max_chars
     }
 }
+

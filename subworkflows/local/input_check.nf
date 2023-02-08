@@ -3,58 +3,42 @@
 //
 
 include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
-include { LANE_MERGE        } from '../../modules/local/lane_merge'
 
 workflow INPUT_CHECK {
     take:
     samplesheet // file: /path/to/samplesheet.csv
 
     main:
-    ch_versions = Channel.empty()
-
-    Channel.fromPath(samplesheet)
-           .splitCsv( header:false, sep:',', skip:1 )
-           .map { row -> stage_fastq(row) }
-           .set{ precheck_reads }
-
-   LANE_MERGE(precheck_reads)
+    SAMPLESHEET_CHECK ( samplesheet )
+        .csv
+        .splitCsv ( header:true, sep:',' )
+        .map { create_fastq_channel(it) }
+        .set { reads }
 
     emit:
-    reads    =   LANE_MERGE.out.reads       // channel: [ val(meta), [ reads ] ]
-    versions =   ch_versions                // channel: [ versions.yml ]
+    reads                                     // channel: [ val(meta), [ reads ] ]
+    versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }
 
-// Function to get list of [ meta, [ fastq_1, fastq_2, fastq_?... ] ]
-def stage_fastq(ArrayList row) {
-    //print row
-    def meta        = [:]
-    meta.id         = row[0]
-    meta.single_end = false
-    def array       = []
-    def filesarray  = []
+// Function to get list of [ meta, [ fastq_1, fastq_2 ] ]
+def create_fastq_channel(LinkedHashMap row) {
+    // create meta map
+    def meta = [:]
+    meta.id         = row.sample
+    meta.single_end = row.single_end.toBoolean()
 
-    for(int i = 1; i < row.size(); i++)
-    {
-        if(row[i] == "")
-        {
-            // skip this row
-        } else if (!file(row[i]).exists()) {
-            exit 1, "ERROR: Please check input samplesheet -> Read $i FastQ file does not exist!\n${row[i]}"
-        } else
-        {
-            filesarray.add(file(row[i]))
+    // add path(s) of the fastq file(s) to the meta map
+    def fastq_meta = []
+    if (!file(row.fastq_1).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> Read 1 FastQ file does not exist!\n${row.fastq_1}"
+    }
+    if (meta.single_end) {
+        fastq_meta = [ meta, [ file(row.fastq_1) ] ]
+    } else {
+        if (!file(row.fastq_2).exists()) {
+            exit 1, "ERROR: Please check input samplesheet -> Read 2 FastQ file does not exist!\n${row.fastq_2}"
         }
+        fastq_meta = [ meta, [ file(row.fastq_1), file(row.fastq_2) ] ]
     }
-
-    if(filesarray.size() == 1)
-    {
-        meta.single_end = true
-    } else if( (filesarray.size() % 2) != 0)
-    {
-        exit 1, "ERROR: Please check input samplesheet -> Number of samples is not an even number or 1.\n$row"
-    }
-    
-    array = [ meta, filesarray]
-    return array
+    return fastq_meta
 }
-// taken from (https://github.com/CDCgov/mycosnp-nf/blob/master/subworkflows/local/input_check.nf)
