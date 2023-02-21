@@ -15,7 +15,38 @@ def checkPathParamList = [ params.input, params.multiqc_config, params.fasta ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
-if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
+sra_list = []
+sra_ids = [:]
+ch_input = null;
+if (params.input)
+{
+    ch_input = file(params.input)
+}
+if(params.add_sra_file)
+{
+    sra_file = file(params.add_sra_file, checkIfExists: true)
+    allLines  = sra_file.readLines()
+    for( line : allLines )
+    {
+        row = line.split(',')
+        if(row.size() > 1)
+        {
+            println "Add SRA ${row[1]} => ${row[0]}"
+            sra_list.add(row[1])
+            sra_ids[row[1]] = row[0]
+        } else
+        {
+            if(row[0] != "")
+            {
+                println " ${row[0]} => ${row[0]}"
+                sra_list.add(row[0])
+                sra_ids[row[0]] = row[0]
+            }
+        }
+    }
+}
+
+if(! ( params.input || params.add_sra_file ) ) { exit 1, 'Input samplesheet or sra file not specified!' }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,7 +68,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { SRA_FASTQ_SRATOOLS } from '../subworkflows/local/sra_fastq_sratools'
+include { FLU_PREPROCESS     } from '../subworkflows/local/flu_preprocess'
+include { INPUT_CHECK        } from '../subworkflows/local/input_check'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,6 +82,9 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 // MODULE: Installed directly from nf-core/modules
 //
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
+include { QC_REPORTSHEET              } from '../modules/local/qc_reportsheet.nf'
+include { FAQCS                       } from '../modules/nf-core/faqcs/main'
+include { TRIMMOMATIC                 } from '../modules/nf-core/trimmomatic/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -68,16 +104,42 @@ workflow FLUDEVPIPELINE {
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-    INPUT_CHECK (
-        ch_input
+    ch_all_reads = Channel.empty()
+    ch_contaminants = Channel.fromPath("${params.contaminants}", type: "file")
+    ch_sra_reads = Channel.empty()
+    ch_sra_list  = Channel.empty()
+    if(params.add_sra_file)
+    {
+        ch_sra_list = Channel.fromList(sra_list)
+                             .map{valid -> [ ['id':sra_ids[valid],single_end:false], valid ]}
+        SRA_FASTQ_SRATOOLS(ch_sra_list)
+        ch_all_reads = ch_all_reads.mix(SRA_FASTQ_SRATOOLS.out.reads)
+    }
+
+    if(params.input)
+    {
+
+        INPUT_CHECK (
+            ch_input
+        )
+        ch_all_reads = ch_all_reads.mix(INPUT_CHECK.out.reads)
+        ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
+    }
+
+    FLU_PREPROCESS(ch_all_reads)
+    ch_versions = ch_versions.mix(FLU_PREPROCESS.out.versions)
+
+    // MODULE: QC_REPORTSHEET
+    ch_qcreportsheet = FLU_PREPROCESS.out.qc_lines.collect()
+    QC_REPORTSHEET (
+        ch_qcreportsheet
     )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //
     // MODULE: Run FastQC
     //
     FASTQC (
-        INPUT_CHECK.out.reads
+        ch_all_reads
     )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
@@ -99,6 +161,7 @@ workflow FLUDEVPIPELINE {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FLU_PREPROCESS.out.summary.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),
