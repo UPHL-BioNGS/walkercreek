@@ -263,6 +263,59 @@
             "type": "boolean",
             "description": "Save intermediate files for debugging",
             "fa_icon": "fas fa-bug"
+        },
+        "irma_module": {
+            "type": "string",
+            "default": "FLU",
+            "fa_icon": "fas fa-cube",
+            "description": "IRMA module used in analysis.",
+            "enum": ["FLU", "FLU-utr", "FLU-alt", "FLU-avian", "FLU-lowQC", "FLU-pacbio", "FLU-ref", "FLU-secondary"]
+        },
+        "keep_ref_deletions": {
+            "type": "boolean",
+            "default": true,
+            "fa_icon": "fas fa-trash-alt",
+            "description": "Set \"DEL_TYPE=NNN\" to keep deletions to reference sequence as N characters in consensus."
+        },
+        "shortread_qc_mergepairs": {
+            "type": "boolean",
+            "fa_icon": "fas fa-toggle-on",
+            "description": "Turn on merging of read pairs for paired-end data",
+            "help_text": "Turn on the merging of read-pairs of paired-end short read sequencing data."
+        },
+        "shortread_qc_skipadaptertrim": {
+            "type": "boolean",
+            "fa_icon": "fas fa-forward",
+            "description": "Skip adapter trimming",
+            "help_text": "Skip the removal of sequencing adapters."
+        },
+        "shortread_qc_adapterlist": {
+            "type": "string",
+            "default": "None",
+            "description": "Specify a list of all possible adapters to trim.",
+            "help_text": "Allows to supply a file with a list of adapter (combinations) to remove from all files.",
+            "fa_icon": "fas fa-th-list"
+        },
+        "shortread_qc_adapter1": {
+            "type": "string",
+            "default": "None",
+            "fa_icon": "fas fa-grip-lines",
+            "description": "Specify adapter 1 nucleotide sequence",
+            "help_text": "Specify a custom forward or R1 adapter sequence to be removed from reads."
+        },
+        "shortread_qc_adapter2": {
+            "type": "string",
+            "default": "None",
+            "fa_icon": "fas fa-grip-lines",
+            "description": "Specify adapter 2 nucleotide sequence",
+            "help_text": "Specify a custom reverse or R2 adapter sequence to be removed from reads."
+        },
+        "shortread_qc_minlength": {
+            "type": "integer",
+            "default": 15,
+            "fa_icon": "fas fa-ruler-horizontal",
+            "description": "Specify the minimum length of reads to be retained",
+            "help_text": "Specifying a minimum read length filtering can speed up profiling by reducing the number of short unspecific reads that need to be match/aligned to the database."
         }
     }
 }

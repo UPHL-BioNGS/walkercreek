@@ -5,6 +5,11 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
+                    "adapterremoval": {
+                        "branch": "master",
+                        "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
+                        "installed_by": ["modules"]
+                    },
                     "custom/dumpsoftwareversions": {
                         "branch": "master",
                         "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
@@ -16,11 +21,6 @@
                         "installed_by": ["modules"]
                     },
                     "fastqc": {
-                        "branch": "master",
-                        "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
-                        "installed_by": ["modules"]
-                    },
-                    "fastqscan": {
                         "branch": "master",
                         "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
                         "installed_by": ["modules"]
@@ -38,11 +38,6 @@
                     "seqkit/pair": {
                         "branch": "master",
                         "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",
-                        "installed_by": ["modules"]
-                    },
-                    "trimmomatic": {
-                        "branch": "master",
-                        "git_sha": "9f791a2de5dca3f7b5007b65d7fd4c2689a53705",
                         "installed_by": ["modules"]
                     }
                 }

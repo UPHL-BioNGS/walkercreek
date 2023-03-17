@@ -12,10 +12,16 @@ process QC_REPORTSHEET {
     output:
     path("qc_report.tsv"), emit: qc_reportsheet
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
+    def args = task.ext.args ?: ''
     """
     printf \"Sample Name\\tReads Before Trimming\\tGC Before Trimming\\tAverage Q Score Before Trimming\\tReads After Trimming\\tPaired Reads After Trimming\\tUnpaired Reads After Trimming\\tGC After Trimming\\tAverage Q Score After Trimming\\n\" > qc_report.tsv
     sort ${qc_lines} > sorted.tsv
     cat sorted.tsv >> qc_report.tsv
     """
 }
+
+

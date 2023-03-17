@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 from genericpath import sameopenfile
 from importlib.resources import path
+from os.path import exists
 import argparse
 import pandas as pd
 
-# Argument parser: get arguments from FAQCS text files
+# Argument parser: get arguments from FAQCS, IRMA, and NCBI SRA HUMAN SCRUBBER text files
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--sample")
 parser.add_argument("--stats", type=argparse.FileType("r"))
@@ -12,7 +13,6 @@ parser.add_argument("--base_content_before_trim", type=argparse.FileType("r"))
 parser.add_argument("--base_content_after_trim", type=argparse.FileType("r"))
 parser.add_argument("--qual_scores_before_trim", type=argparse.FileType("r"))
 parser.add_argument("--qual_scores_after_trim", type=argparse.FileType("r"))
-parser.add_argument("--reference", type=argparse.FileType("r"))
 args = parser.parse_args()
 
 # Sample name variable
@@ -30,7 +30,7 @@ read_length_after_trim = list[8].split(" ")[3]
 paired_reads_after_trim = list[9].split(": ")[1].strip("\n")
 unpaired_reads_after_trim = list[11].split(": ")[1].strip("\n")
 
-# Calculate the GC content from base_content.txt file using Pandas
+# Calculate the GC content before trimming from base_content.txt file using Pandas
 df1 = pd.read_csv(
     args.base_content_before_trim, delim_whitespace=True, header=None, index_col=None
 )
@@ -43,7 +43,7 @@ GC_content_before = (sum_reads_GC_content) / (sum_reads)
 GC_content_before = "{:.2f}".format(GC_content_before)
 GC_content_before = str(GC_content_before + "%")
 
-# Calculate the GC content from base_content.txt file using Pandas
+# Calculate the GC content after trimming from base_content.txt file using Pandas
 df2 = pd.read_csv(
     args.base_content_after_trim, delim_whitespace=True, header=None, index_col=None
 )
@@ -56,7 +56,7 @@ GC_content_after = (sum_reads_GC_content) / (sum_reads)
 GC_content_after = "{:.2f}".format(GC_content_after)
 GC_content_after = str(GC_content_after + "%")
 
-# Calculate the average phred/quality score from qual_scores.txt file using Pandas
+# Calculate the average phred/quality score before trimming from qual_scores.txt file using Pandas
 df3 = pd.read_csv(args.qual_scores_before_trim, delim_whitespace=True, index_col=None)
 df3["x"] = df3["Score"] * df3["readsNum"]
 sum_reads_num = sum(df3["readsNum"])
@@ -64,7 +64,7 @@ phred_avg_before = sum(df3["x"]) / sum_reads_num
 # Formatting. 2 decimal points
 phred_avg_before = "{:.2f}".format(phred_avg_before)
 
-# Calculate the average phred/quality score from qual_scores.txt file using Pandas
+# Calculate the average phred/quality score after trimming from qual_scores.txt file using Pandas
 df4 = pd.read_csv(args.qual_scores_after_trim, delim_whitespace=True, index_col=None)
 df4["x"] = df4["Score"] * df4["readsNum"]
 sum_reads_num = sum(df4["readsNum"])

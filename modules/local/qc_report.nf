@@ -8,10 +8,13 @@ process QC_REPORT {
         'quay.io/biocontainers/pandas:1.1.5' }"
 
     input:
-    tuple val(meta), path(txt) //input values are from channel that joins FAQCS("txt")
+    tuple val(meta), path(txt)
 
     output:
     path("*_output.txt"), emit: qc_line
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''

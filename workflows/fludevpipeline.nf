@@ -68,10 +68,9 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { SRA_FASTQ_SRATOOLS } from '../subworkflows/local/sra_fastq_sratools'
-include { FLU_PREPROCESS     } from '../subworkflows/local/flu_preprocess'
-include { INPUT_CHECK        } from '../subworkflows/local/input_check'
-
+include { SRA_FASTQ_SRATOOLS          } from '../subworkflows/local/sra_fastq_sratools'
+include { INPUT_CHECK                 } from '../subworkflows/local/input_check'
+include { FLU_PREPROCESS_ASSEMBLY     } from '../subworkflows/local/flu_preprocess_assembly'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -83,8 +82,6 @@ include { INPUT_CHECK        } from '../subworkflows/local/input_check'
 //
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { QC_REPORTSHEET              } from '../modules/local/qc_reportsheet.nf'
-include { FAQCS                       } from '../modules/nf-core/faqcs/main'
-include { TRIMMOMATIC                 } from '../modules/nf-core/trimmomatic/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -100,12 +97,12 @@ def multiqc_report = []
 workflow FLUDEVPIPELINE {
 
     ch_versions = Channel.empty()
+    adapterlist = params.shortread_qc_adapterlist ? file(params.shortread_qc_adapterlist) : []
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
     ch_all_reads = Channel.empty()
-    ch_contaminants = Channel.fromPath("${params.contaminants}", type: "file")
     ch_sra_reads = Channel.empty()
     ch_sra_list  = Channel.empty()
     if(params.add_sra_file)
@@ -126,11 +123,11 @@ workflow FLUDEVPIPELINE {
         ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
     }
 
-    FLU_PREPROCESS(ch_all_reads)
-    ch_versions = ch_versions.mix(FLU_PREPROCESS.out.versions)
+    FLU_PREPROCESS_ASSEMBLY(ch_all_reads, adapterlist)
+    ch_versions = ch_versions.mix(FLU_PREPROCESS_ASSEMBLY.out.versions)
 
     // MODULE: QC_REPORTSHEET
-    ch_qcreportsheet = FLU_PREPROCESS.out.qc_lines.collect()
+    ch_qcreportsheet = FLU_PREPROCESS_ASSEMBLY.out.qc_lines.collect()
     QC_REPORTSHEET (
         ch_qcreportsheet
     )
@@ -161,7 +158,7 @@ workflow FLUDEVPIPELINE {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FLU_PREPROCESS.out.summary.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FLU_PREPROCESS_ASSEMBLY.out.stats.map{meta, stats -> [stats]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),

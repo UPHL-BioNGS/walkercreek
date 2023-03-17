@@ -12,8 +12,9 @@ process NCBISCRUB {
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path('*.dehosted.fastq.gz')             , emit: reads
-    //path('*.SPOTS_REMOVED')                                , emit: spots_removed
+    //tuple val(meta), path('*_dehosted.fastq.gz')             , emit: reads
+    //tuple val(meta), path("SE_SPOTS_REMOVED.txt")            , emit: se_spots_removed
+    tuple val(meta), path("PE_SPOTS_REMOVED.txt")            , emit: pe_spots_removed
     tuple val(meta), path('*.log')                           , emit: log
     path 'versions.yml'                                      , emit: versions
 
@@ -25,18 +26,19 @@ process NCBISCRUB {
     def prefix = task.ext.prefix ?: "${meta.id}"
     if (meta.single_end) {
         """
-        if [ ! -f "${prefix}.fastq.gz" ]; then
-          cp "$reads" "${prefix}.fastq.gz"
-        fi
-
+        [ ! -f  ${prefix}.fastq.gz ] && ln -s $reads ${prefix}.fastq.gz
         gunzip ${prefix}.fastq.gz
 
         mkdir data
         cd data && curl --insecure "https://ftp.ncbi.nlm.nih.gov/sra/dbs/human_filter/20220806v2.human_filter.db" -o "20220806v2.human_filter.db"
         ln -s 20220806v2.human_filter.db human_filter.db
 
-        /scrubber/scripts/scrub.sh -o ${prefix}.fastq -d human_filter.db
-        gzip ${prefix}.fastq > ${prefix}.dehosted.fastq.gz
+        # dehost reads
+        scrub.sh -n ${prefix}.fastq -d data/human_filter.db |& tail -n1 | awk -F" " '{print \$1}' > SE_SPOTS_REMOVED
+        gzip ${prefix}.clean -c > ${prefix}_dehosted.fastq.gz
+
+        if [ -f "SE_SPOTS_REMOVED" ]; then
+        cat "SE_SPOTS_REMOVED" > "SE_SPOTS_REMOVED.txt"
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -45,14 +47,8 @@ process NCBISCRUB {
         """
     } else {
         """
-        if [ ! -f "${prefix}_1.fastq.gz" ]; then
-          cp "${reads[0]}" "${prefix}_1.fastq.gz"
-        fi
-
-        if [ ! -f "${prefix}_2.fastq.gz" ]; then
-          cp "${reads[1]}" "${prefix}_2.fastq.gz"
-        fi
-
+        [ ! -f  ${prefix}_1.fastq.gz ] && ln -s ${reads[0]} ${prefix}_1.fastq.gz
+        [ ! -f  ${prefix}_2.fastq.gz ] && ln -s ${reads[1]} ${prefix}_2.fastq.gz
         gunzip ${prefix}_1.fastq.gz
         gunzip ${prefix}_2.fastq.gz
 
@@ -60,12 +56,17 @@ process NCBISCRUB {
         cd data && curl --insecure "https://ftp.ncbi.nlm.nih.gov/sra/dbs/human_filter/20220806v2.human_filter.db" -o "20220806v2.human_filter.db"
         mv 20220806v2.human_filter.db human_filter.db
 
-        scrub.sh ${prefix}_1.fastq -d human_filter.db
-        scrub.sh ${prefix}_2.fastq -d human_filter.db
+        # dehost reads
+        scrub.sh -n ${prefix}_1.fastq |& tail -n1 | awk -F" " '{print \$1}' > FWD_SPOTS_REMOVED
+        scrub.sh -n ${prefix}_2.fastq |& tail -n1 | awk -F" " '{print \$1}' > REV_SPOTS_REMOVED
+
+        if [ -f "FWD_SPOTS_REMOVED" ] && [ -f "REV_SPOTS_REMOVED" ]; then
+          cat "FWD_SPOTS_REMOVED" "REV_SPOTS_REMOVED" > "PE_SPOTS_REMOVED.txt"
+        fi
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
-            ncbiscrub: \$(ncbiscrub 2>&1) | head -n1 | sed 's/^.*ncbiscrub //; s/ .*\$//')
+            ncbiscrub: \$(ncbiscrub 2>&1) | head -n1 | sed 's/^.*ncbiscrub //; s/ .*\$//'
         END_VERSIONS
         """
     }
