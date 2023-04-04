@@ -14,7 +14,7 @@ process IRMA {
 
     output:
     tuple val(meta), path("${meta.id}/")                    , emit: irma
-    tuple val(meta), path("${meta.id}.irma.consensus.fasta"), optional: true, emit: consensus
+    tuple val(meta), path("${meta.id}.irma.consensus.fasta"), emit: assembly
     tuple val(meta), path('*.IRMA_TYPE.txt')                , emit: irma_type
     tuple val(meta), path('*.IRMA_SUBTYPE.txt')             , emit: irma_subtype
     path "*.irma.log"                                       , emit: log
@@ -28,7 +28,7 @@ process IRMA {
       def prefix = task.ext.prefix ?: "${meta.id}"
       def irma_config = "DEL_TYPE=\"NNN\"\nALIGN_PROG=\"BLAT\""
       def irma_log = "${meta.id}.irma.log"
-      def subtype = ''
+
     """
     touch irma_config.sh
     echo 'SINGLE_LOCAL_PROC=${task.cpus}' >> irma_config.sh
@@ -40,13 +40,13 @@ process IRMA {
 
     IRMA $irma_module $reads $meta.id
 
-    if [ -d "${meta.id}/amended_consensus/" ]; then
-      cat ${meta.id}/amended_consensus/*.fa > ${meta.id}.irma.consensus.fasta
+    if [ -e "${meta.id}" ] && [ -n "\$(ls -A ${meta.id})" ]; then
+      cat ${meta.id}/*.fasta > ${meta.id}.irma.consensus.fasta
     else
-      echo "No consensus file generated" > ${meta.id}/IRMA_CONSENSUS
+      echo "No consensus file generated" > ${meta.id}_IRMA_CONSENSUS
     fi
-    if [ -f "IRMA_CONSENSUS" ]; then
-      cat "IRMA_CONSENSUS" > "IRMA_CONSENSUS.txt"
+    if [ -f "${meta.id}_IRMA_CONSENSUS" ]; then
+      cat "${meta.id}_IRMA_CONSENSUS" > "${meta.id}_IRMA_CONSENSUS.txt"
     fi
 
     if [ -e "${meta.id}" ] && [ -n "\$(ls -A ${meta.id})" ]; then

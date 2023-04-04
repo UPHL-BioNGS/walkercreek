@@ -275,47 +275,55 @@
             "type": "boolean",
             "default": true,
             "fa_icon": "fas fa-trash-alt",
-            "description": "Set \"DEL_TYPE=NNN\" to keep deletions to reference sequence as N characters in consensus."
+            "description": "Set \"DEL_TYPE=NNN\" to keep deletions to reference sequence as N characters in consensus.",
+            "hidden": true
         },
-        "shortread_qc_mergepairs": {
+        "skip_abricate": {
             "type": "boolean",
-            "fa_icon": "fas fa-toggle-on",
-            "description": "Turn on merging of read pairs for paired-end data",
-            "help_text": "Turn on the merging of read-pairs of paired-end short read sequencing data."
+            "default": false,
+            "description": "Skip ABRicate option."
         },
-        "shortread_qc_skipadaptertrim": {
-            "type": "boolean",
-            "fa_icon": "fas fa-forward",
-            "description": "Skip adapter trimming",
-            "help_text": "Skip the removal of sequencing adapters."
-        },
-        "shortread_qc_adapterlist": {
+        "abricate_db": {
             "type": "string",
-            "default": "None",
-            "description": "Specify a list of all possible adapters to trim.",
-            "help_text": "Allows to supply a file with a list of adapter (combinations) to remove from all files.",
-            "fa_icon": "fas fa-th-list"
+            "default": "insaflu",
+            "fa_icon": "fas fa-layer-group",
+            "description": "InsaFLU database to use by ABRicate (https://github.com/StaPH-B/docker-builds/blob/master/abricate/1.0.1-insaflu-220727/insaflu220727_sequences)."
         },
-        "shortread_qc_adapter1": {
-            "type": "string",
-            "default": "None",
-            "fa_icon": "fas fa-grip-lines",
-            "description": "Specify adapter 1 nucleotide sequence",
-            "help_text": "Specify a custom forward or R1 adapter sequence to be removed from reads."
-        },
-        "shortread_qc_adapter2": {
-            "type": "string",
-            "default": "None",
-            "fa_icon": "fas fa-grip-lines",
-            "description": "Specify adapter 2 nucleotide sequence",
-            "help_text": "Specify a custom reverse or R2 adapter sequence to be removed from reads."
-        },
-        "shortread_qc_minlength": {
+        "abricate_minid": {
             "type": "integer",
-            "default": 15,
-            "fa_icon": "fas fa-ruler-horizontal",
-            "description": "Specify the minimum length of reads to be retained",
-            "help_text": "Specifying a minimum read length filtering can speed up profiling by reducing the number of short unspecific reads that need to be match/aligned to the database."
+            "default": 70,
+            "description": "Minimum percent identity of alignment required for a hit to be considered.",
+            "help_text": "Specifies the minimum percent identity used.",
+            "fa_icon": "far fa-arrow-alt-circle-down",
+            "minimum": 1,
+            "maximum": 100
+        },
+        "abricate_mincov": {
+            "type": "integer",
+            "default": 60,
+            "description": "Minimum percent coverage of alignment required for a hit to be considered.",
+            "help_text": "Specifies the minimum coverage of the nucleotide sequence to be assigned.",
+            "fa_icon": "far fa-arrow-alt-circle-down",
+            "minimum": 1,
+            "maximum": 100
+        },
+        "adapters_fasta": {
+            "type": "string",
+            "default": "https://raw.githubusercontent.com/BioInfoTools/BBMap/master/resources/adapters.fa",
+            "description": "Path to the adapters fasta file.",
+            "fa_icon": "fa-file"
+        },
+        "phix_fasta": {
+            "type": "string",
+            "default": "https://github.com/BioInfoTools/BBMap/blob/master/resources/phix174_ill.ref.fa.gz?raw=true",
+            "description": "Path to the phix174_ill reference fasta file",
+            "fa_icon": "fa-file-archive-o"
+        },
+        "krakendb": {
+            "type": "string",
+            "default": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08gb_20230314.tar.gz",
+            "description": "Path to kraken database folder or compressed database file, or a URL to a compressed database file, in tar.gz format - (https://benlangmead.github.io/aws-indexes/k2)",
+            "fa_icon": "database"
         }
     }
 }

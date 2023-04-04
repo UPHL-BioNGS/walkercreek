@@ -11,7 +11,7 @@ WorkflowFludevpipeline.initialise(params, log)
 
 // TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta ]
+def checkPathParamList = [ params.input, params.multiqc_config, params.fasta, params.krakendb ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
@@ -82,6 +82,7 @@ include { FLU_PREPROCESS_ASSEMBLY     } from '../subworkflows/local/flu_preproce
 //
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { QC_REPORTSHEET              } from '../modules/local/qc_reportsheet.nf'
+include { UNTAR       as UNTAR_KRAKEN } from '../modules/nf-core/untar/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -97,7 +98,23 @@ def multiqc_report = []
 workflow FLUDEVPIPELINE {
 
     ch_versions = Channel.empty()
-    adapterlist = params.shortread_qc_adapterlist ? file(params.shortread_qc_adapterlist) : []
+    ch_krakendb = Channel.empty()
+
+    adapters = params.adapters_fasta ? file(params.adapters_fasta) : []
+    phix = params.phix_fasta ? file(params.phix_fasta) : []
+
+    // parsing kraken2 database
+    if (params.krakendb.endsWith('.tar.gz')) {
+        UNTAR_KRAKEN(
+            [ [:], params.krakendb ]
+        )
+        ch_krakendb = UNTAR_KRAKEN.out.untar.map { it[1] }
+        ch_versions = ch_versions.mix(UNTAR_KRAKEN.out.versions)
+    } else {
+        ch_krakendb = Channel.value(file(params.krakendb))
+    }
+
+    db = ch_krakendb
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
@@ -123,7 +140,7 @@ workflow FLUDEVPIPELINE {
         ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
     }
 
-    FLU_PREPROCESS_ASSEMBLY(ch_all_reads, adapterlist)
+    FLU_PREPROCESS_ASSEMBLY(ch_all_reads, adapters, phix, ch_krakendb)
     ch_versions = ch_versions.mix(FLU_PREPROCESS_ASSEMBLY.out.versions)
 
     // MODULE: QC_REPORTSHEET
