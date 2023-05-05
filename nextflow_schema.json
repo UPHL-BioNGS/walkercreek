@@ -22,6 +22,15 @@
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/fludevpipeline/usage#samplesheet-input).",
                     "fa_icon": "fas fa-file-csv"
                 },
+                "add_sra_file": {
+                    "type": "string",
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "Path to comma-separated file containing SRA ids to download from NCBI. Format: Name,SRAID",
+                    "help_text": "You will need to create a csv file with information about the sra samples you want to add. Use this parameter to specify its location. It has to be a comma-separated file with 1 or 2 columns.",
+                    "format": "file-path",
+                    "mimetype": "text/csv",
+                    "fa_icon": "fas fa-file-csv"
+                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
@@ -39,6 +48,15 @@
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
+                },
+                "publish_dir_mode": {
+                    "type": "string",
+                    "default": "copy",
+                    "description": "Method used to save pipeline results to output directory.",
+                    "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
+                    "fa_icon": "fas fa-copy",
+                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
+                    "hidden": true
                 }
             }
         },
@@ -144,15 +162,6 @@
                     "fa_icon": "fas fa-question-circle",
                     "hidden": true
                 },
-                "publish_dir_mode": {
-                    "type": "string",
-                    "default": "copy",
-                    "description": "Method used to save pipeline results to output directory.",
-                    "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
-                    "fa_icon": "fas fa-copy",
-                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
-                    "hidden": true
-                },
                 "email_on_fail": {
                     "type": "string",
                     "description": "Email address for completion summary, only when pipeline fails.",
@@ -225,6 +234,114 @@
                     "description": "Show all params when using `--help`",
                     "hidden": true,
                     "help_text": "By default, parameters set as _hidden_ in the schema are not shown on the command line when a user runs with `--help`. Specifying this option will tell the pipeline to show all parameters."
+                },
+                "enable_conda": {
+                    "type": "boolean",
+                    "description": "Run this workflow with Conda. You can also use '-profile conda' instead of providing this parameter.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-bacon"
+                }
+            }
+        },
+        "fludevpipeline_options": {
+            "title": "fludevpipeline Options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "fasta": {
+                    "type": "string",
+                    "default": "https://ftp.ncbi.nih.gov/genomes/INFLUENZA/influenza.fna.gz",
+                    "description": "Path/URL to NCBI Influenza DB sequences FASTA file.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "ha_reference": {
+                    "type": "string",
+                    "default": "$projectDir/bin/HA_reference.fasta",
+                    "description": "Concatenated HA reference fasta files from Nextclade.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "save_debug": {
+                    "type": "boolean",
+                    "description": "Save intermediate files for debugging",
+                    "fa_icon": "fas fa-bug"
+                },
+                "irma_module": {
+                    "type": "string",
+                    "default": "FLU",
+                    "fa_icon": "fas fa-cube",
+                    "description": "IRMA module used in analysis.",
+                    "enum": [
+                        "FLU",
+                        "FLU-utr",
+                        "FLU-alt",
+                        "FLU-avian",
+                        "FLU-lowQC",
+                        "FLU-pacbio",
+                        "FLU-ref",
+                        "FLU-secondary"
+                    ]
+                },
+                "keep_ref_deletions": {
+                    "type": "boolean",
+                    "default": true,
+                    "fa_icon": "fas fa-trash-alt",
+                    "description": "Set \"DEL_TYPE=NNN\" to keep deletions to reference sequence as N characters in consensus.",
+                    "hidden": true
+                },
+                "skip_abricate": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip ABRicate option."
+                },
+                "adapters_fasta": {
+                    "type": "string",
+                    "default": "https://raw.githubusercontent.com/BioInfoTools/BBMap/master/resources/adapters.fa",
+                    "description": "Path to the adapters fasta file.",
+                    "fa_icon": "fa-file"
+                },
+                "phix_fasta": {
+                    "type": "string",
+                    "default": "https://github.com/BioInfoTools/BBMap/blob/master/resources/phix174_ill.ref.fa.gz?raw=true",
+                    "description": "Path to the phix174_ill reference fasta file",
+                    "fa_icon": "fa-file-archive-o"
+                },
+                "krakendb": {
+                    "type": "string",
+                    "default": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08gb_20230314.tar.gz",
+                    "description": "Path to kraken database folder or compressed database file, or a URL to a compressed database file, in tar.gz format - (https://benlangmead.github.io/aws-indexes/k2)",
+                    "fa_icon": "database"
+                },
+                "cacheDir": {
+                    "type": "string",
+                    "default": ".nextflow/cache",
+                    "description": "Directory where downloaded files are cached",
+                    "fa_icon": "fa-folder-open"
+                },
+                "skip_kraken2": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip Kraken2 option."
+                },
+                "skip_nextclade": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip Nextclade clade assignment option."
+                },
+                "skip_nextstrain": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip Nextstrain phylogeny option."
+                },
+                "nextclade_dataset": {
+                    "type": "string",
+                    "description": "Full path to Nextclade dataset required for 'nextclade run' command.",
+                    "fa_icon": "fas fa-project-diagram"
+                },
+                "nextstrain_metadata": {
+                    "type": "string",
+                    "description": "Provide Nextstrain metadata to make the most of augur's features. This metadata could typically include collection dates, geographic location, symptoms of patients, host characteristics, etc. ",
+                    "fa_icon": "fa-table"
                 }
             }
         }
@@ -241,89 +358,9 @@
         },
         {
             "$ref": "#/definitions/generic_options"
+        },
+        {
+            "$ref": "#/definitions/fludevpipeline_options"
         }
-    ],
-    "properties": {
-        "add_sra_file": {
-            "type": "string",
-            "pattern": "^\\S+\\.csv$",
-            "description": "Path to comma-separated file containing SRA ids to download from NCBI. Format: Name,SRAID",
-            "help_text": "You will need to create a csv file with information about the sra samples you want to add. Use this parameter to specify its location. It has to be a comma-separated file with 1 or 2 columns.",
-            "format": "file-path",
-            "mimetype": "text/csv",
-            "fa_icon": "fas fa-file-csv"
-        },
-        "fasta": {
-            "type": "string",
-            "default": "https://ftp.ncbi.nih.gov/genomes/INFLUENZA/influenza.fna.gz",
-            "description": "Path/URL to NCBI Influenza DB sequences FASTA file.",
-            "fa_icon": "fas fa-file-alt"
-        },
-        "save_debug": {
-            "type": "boolean",
-            "description": "Save intermediate files for debugging",
-            "fa_icon": "fas fa-bug"
-        },
-        "irma_module": {
-            "type": "string",
-            "default": "FLU",
-            "fa_icon": "fas fa-cube",
-            "description": "IRMA module used in analysis.",
-            "enum": ["FLU", "FLU-utr", "FLU-alt", "FLU-avian", "FLU-lowQC", "FLU-pacbio", "FLU-ref", "FLU-secondary"]
-        },
-        "keep_ref_deletions": {
-            "type": "boolean",
-            "default": true,
-            "fa_icon": "fas fa-trash-alt",
-            "description": "Set \"DEL_TYPE=NNN\" to keep deletions to reference sequence as N characters in consensus.",
-            "hidden": true
-        },
-        "skip_abricate": {
-            "type": "boolean",
-            "default": false,
-            "description": "Skip ABRicate option."
-        },
-        "abricate_db": {
-            "type": "string",
-            "default": "insaflu",
-            "fa_icon": "fas fa-layer-group",
-            "description": "InsaFLU database to use by ABRicate (https://github.com/StaPH-B/docker-builds/blob/master/abricate/1.0.1-insaflu-220727/insaflu220727_sequences)."
-        },
-        "abricate_minid": {
-            "type": "integer",
-            "default": 70,
-            "description": "Minimum percent identity of alignment required for a hit to be considered.",
-            "help_text": "Specifies the minimum percent identity used.",
-            "fa_icon": "far fa-arrow-alt-circle-down",
-            "minimum": 1,
-            "maximum": 100
-        },
-        "abricate_mincov": {
-            "type": "integer",
-            "default": 60,
-            "description": "Minimum percent coverage of alignment required for a hit to be considered.",
-            "help_text": "Specifies the minimum coverage of the nucleotide sequence to be assigned.",
-            "fa_icon": "far fa-arrow-alt-circle-down",
-            "minimum": 1,
-            "maximum": 100
-        },
-        "adapters_fasta": {
-            "type": "string",
-            "default": "https://raw.githubusercontent.com/BioInfoTools/BBMap/master/resources/adapters.fa",
-            "description": "Path to the adapters fasta file.",
-            "fa_icon": "fa-file"
-        },
-        "phix_fasta": {
-            "type": "string",
-            "default": "https://github.com/BioInfoTools/BBMap/blob/master/resources/phix174_ill.ref.fa.gz?raw=true",
-            "description": "Path to the phix174_ill reference fasta file",
-            "fa_icon": "fa-file-archive-o"
-        },
-        "krakendb": {
-            "type": "string",
-            "default": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08gb_20230314.tar.gz",
-            "description": "Path to kraken database folder or compressed database file, or a URL to a compressed database file, in tar.gz format - (https://benlangmead.github.io/aws-indexes/k2)",
-            "fa_icon": "database"
-        }
-    }
+    ]
 }

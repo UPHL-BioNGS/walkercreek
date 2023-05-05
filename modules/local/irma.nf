@@ -13,12 +13,14 @@ process IRMA {
     val(irma_module)
 
     output:
-    tuple val(meta), path("${meta.id}/")                    , emit: irma
-    tuple val(meta), path("${meta.id}.irma.consensus.fasta"), emit: assembly
-    tuple val(meta), path('*.IRMA_TYPE.txt')                , emit: irma_type
-    tuple val(meta), path('*.IRMA_SUBTYPE.txt')             , emit: irma_subtype
-    path "*.irma.log"                                       , emit: log
-    path "versions.yml"                                     , emit: versions
+    tuple val(meta), path("${meta.id}/")                                  , emit: irma
+    tuple val(meta), path("${meta.id}.irma.consensus.fasta")              , emit: assembly
+    tuple val(meta), path("${meta.id}/amended_consensus/${meta.id}_4.fa") , emit: HA
+    tuple val(meta), path('*.IRMA_TYPE.txt')                              , emit: irma_type
+    tuple val(meta), path('*.IRMA_SUBTYPE.txt')                           , emit: irma_subtype
+    tuple val(meta), path("*.tsv")                                        , emit: report
+    path "*.irma.log"                                                     , emit: log
+    path "versions.yml"                                                   , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -65,7 +67,7 @@ process IRMA {
     fi
 
     if [ -e "${meta.id}" ] && [ -n "\$(ls -A ${meta.id})" ]; then
-      echo "\$(basename \$(find ${meta.id} -name "*NA_N*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" >${meta.id}_NA_SUBTYPE
+      echo "\$(basename \$(find ${meta.id} -name "*NA_N*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > ${meta.id}_NA_SUBTYPE
     else
       echo "No IRMA subtype found for ${meta.id}_NA gene segment"
     fi
@@ -74,6 +76,9 @@ process IRMA {
       cat "${meta.id}_HA_SUBTYPE" "${meta.id}_NA_SUBTYPE" > "${meta.id}.output.txt"
       awk '{sub(".fasta","",\$1); printf \$1}' ${meta.id}.output.txt > ${meta.id}.IRMA_SUBTYPE.txt
     fi
+
+    echo -e "Sample\tIRMA_type\tIRMA_subtype" > ${meta.id}.IRMA.typing.tsv
+    echo -e "${meta.id}\t\$(cat ${meta.id}.IRMA_TYPE.txt)\t\$(cat ${meta.id}.IRMA_SUBTYPE.txt)" >> ${meta.id}.IRMA.typing.tsv
 
     ln -s .command.log $irma_log
 

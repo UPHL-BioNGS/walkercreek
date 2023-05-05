@@ -35,6 +35,16 @@
                         "git_sha": "ee80d14721e76e2e079103b8dcd5d57129e584ba",
                         "installed_by": ["modules"]
                     },
+                    "nextclade/datasetget": {
+                        "branch": "master",
+                        "git_sha": "b6d4d476aee074311c89d82a69c1921bd70c8180",
+                        "installed_by": ["modules"]
+                    },
+                    "nextclade/run": {
+                        "branch": "master",
+                        "git_sha": "b6d4d476aee074311c89d82a69c1921bd70c8180",
+                        "installed_by": ["modules"]
+                    },
                     "seqkit/pair": {
                         "branch": "master",
                         "git_sha": "c8e35eb2055c099720a75538d1b8adb3fb5a464c",

@@ -14,7 +14,9 @@ WorkflowFludevpipeline.initialise(params, log)
 def checkPathParamList = [ params.input, params.multiqc_config, params.fasta, params.krakendb ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
+//
 // Check mandatory parameters
+//
 sra_list = []
 sra_ids = [:]
 ch_input = null;
@@ -68,9 +70,13 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { SRA_FASTQ_SRATOOLS          } from '../subworkflows/local/sra_fastq_sratools'
-include { INPUT_CHECK                 } from '../subworkflows/local/input_check'
-include { FLU_PREPROCESS_ASSEMBLY     } from '../subworkflows/local/flu_preprocess_assembly'
+include { SRA_FASTQ_SRATOOLS                    } from '../subworkflows/local/sra_fastq_sratools'
+include { INPUT_CHECK                           } from '../subworkflows/local/input_check'
+include { FLU_READ_QC                           } from '../subworkflows/local/flu_read_qc'
+include { FLU_ASSEMBLY_TYPING_CLADE_VARIABLES   } from '../subworkflows/local/flu_assembly_typing_clade_variables'
+include { FLU_NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/flu_nextclade_dataset_and_analysis'
+include { FLU_NEXTSTRAIN_PHYLOGENY              } from '../subworkflows/local/flu_nextstrain_phylogeny'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -92,36 +98,42 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+//
 // Info required for completion email and summary
+//
 def multiqc_report = []
 
 workflow FLUDEVPIPELINE {
 
-    ch_versions = Channel.empty()
-    ch_krakendb = Channel.empty()
+    ch_versions                    = Channel.empty()
+    ch_krakendb                    = Channel.empty()
 
     adapters = params.adapters_fasta ? file(params.adapters_fasta) : []
     phix = params.phix_fasta ? file(params.phix_fasta) : []
 
     // parsing kraken2 database
-    if (params.krakendb.endsWith('.tar.gz')) {
-        UNTAR_KRAKEN(
-            [ [:], params.krakendb ]
-        )
-        ch_krakendb = UNTAR_KRAKEN.out.untar.map { it[1] }
-        ch_versions = ch_versions.mix(UNTAR_KRAKEN.out.versions)
-    } else {
-        ch_krakendb = Channel.value(file(params.krakendb))
+    if (!params.skip_kraken2) {
+        if (params.krakendb.endsWith('.tar.gz')) {
+            UNTAR_KRAKEN(
+                [ [:], params.krakendb ]
+            )
+            ch_krakendb = UNTAR_KRAKEN.out.untar.map { it[1] }
+            ch_versions = ch_versions.mix(UNTAR_KRAKEN.out.versions)
+        } else {
+            ch_krakendb = Channel.value(file(params.krakendb))
+        }
     }
 
     db = ch_krakendb
 
     //
-    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
+    // Read in samplesheet, validate and stage input files
     //
-    ch_all_reads = Channel.empty()
-    ch_sra_reads = Channel.empty()
-    ch_sra_list  = Channel.empty()
+
+    ch_all_reads                   = Channel.empty()
+    ch_sra_reads                   = Channel.empty()
+    ch_sra_list                    = Channel.empty()
+
     if(params.add_sra_file)
     {
         ch_sra_list = Channel.fromList(sra_list)
@@ -140,14 +152,61 @@ workflow FLUDEVPIPELINE {
         ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
     }
 
-    FLU_PREPROCESS_ASSEMBLY(ch_all_reads, adapters, phix, ch_krakendb)
-    ch_versions = ch_versions.mix(FLU_PREPROCESS_ASSEMBLY.out.versions)
+    FLU_READ_QC(ch_all_reads, adapters, phix, ch_krakendb)
+    ch_all_reads = ch_all_reads.mix(FLU_READ_QC.out.clean_reads)
+    ch_versions = ch_versions.mix(FLU_READ_QC.out.versions)
 
+    //
     // MODULE: QC_REPORTSHEET
-    ch_qcreportsheet = FLU_PREPROCESS_ASSEMBLY.out.qc_lines.collect()
+    //
+    ch_qcreportsheet = FLU_READ_QC.out.qc_lines.collect()
     QC_REPORTSHEET (
         ch_qcreportsheet
     )
+
+    ch_assembly = Channel.empty()
+    ch_dataset = Channel.empty()
+    ch_ha_sequences = Channel.empty()
+    ch_reference = Channel.empty()
+    ch_tag = Channel.empty()
+
+    FLU_ASSEMBLY_TYPING_CLADE_VARIABLES (ch_all_reads, ch_assembly)
+    ch_versions = ch_versions.mix(FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
+
+    ch_ha_sequences = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA.collect()
+    ch_dataset = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
+    ch_reference = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.reference
+    ch_tag = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.tag
+    ch_assembly = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
+    ch_nextclade_db = Channel.empty()
+    nextclade_db = ch_nextclade_db
+
+    FLU_NEXTCLADE_DATASET_AND_ANALYSIS (ch_dataset,
+                                        ch_reference,
+                                        ch_tag,
+                                        ch_assembly,
+                                        ch_nextclade_db
+    )
+    ch_versions = ch_versions.mix(FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.versions)
+
+    // Define the nextstrain metadata channel for use in the FLU_NEXTSTRAIN_PHYLOGENY subworkflow
+    ch_nextstrain_metadata = Channel.empty()
+    ch_nextstrain_metadata = params.nextstrain_metadata ? file(params.nextstrain_metadata, checkIfExists: true) : file("$projectDir/data/metadata.tsv", checkIfExists: true)
+    metadata = ch_nextstrain_metadata
+
+    // Define the IRMA reference channel for use in the FLU_NEXTSTRAIN_PHYLOGENY subworkflow
+    ch_ha_reference = Channel.empty()
+    ch_ha_reference = params.ha_reference ? file(params.ha_reference, checkIfExists: true) : file("$projectDir}/data/ha_reference", checkIfExists: true)
+    ha_reference = ch_ha_reference
+
+    ch_aligned = Channel.empty()
+    ch_aligned = FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.aligned
+    aligned = ch_aligned
+
+    FLU_NEXTSTRAIN_PHYLOGENY (ch_ha_sequences, ch_ha_reference)
+    ch_versions = ch_versions.mix(FLU_NEXTSTRAIN_PHYLOGENY.out.versions)
+
+    ch_nextclade_multiqc = Channel.empty()
 
     //
     // MODULE: Run FastQC
@@ -175,7 +234,8 @@ workflow FLUDEVPIPELINE {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FLU_PREPROCESS_ASSEMBLY.out.stats.map{meta, stats -> [stats]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FLU_READ_QC.out.stats.map{meta, stats -> [stats]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FLU_READ_QC.out.adapters_stats.map{meta, stats -> [stats]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),

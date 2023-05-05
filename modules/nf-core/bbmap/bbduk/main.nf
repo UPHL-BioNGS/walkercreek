@@ -13,7 +13,7 @@ process BBMAP_BBDUK {
     path phix
 
     output:
-    tuple val(meta), path('*.clean*.fastq.gz')    , emit: reads
+    tuple val(meta), path('*.clean*.fastq.gz')    , emit: clean_reads
     tuple val(meta), path('*.adapters.stats.tsv') , emit: adapters_stats
     tuple val(meta), path('*.phix.stats.tsv')     , emit: phix_stats
     tuple val(meta), path('*.log')                , emit: log

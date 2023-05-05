@@ -4,17 +4,18 @@ process ABRICATE_FLU {
 
     conda "bioconda::abricate=1.0.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/abricate:1.0.1--ha8f3691_1'
+        'https://depot.galaxyproject.org/singularity/abricate:1.0.1--ha8f3691_1' :
         'quay.io/staphb/abricate:1.0.1-insaflu-220727' }"
 
     input:
     tuple val(meta), path(assembly)
 
     output:
-    tuple val(meta), path("*.tsv")                      , emit: report
-    tuple val(meta), path('*.abricate_flu_type.txt')    , emit: abricate_type
-    tuple val(meta), path('*.abricate_flu_subtype.txt') , emit: abricate_subtype
-    path "versions.yml"                                 , emit: versions
+    tuple val(meta), path("*.tsv")                           , emit: report
+    tuple val(meta), path('*.abricate_flu_type.txt')         , emit: abricate_type
+    tuple val(meta), path('*.abricate_flu_subtype.txt')      , emit: abricate_subtype
+    tuple val(meta), path('*.txt')                           , emit: txt
+    path "versions.yml"                                      , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,6 +23,7 @@ process ABRICATE_FLU {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+
     """
     abricate \\
         $assembly \\
@@ -29,16 +31,19 @@ process ABRICATE_FLU {
         --nopath \\
         --threads $task.cpus > ${meta.id}_abricate_hits.tsv
 
-    # capturing flu type (A or B based on M1 hit) and subtype (e.g. H1 and N1 based on HA/NA hits)
-    # awk for gene column ($6) to grab subtype ($15)
-    awk -F '\t' '{if (\$6=="M1") print \$15}' < "${meta.id}_abricate_hits.tsv" > ${meta.id}_abricate_flu_type
-    if [ -f "${meta.id}_abricate_flu_type" ]; then
-      cat "${meta.id}_abricate_flu_type" > "${meta.id}.abricate_flu_type.txt"
+    grep -E "M1|HA|NA" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '
+        BEGIN {OFS="\t"; print "Sample", "abricate_InsaFlu_type", "abricate_InsaFlu_subtype"}
+        { if (\$6 == "M1") type = \$15; if (\$6 == "HA") ha = \$15; if (\$6 == "NA") na = \$15 }
+        END { print "${meta.id}", type, ha na }' > "${meta.id}.abricate_InsaFlu.typing.tsv"
+
+    grep -E "M1" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' > ${meta.id}_abricate_flu_type
+    if [ -f "${meta.id}_abricate_flu_type" ] && [ -s "${meta.id}_abricate_flu_type" ]; then
+        cat "${meta.id}_abricate_flu_type" > "${meta.id}.abricate_flu_type.txt"
     fi
-    awk -F '\t' '{if (\$6=="HA") print \$15 }' < "${meta.id}_abricate_hits.tsv" > ${meta.id}_HA_hit
-    awk -F '\t' '{if (\$6=="NA") print \$15 }' < "${meta.id}_abricate_hits.tsv" > ${meta.id}_NA_hit
-    if [ -f "${meta.id}_HA_hit" ] && [ -f "${meta.id}_NA_hit" ]; then
-      cat "${meta.id}_HA_hit" "${meta.id}_NA_hit" > "${meta.id}.abricate_flu_subtype.txt"
+
+    grep -E "HA|NA" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' | tr -d '[:space:]' > ${meta.id}_abricate_flu_subtype
+    if [ -f "${meta.id}_abricate_flu_subtype" ] && [ -s "${meta.id}_abricate_flu_subtype" ]; then
+        cat "${meta.id}_abricate_flu_subtype" > "${meta.id}.abricate_flu_subtype.txt"
     fi
 
     cat <<-END_VERSIONS > versions.yml
