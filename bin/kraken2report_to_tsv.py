@@ -3,6 +3,7 @@ from genericpath import sameopenfile
 from importlib.resources import path
 from os.path import exists
 import argparse
+import glob
 import pandas as pd
 
 # Argument parser: get arguments from Kraken2 report text file
@@ -33,8 +34,8 @@ else:
 
 
 # extract the percentage values from the first column of the filtered rows
-percentage_human = human_rows.iloc[0,0]
-percentage_fluA = fluA_rows.iloc[0,0]
+percentage_human = human_rows.iloc[0, 0] if not human_rows.empty else "NA"
+percentage_fluA = fluA_rows.iloc[0, 0] if not fluA_rows.empty else "NA"
 
 # create a tab-delimited string for report with headers
 output = f"File\t{args.human}\t{args.fluA}\t{args.fluB}\n"
@@ -44,3 +45,18 @@ output += f"{args.report.name}\t{percentage_human}\t{percentage_fluA}\t{percenta
 with open(f"{sample_name}_read_percentages.tsv", "w") as outfile:
     outfile.write(output)
 
+# Generate the summary file
+summary_files = glob.glob("*_read_percentages.tsv")
+summary_data = []
+
+for file in summary_files:
+    sample_id = file.replace("_read_percentages.tsv", "")
+    with open(file, "r") as infile:
+        percentages = infile.read().strip().split("\n")[1]
+        summary_data.append(f"{sample_id}\t{percentages}")
+
+summary_data.sort()
+
+with open("kraken2_report_summary.tsv", "w") as summary_file:
+    summary_file.write("Sample\tHomo sapiens\tInfluenza A virus\tInfluenza B virus\n")
+    summary_file.write("\n".join(summary_data))

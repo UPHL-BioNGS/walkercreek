@@ -8,7 +8,7 @@ process NEXTCLADE_VARIABLES {
         'quay.io/biocontainers/pandas:1.1.5' }"
 
     input:
-    tuple val(meta), path(txt)
+    tuple val(meta), path(abricate_subtype)
 
     output:
     tuple val(meta), path("flu_h1n1pdm_ha")       , optional:true, emit: dataset_H1N1

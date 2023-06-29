@@ -8,7 +8,7 @@ process NEXTCLADE_RUN {
         'quay.io/biocontainers/nextclade:2.12.0--h9ee0642_0' }"
 
     input:
-    tuple val(meta), path(assembly)
+    tuple val(meta), path(HA)
     tuple val(meta), path(dataset)
 
     output:
@@ -19,7 +19,7 @@ process NEXTCLADE_RUN {
     tuple val(meta), path("${prefix}.json")          , optional:true, emit: json
     tuple val(meta), path("${prefix}.auspice.json")  , optional:true, emit: json_auspice
     tuple val(meta), path("${prefix}.ndjson")        , optional:true, emit: ndjson
-    tuple val(meta), path("${prefix}.aligned.fasta") , optional:true, emit: fasta_aligned
+    tuple val(meta), path("${prefix}.aligned.fasta") , emit: fasta_aligned
     tuple val(meta), path("*.translation.fasta")     , optional:true, emit: fasta_translation
     path "versions.yml"                              , emit: versions
 
@@ -37,7 +37,7 @@ process NEXTCLADE_RUN {
         --input-dataset $dataset \\
         --output-all ./ \\
         --output-basename ${prefix} \\
-        $assembly
+        $HA
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

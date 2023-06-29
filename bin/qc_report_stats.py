@@ -87,3 +87,5 @@ output_list = [
 
 # Creating tab delimited string for qc report generation
 print('\t'.join(output_list))
+
+# Modified from https://github.com/CDCgov/mycosnp-nf/blob/master/bin/qc_report_stats.py

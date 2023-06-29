@@ -1,6 +1,5 @@
-process KRAKEN2REPORT_SUMMARY {
-    tag "$meta.id"
-    label 'process_low'
+process FLU_SUMMARY {
+    label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::pandas=1.1.5" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -8,11 +7,12 @@ process KRAKEN2REPORT_SUMMARY {
         'quay.io/biocontainers/pandas:1.1.5' }"
 
     input:
-    tuple val(meta), path(txt)
+    file(input)
 
     output:
-    path("*_read_percentages.tsv")    ,   emit: kraken_line
-    path("kraken2_report_summary.tsv"),   emit: kraken2_report_summary
+    path ("flu_summary.tsv")     , emit: summary_tsv
+    path ("flu_summary.txt")     , emit: summary_txt
+    path "flu_summary.log"       , emit: log
 
     when:
     task.ext.when == null || task.ext.when
@@ -20,11 +20,12 @@ process KRAKEN2REPORT_SUMMARY {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def flu_summary_log = "flu.summary.log"
+
     """
-    python $projectDir/bin/kraken2report_to_tsv.py \\
-        --sample ${meta.id} \\
-        --report ${meta.id}.kraken2.report.txt > ${meta.id}_read_percentages.tsv
+    python $projectDir/bin/flu_summary.py
+
+    ln -s .command.log $flu_summary_log
 
     """
 }
-
