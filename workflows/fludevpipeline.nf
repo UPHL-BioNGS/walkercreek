@@ -56,7 +56,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT LOCAL MODULES/SUBWORKFLOWS
+    IMPORT SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
@@ -68,22 +68,23 @@ include { INPUT_CHECK                           } from '../subworkflows/local/in
 include { FLU_READ_QC                           } from '../subworkflows/local/flu_read_qc'
 include { FLU_ASSEMBLY_TYPING_CLADE_VARIABLES   } from '../subworkflows/local/flu_assembly_typing_clade_variables'
 include { FLU_NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/flu_nextclade_dataset_and_analysis'
-include { FLU_SUMMARY_REPORT                    } from '../subworkflows/local/flu_summary_report'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT NF-CORE MODULES/SUBWORKFLOWS
+    IMPORT MODULES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-include { QC_REPORTSHEET              } from '../modules/local/qc_reportsheet.nf'
-include { UNTAR       as UNTAR_KRAKEN } from '../modules/nf-core/untar/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { FASTQC                              } from '../modules/nf-core/fastqc/main'
+include { QC_REPORTSHEET                      } from '../modules/local/qc_reportsheet.nf'
+include { FLU_SUMMARY_REPORT                  } from '../modules/local/flu_summary_report'
+include { UNTAR       as UNTAR_KRAKEN         } from '../modules/nf-core/untar/main'
+include { NEXTCLADE_REPORTSHEET               } from '../modules/local/nextclade_reportsheet.nf'
+include { MULTIQC                             } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS         } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,7 +103,7 @@ workflow FLUDEVPIPELINE {
     ch_all_reads                   = Channel.empty()
     ch_sra_reads                   = Channel.empty()
     ch_sra_list                    = Channel.empty()
-    ch_flu_summary                 = Channel.empty()
+
 
     // Read in samplesheet, validate and stage input files
 
@@ -144,7 +145,6 @@ workflow FLUDEVPIPELINE {
     */
     FLU_READ_QC(ch_all_reads, adapters, phix, ch_krakendb)
     ch_all_reads = ch_all_reads.mix(FLU_READ_QC.out.clean_reads)
-    ch_flu_summary = ch_flu_summary.mix(FLU_READ_QC.out.flu_summary)
     ch_versions = ch_versions.mix(FLU_READ_QC.out.versions)
 
     //
@@ -152,7 +152,6 @@ workflow FLUDEVPIPELINE {
     //
     ch_qcreportsheet = FLU_READ_QC.out.qc_lines.collect()
     QC_REPORTSHEET(ch_qcreportsheet)
-    ch_flu_summary = ch_flu_summary.mix(QC_REPORTSHEET.out.qc_reportsheet)
 
     ch_assembly = Channel.empty()
     ch_HA = Channel.empty()
@@ -160,6 +159,7 @@ workflow FLUDEVPIPELINE {
     ch_dataset = Channel.empty()
     ch_reference = Channel.empty()
     ch_tag = Channel.empty()
+    ch_output_tsv = Channel.empty()
 
     /*
         SUBWORKFLOW: FLU_ASSEMBLY_TYPING_CLADE_VARIABLES
@@ -169,9 +169,8 @@ workflow FLUDEVPIPELINE {
     ch_irma_reference = params.irma_reference ? file(params.irma_reference, checkIfExists: true) : file("$projectDir}/data/irma_reference", checkIfExists: true)
 
     FLU_ASSEMBLY_TYPING_CLADE_VARIABLES(ch_all_reads, ch_assembly, ch_irma_reference)
-    ch_flu_summary = ch_flu_summary.mix(FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.flu_summary)
-    ch_versions = ch_versions.mix(FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
 
+    ch_versions = ch_versions.mix(FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
     ch_dataset = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_reference = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.reference
     ch_tag = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.tag
@@ -186,10 +185,13 @@ workflow FLUDEVPIPELINE {
         SUBWORKFLOW: FLU_NEXTCLADE_DATASET_AND_ANALYSIS
     */
     FLU_NEXTCLADE_DATASET_AND_ANALYSIS(ch_dataset, ch_reference, ch_tag, ch_HA, ch_nextclade_db)
-    ch_flu_summary = ch_flu_summary.mix(FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.flu_summary)
     ch_versions = ch_versions.mix(FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.versions)
 
     ch_nextclade_multiqc = Channel.empty()
+
+    ch_nextclade_reportsheet = FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.nextclade_report_lines.collect()
+
+    NEXTCLADE_REPORTSHEET(ch_nextclade_reportsheet)
 
     //
     // MODULE: Run FastQC
@@ -225,8 +227,8 @@ workflow FLUDEVPIPELINE {
     multiqc_report = MULTIQC.out.report.toList()
     ch_multiqc_report = MULTIQC.out.report.toList()
 
-    flu_summary_script = Channel.fromPath(workflow.projectDir + "/bin/flu_summary.py", type: "file")
-    FLU_SUMMARY_REPORT(ch_all_reads, ch_multiqc_report, ch_flu_summary.concat(flu_summary_script).collect())
+   //flu_summary_script = Channel.fromPath(workflow.projectDir + "/bin/flu_summary.py", type: "file")
+    //FLU_SUMMARY_REPORT(ch_flu_summary_tsv, ch_flu_summary_txt, ch_flu_qc_summary_tsv)
 }
 
 /*

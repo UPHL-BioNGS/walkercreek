@@ -11,8 +11,7 @@ process KRAKEN2REPORT_SUMMARY {
     tuple val(meta), path(txt)
 
     output:
-    path("*_read_percentages.tsv")    ,   emit: kraken_line
-    path("kraken2_report_summary.tsv"),   emit: kraken2_report_summary
+    path("*_read_percentages.txt") ,   emit: kraken_lines
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,7 +22,7 @@ process KRAKEN2REPORT_SUMMARY {
     """
     python $projectDir/bin/kraken2report_to_tsv.py \\
         --sample ${meta.id} \\
-        --report ${meta.id}.kraken2.report.txt > ${meta.id}_read_percentages.tsv
+        --report ${meta.id}.kraken2.report.txt > ${meta.id}_read_percentages.txt
 
     """
 }

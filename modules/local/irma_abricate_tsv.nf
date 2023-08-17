@@ -1,4 +1,4 @@
-process QC_REPORTSHEET {
+process IRMA_ABRICATE_TSV {
     label 'process_low'
 
     conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
@@ -7,21 +7,23 @@ process QC_REPORTSHEET {
         'quay.io/biocontainers/python:3.8.3' }"
 
     input:
-    path(qc_lines)
+    path(sample_typing_reports)
 
     output:
-    path("qc_report.tsv"), emit: tsv
+    path("typing_report.tsv"), emit: combined_typing_reports
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
+
     """
-    printf \"Sample\\tReads Before Trimming\\tGC Before Trimming\\tAverage Q Score Before Trimming\\tReads After Trimming\\tPaired Reads After Trimming\\tUnpaired Reads After Trimming\\tGC After Trimming\\tAverage Q Score After Trimming\\n\" > qc_report.tsv
-    sort ${qc_lines} > sorted.tsv
-    cat sorted.tsv >> qc_report.tsv
+    cat $sample_typing_reports > "tmp_typing_report.tsv"
+
+    echo -e "Sample\tIRMA type\tIRMA subtype\tabricate INSaFLU type\tabricate INSaFLU subtype" > "temp.tsv"
+
+    cat "temp.tsv" "tmp_typing_report.tsv" > "typing_report.tsv"
+
     """
 }
-
-

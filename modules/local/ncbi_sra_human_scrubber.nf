@@ -12,9 +12,9 @@ process NCBI_SRA_HUMAN_SCRUBBER {
 
     output:
     tuple val(meta), path("${meta.id}_*_dehosted.fastq.gz"), emit: reads
-    tuple val(meta), path('*.FWD_SPOTS_REMOVED.txt')       , optional: true, emit: fwd_spots_removed
-    tuple val(meta), path('*.REV_SPOTS_REMOVED.txt')       , optional: true, emit: rev_spots_removed
-    tuple val(meta), path('*.TOTAL_SPOTS_REMOVED.txt')     , emit: total_spots_removed
+    tuple val(meta), path('*.FWD_SPOTS_REMOVED.txt')       , emit: fwd_spots_removed
+    tuple val(meta), path('*.REV_SPOTS_REMOVED.txt')       , emit: rev_spots_removed
+    tuple val(meta), path('*.TOTAL_SPOTS_REMOVED.txt')     , emit: txt
     path 'versions.yml'                                    , emit: versions
 
     when:

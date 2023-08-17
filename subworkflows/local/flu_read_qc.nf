@@ -10,6 +10,7 @@ include { FAQCS                                } from '../../modules/nf-core/faq
 include { BBMAP_BBDUK                          } from '../../modules/nf-core/bbmap/bbduk/main'
 include { KRAKEN2_KRAKEN2                      } from '../../modules/nf-core/kraken2/kraken2/main'
 include { KRAKEN2REPORT_SUMMARY                } from '../../modules/local/kraken2report_summary.nf'
+include { KRAKEN2_REPORTSHEET                  } from '../../modules/local/kraken2_reportsheet.nf'
 include { QC_REPORT                            } from '../../modules/local/qc_report.nf'
 
 
@@ -28,11 +29,11 @@ workflow FLU_READ_QC {
     db
 
     main:
-    ch_versions    = Channel.empty()
-    ch_flu_summary = Channel.empty()
+    ch_versions        = Channel.empty()
+    ch_flu_summary_txt = Channel.empty()
 
     NCBI_SRA_HUMAN_SCRUBBER(reads)
-    ch_flu_summary = ch_flu_summary.mix(NCBI_SRA_HUMAN_SCRUBBER.out.total_spots_removed)
+    ch_flu_summary_txt = ch_flu_summary_txt.mix(NCBI_SRA_HUMAN_SCRUBBER.out.txt)
     ch_versions = ch_versions.mix(NCBI_SRA_HUMAN_SCRUBBER.out.versions)
 
     SEQKIT_PAIR(reads)
@@ -53,15 +54,15 @@ workflow FLU_READ_QC {
         ch_versions = ch_versions.mix(KRAKEN2_KRAKEN2.out.versions)
         ch_kraken2report_summary_input = KRAKEN2_KRAKEN2.out.txt
         KRAKEN2REPORT_SUMMARY(ch_kraken2report_summary_input)
-        ch_flu_summary = ch_flu_summary.mix(KRAKEN2REPORT_SUMMARY.out.kraken_line)
-        ch_kraken2report_summary = KRAKEN2REPORT_SUMMARY.out.kraken_line
+        ch_kraken2reportsheet = KRAKEN2REPORT_SUMMARY.out.kraken_lines.collect()
+        KRAKEN2_REPORTSHEET(ch_kraken2reportsheet)
+        ch_flu_summary_tsv = KRAKEN2_REPORTSHEET.out.tsv.collect()
 
-        emit:
-        versions         = ch_versions
-        report           = KRAKEN2_KRAKEN2.out.report
-        classified_reads = KRAKEN2_KRAKEN2.out.classified_reads_assignment
-        kraken_lines     = ch_kraken2report_summary
-        flu_summary      = ch_flu_summary
+    emit:
+    report              = KRAKEN2_KRAKEN2.out.report
+    classified_reads    = KRAKEN2_KRAKEN2.out.classified_reads_assignment
+    kraken_lines        = ch_kraken2reportsheet
+    clean_reads         = BBMAP_BBDUK.out.clean_reads
     }
 
     emit:
@@ -71,7 +72,7 @@ workflow FLU_READ_QC {
     qc_report           = FAQCS.out.statspdf
     versions            = ch_versions
     qc_lines            = ch_qcreport
-    flu_summary         = ch_flu_summary
+    txt                 = ch_flu_summary_txt
 
 }
 

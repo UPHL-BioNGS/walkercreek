@@ -28,9 +28,15 @@ tsv_data.loc[:, ['clade']].to_csv(f"NEXTCLADE_CLADE.tsv", sep='\t', header=False
 tsv_data.loc[:, ['aaSubstitutions']].to_csv(f"NEXTCLADE_AASUBS.tsv", sep='\t', header=False)
 tsv_data.loc[:, ['aaDeletions']].to_csv(f"NEXTCLADE_AADELS.tsv", sep='\t', header=False)
 
-# Check if 'lineage' column exists in the input TSV file
+# If the 'lineage' column exists in the input TSV file, read in the 'NEXTCLADE_LINEAGE.tsv' output file
 if 'lineage' in tsv_data.columns:
-    tsv_data.loc[:, ['lineage']].to_csv(f"NEXTCLADE_LINEAGE.tsv", sep='\t', header=False)
+    try:
+        df_lineage = pd.read_csv("NEXTCLADE_LINEAGE.tsv", sep="\t", header=None, names=["lineage"])
+    except FileNotFoundError:
+        print("NEXTCLADE_LINEAGE.tsv not found")
+        df_lineage = pd.DataFrame(columns=["lineage"])
+else:
+    df_lineage = pd.DataFrame(columns=["lineage"])
 
 # Read in the four output files, handling the case where a file is missing
 try:
@@ -49,20 +55,23 @@ except FileNotFoundError:
     print(f"NEXTCLADE_AADELS.tsv not found")
     df_dels = pd.DataFrame(columns=["aaDeletions"])
 
-# If the 'lineage' column exists in the input TSV file, read in the 'NEXTCLADE_LINEAGE.tsv' output file
-if 'lineage' in tsv_data.columns:
-    try:
-        df_lineage = pd.read_csv("NEXTCLADE_LINEAGE.tsv", sep="\t", header=None, names=["lineage"])
-    except FileNotFoundError:
-        print("NEXTCLADE_LINEAGE.tsv not found")
-        df_lineage = pd.DataFrame(columns=["lineage"])
-else:
-    df_lineage = pd.DataFrame(columns=["lineage"])
+# Extract the desired columns from the original TSV data
+df_qc_score = tsv_data.loc[:, ['qc.overallScore']]
+df_qc_status = tsv_data.loc[:, ['qc.overallStatus']]
+df_substitutions = tsv_data.loc[:, ['totalSubstitutions']]
+df_coverage = tsv_data.loc[:, ['coverage']]
 
-# Concatenate the four dataframes horizontally, excluding the 'lineage' column if it doesn't exist in the input TSV file
-df_combined = pd.concat([df_clade, df_subs, df_dels], axis=1)
+# Remove file extension from the sample name
+sample_name = id_name.rsplit('.', 1)[0]
+
+# Create a DataFrame with the sample name
+df_sample = pd.DataFrame({'Sample': [sample_name]})
+
+# Concatenate all the dataframes horizontally
+df_combined = pd.concat([df_sample, df_clade, df_subs, df_dels, df_qc_score, df_qc_status, df_substitutions, df_coverage], axis=1)
+
 if 'lineage' in tsv_data.columns:
     df_combined = pd.concat([df_combined, df_lineage], axis=1)
 
 # Write the combined dataframe to a TSV file as final report
-df_combined.to_csv(f"NEXTCLADE_REPORT.tsv", sep="\t", index=False)
+df_combined.to_csv(f"{sample_name}.nextclade_report.tsv", sep="\t", index=False)

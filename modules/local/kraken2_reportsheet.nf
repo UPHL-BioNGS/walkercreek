@@ -1,4 +1,4 @@
-process QC_REPORTSHEET {
+process KRAKEN2_REPORTSHEET {
     label 'process_low'
 
     conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
@@ -7,10 +7,10 @@ process QC_REPORTSHEET {
         'quay.io/biocontainers/python:3.8.3' }"
 
     input:
-    path(qc_lines)
+    path(kraken_lines)
 
     output:
-    path("qc_report.tsv"), emit: tsv
+    path("kraken2_report.tsv"), emit: tsv
 
     when:
     task.ext.when == null || task.ext.when
@@ -18,10 +18,8 @@ process QC_REPORTSHEET {
     script:
     def args = task.ext.args ?: ''
     """
-    printf \"Sample\\tReads Before Trimming\\tGC Before Trimming\\tAverage Q Score Before Trimming\\tReads After Trimming\\tPaired Reads After Trimming\\tUnpaired Reads After Trimming\\tGC After Trimming\\tAverage Q Score After Trimming\\n\" > qc_report.tsv
-    sort ${qc_lines} > sorted.tsv
-    cat sorted.tsv >> qc_report.tsv
+    printf \"Sample\\tkraken2 Homo sapiens percentage\\tkraken2 Influenza A virus percentage\\tkraken2 Influenza B virus percentage\\n\" > kraken2_report.tsv
+    sort ${kraken_lines} > sorted_kraken.tsv
+    cat sorted_kraken.tsv >> kraken2_report.tsv
     """
 }
-
-

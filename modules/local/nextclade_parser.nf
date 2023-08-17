@@ -11,11 +11,11 @@ process NEXTCLADE_PARSER {
     tuple val(meta), path(tsv)
 
     output:
-    tuple val(meta), path('NEXTCLADE_CLADE.tsv')   , emit: clades
-    tuple val(meta), path('NEXTCLADE_LINEAGE.tsv') , optional: true, emit: lineage
-    tuple val(meta), path('NEXTCLADE_AASUBS.tsv')  , emit: aa_subs
-    tuple val(meta), path('NEXTCLADE_AADELS.tsv')  , emit: aa_dels
-    tuple val(meta), path('NEXTCLADE_REPORT.tsv')  , emit: nextclade_report
+    tuple val(meta), path('NEXTCLADE_CLADE.tsv')     , emit: clades
+    tuple val(meta), path('NEXTCLADE_LINEAGE.tsv')   , optional: true, emit: lineage
+    tuple val(meta), path('NEXTCLADE_AASUBS.tsv')    , emit: aa_subs
+    tuple val(meta), path('NEXTCLADE_AADELS.tsv')    , emit: aa_dels
+    tuple val(meta), path('*.nextclade_report.tsv')  , emit: tsv
 
     when:
     task.ext.when == null || task.ext.when

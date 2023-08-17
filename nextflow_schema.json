@@ -305,11 +305,6 @@
                     "default": 13500,
                     "fa_icon": "fas fa-length"
                 },
-                "skip_abricate": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Skip ABRicate option."
-                },
                 "adapters_fasta": {
                     "type": "string",
                     "default": "https://raw.githubusercontent.com/BioInfoTools/BBMap/master/resources/adapters.fa",

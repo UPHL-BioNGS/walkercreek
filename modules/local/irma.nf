@@ -22,8 +22,8 @@ process IRMA {
     tuple val(meta), path("${meta.id}_NA_FILE_NOT_FOUND.txt")             , optional:true, emit: failed_NA
     tuple val(meta), path("${meta.id}.irma_type.txt")                     , emit: irma_type
     tuple val(meta), path("${meta.id}.irma_subtype.txt")                  , emit: irma_subtype
-    tuple val(meta), path("${meta.id}.irma.typing.tsv")                   , emit: typing
-    tuple val(meta), path("irma_typing_summary.tsv")                      , optional:true, emit: irma_typing_report
+    tuple val(meta), path('*.txt')                                        , optional:true, emit: txt
+    tuple val(meta), path("${meta.id}.irma.typing.tsv")                   , emit: tsv
     path "*.irma.log"                                                     , emit: log
     path "versions.yml"                                                   , emit: versions
 
@@ -35,12 +35,9 @@ process IRMA {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def irma_config = "DEL_TYPE=\"NNN\"\nALIGN_PROG=\"BLAT\""
     def irma_log = "${meta.id}.irma.log"
-    def irma_type = ''
-    def irma_subtype = ''
 
     """
-    touch irma_config.sh
-    echo 'SINGLE_LOCAL_PROC=${task.cpus}' >> irma_config.sh
+    echo 'SINGLE_LOCAL_PROC=${task.cpus}' > irma_config.sh
     echo 'DOUBLE_LOCAL_PROC=${(task.cpus / 2).toInteger()}' >> irma_config.sh
     if [ ${params.keep_ref_deletions} ]; then
         echo 'DEL_TYPE="NNN"' >> irma_config.sh
@@ -60,29 +57,25 @@ process IRMA {
         echo "Type_\$(basename \$(find "${meta.id}" -name "*.fasta" | head -n1) | cut -d_ -f1)" > "${meta.id}_IRMA_TYPE"
         cat "${meta.id}_IRMA_TYPE" > "${meta.id}.irma_type.txt"
     else
-        echo "No IRMA flu type" > "${meta.id}_IRMA_TYPE"
+        echo "No IRMA type" > "${meta.id}_IRMA_TYPE"
         cat "${meta.id}_IRMA_TYPE" > "${meta.id}.irma_type.txt"
     fi
 
-    if [ -d "${meta.id}" ] && [ -n "\$(ls -A ${meta.id})" ]; then
+    if [ -d "${meta.id}" ] && [ -n "\$(ls -A ${meta.id}/*HA_H*.fasta)" ]; then
         echo "\$(basename \$(find ${meta.id} -name "*HA_H*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${meta.id}_HA_SUBTYPE"
     else
-        if [ ! -s "${meta.id}_HA_SUBTYPE" ]; then
-            echo "No_HA_subtype" > "${meta.id}_HA_SUBTYPE"
-        fi
+        echo "NoIRMAsubtype " > "${meta.id}_HA_SUBTYPE"
     fi
 
-    if [ -d "${meta.id}" ] && [ -n "\$(ls -A ${meta.id})" ]; then
+    if [ -d "${meta.id}" ] && [ -n "\$(ls -A ${meta.id}/*NA_N*.fasta)" ]; then
         echo "\$(basename \$(find ${meta.id} -name "*NA_N*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${meta.id}_NA_SUBTYPE"
     else
-        if [ ! -s "${meta.id}_NA_SUBTYPE" ]; then
-            echo "-No_NA_subtype" > "${meta.id}_NA_SUBTYPE"
-        fi
+        echo "-NoIRMAsubtype" > "${meta.id}_NA_SUBTYPE"
     fi
 
-    if [ -f "${meta.id}_HA_SUBTYPE" ] && [ -f "${meta.id}_NA_SUBTYPE" ]; then
+    if [ -s "${meta.id}_HA_SUBTYPE" ] && [ -s "${meta.id}_NA_SUBTYPE" ]; then
         cat "${meta.id}_HA_SUBTYPE" "${meta.id}_NA_SUBTYPE" > "${meta.id}.subtype.txt"
-        awk '{sub(".fasta","",\$1); printf \$1}' "${meta.id}.subtype.txt" > "${meta.id}.irma_subtype.txt"
+        awk '{sub(".fasta","",\$1); printf \$1}' "${meta.id}.subtype.txt" | sed 's/NoIRMAsubtype-NoIRMAsubtype/No IRMA subtype/' > "${meta.id}.irma_subtype.txt"
     fi
 
     echo -e "Sample\tIRMA_type\tIRMA_subtype" > ${meta.id}.irma.typing.tsv
@@ -102,15 +95,6 @@ process IRMA {
         cat "${meta.id}_NA_FILE_NOT_FOUND" > "${meta.id}_NA_FILE_NOT_FOUND.txt"
     fi
 
-    irma_type=\$(cat "${meta.id}.irma_type.txt")
-    irma_subtype=\$(cat "${meta.id}.irma_subtype.txt")
-
-    echo -e "Sample\tIRMA_type\tIRMA_subtype" > irma_typing_summary.tmp
-    echo -e "${meta.id}\t${irma_type}\t${irma_subtype}" >> irma_typing_summary.tmp
-
-    sort -k1 irma_typing_summary.tmp > irma_typing_summary.tsv
-    rm irma_typing_summary.tmp
-
     ln -s .command.log $irma_log
 
     cat <<-END_VERSIONS > versions.yml
@@ -118,4 +102,5 @@ process IRMA {
         IRMA: \$(IRMA | head -n1 | sed -E 's/^Iter.*IRMA\\), v(\\S+) .*/\\1/')
     END_VERSIONS
     """
+
 }
