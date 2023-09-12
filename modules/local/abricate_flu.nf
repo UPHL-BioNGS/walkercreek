@@ -11,15 +11,11 @@ process ABRICATE_FLU {
     tuple val(meta), path(assembly)
 
     output:
-    tuple val(meta), path("*.tsv")                                  , emit: report
-    tuple val(meta), path("${meta.id}.abricate_flu_type.txt")       , emit: abricate_type
-    tuple val(meta), path("${meta.id}.abricate_flu_subtype.txt")    , emit: abricate_subtype
-    tuple val(meta), path('*.txt')                                  , optional:true, emit: txt
-    tuple val(meta), path("${meta.id}.abricate_fail.txt")           , optional:true, emit: abricate_fail
-    tuple val(meta), path("${meta.id}.abricate_type_fail.txt")      , optional:true, emit: abricate_failed_type
-    tuple val(meta), path("${meta.id}.abricate_subtype_fail.txt")   , optional:true, emit: abricate_failed_subtype
-    tuple val(meta), path("${meta.id}.abricate_InsaFlu.typing.tsv") , optional:true, emit: tsv
-    path "versions.yml"                                             , emit: versions
+    tuple val(meta), path("*.tsv")                         , emit: report
+    tuple val(meta), path("*.abricate_flu_type.txt")       , emit: abricate_type
+    tuple val(meta), path("*.abricate_flu_subtype.txt")    , emit: abricate_subtype
+    tuple val(meta), path("*.abricate_InsaFlu.typing.tsv") , emit: tsv
+    path "versions.yml"                                    , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -27,80 +23,118 @@ process ABRICATE_FLU {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def abricate_type = ''
-    def abricate_subtype = ''
+    def abricate_hits = "${prefix}_abricate_hits.tsv"
+    def abricate_type = "${prefix}.abricate_flu_type.txt"
+    def abricate_subtype = "${prefix}.abricate_flu_subtype.txt"
 
     """
     abricate \\
         $assembly \\
         $args \\
         --nopath \\
-        --threads $task.cpus > ${meta.id}_abricate_hits.tsv
+        --threads $task.cpus > $abricate_hits
 
-    if [ \$(wc -l < "${meta.id}_abricate_hits.tsv") -eq 1 ]; then
-        echo "No sequences in ${meta.id}.irma.consensus.fasta match or align with genes present in INSaFLU database" > "${meta.id}.abricate_fail.txt"
-        echo "No abricate type" > "${meta.id}.abricate_flu_type.txt"
-        echo "No abricate subtype" > "${meta.id}.abricate_flu_subtype.txt"
+    # Finf INSaFLU Type
+    if grep -q "A_MP" $abricate_hits; then
+        echo "Type_A" > $abricate_type
+    elif grep -q "B_MP" $abricate_hits; then
+        echo "Type_B" > $abricate_type
     else
-        if ! grep -q "M1" "${meta.id}_abricate_hits.tsv"; then
-            echo "No 'M1' found in ${meta.id}_abricate_hits.tsv" > "${meta.id}.abricate_type_fail.txt"
-            if grep -qE "HA|NA" "${meta.id}_abricate_hits.tsv"; then
-                grep -E "HA|NA" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '
-                    BEGIN {OFS="\t"; print "Sample", "abricate_InsaFlu_type", "abricate_InsaFlu_subtype"}
-                    { if (\$6 == "HA") ha = \$15; if (\$6 == "NA") na = \$15 }
-                    END { print "${meta.id}", "", ha na }' > "${meta.id}.abricate_InsaFlu.typing.tsv"
+        echo "No abricate type" > $abricate_type
+    fi
 
-                grep -E "HA|NA" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' | tr -d '[:space:]' > ${meta.id}_abricate_flu_subtype
-                if [ -s "${meta.id}_abricate_flu_subtype" ]; then
-                    cat "${meta.id}_abricate_flu_subtype" > "${meta.id}.abricate_flu_subtype.txt"
-                else
-                    echo "No abricate subtype" > "${meta.id}.abricate_flu_subtype.txt"
-                fi
-            else
-                echo "No 'HA' or 'NA' found in ${meta.id}_abricate_hits.tsv" > "${meta.id}.abricate_subtype_fail.txt"
-                # Include the failure files in the output
-                echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype" > "${meta.id}.abricate_InsaFlu.typing.tsv"
-                echo -e "${meta.id}\tFAIL\tFAIL" >> "${meta.id}.abricate_InsaFlu.typing.tsv"
-                echo "No abricate type" > "${meta.id}.abricate_flu_type.txt"
-                echo "No abricate subtype" > "${meta.id}.abricate_flu_subtype.txt"
-                cat "${meta.id}.abricate_subtype_fail.txt" >> "${meta.id}.abricate_InsaFlu.typing.tsv"
-            fi
+    # Find INSaFLU subtype if Type A
+    if grep -q "Type_A" $abricate_type; then
+    # H1N1
+        if grep -q "H1" $abricate_hits && grep -q "N1" $abricate_hits; then
+            echo "H1N1" > $abricate_subtype
+    # H2N2
+        elif grep -q "H2" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H2N2" > $abricate_subtype
+    # H3N2
+        elif grep -q "H3" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H3N2" > $abricate_subtype
+    # H5N1
+        elif grep -q "H5" $abricate_hits && grep -q "N1" $abricate_hits; then
+            echo "H5N1" > $abricate_subtype
+    # H7N3
+        elif grep -q "H7" $abricate_hits && grep -q "N3" $abricate_hits; then
+            echo "H7N3" > $abricate_subtype
+    # H7N7
+        elif grep -q "H7" $abricate_hits && grep -q "N7" $abricate_hits; then
+            echo "H7N7" > $abricate_subtype
+    # H7N9
+        elif grep -q "H7" $abricate_hits && grep -q "N9" $abricate_hits; then
+            echo "H7N9" > $abricate_subtype
+    # H9N2
+        elif grep -q "H9" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H9N2" > $abricate_subtype
+    # H10N8
+        elif grep -q "H10" $abricate_hits && grep -q "N8" $abricate_hits; then
+            echo "H10N8" > $abricate_subtype
         else
-            grep -E "M1|HA|NA" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '
-                BEGIN {OFS="\t"; print "Sample", "abricate_InsaFlu_type", "abricate_InsaFlu_subtype"}
-                { if (\$6 == "M1") type = \$15; if (\$6 == "HA") ha = \$15; if (\$6 == "NA") na = \$15 }
-                END { print "${meta.id}", type, ha na }' > "${meta.id}.abricate_InsaFlu.typing.tsv"
-
-            grep -E "M1" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' > ${meta.id}_abricate_flu_type
-            if [ -s "${meta.id}_abricate_flu_type" ]; then
-                cat "${meta.id}_abricate_flu_type" > "${meta.id}.abricate_flu_type.txt"
-            else
-                echo "No abricate type" > "${meta.id}.abricate_flu_type.txt"
-            fi
-
-            grep -E "HA|NA" "${meta.id}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' | tr -d '[:space:]' > ${meta.id}_abricate_flu_subtype
-            if [ -s "${meta.id}_abricate_flu_subtype" ]; then
-                cat "${meta.id}_abricate_flu_subtype" > "${meta.id}.abricate_flu_subtype.txt"
-            else
-                echo "No abricate subtype" > "${meta.id}.abricate_flu_subtype.txt"
-            fi
+            echo "No abricate subtype" > $abricate_subtype
         fi
     fi
 
-    # Check if abricate_flu_type.txt exists and create if missing
-    if [ ! -f "${meta.id}.abricate_flu_type.txt" ]; then
-        echo "No abricate type" > "${meta.id}.abricate_flu_type.txt"
+    # Find INSaFLU subtype if Type B
+    if grep -q "Type_B" $abricate_type; then
+        if grep -q "Victoria" $abricate_hits; then
+            echo "Victoria" > $abricate_subtype
+        elif grep -q "Yamagata" $abricate_hits; then
+            echo "Yamagata" > $abricate_subtype
+        else
+            echo "No abricate subtype" > $abricate_subtype
+        fi
     fi
 
-    # Check if abricate_flu_subtype.txt exists and create if missing
-    if [ ! -f "${meta.id}.abricate_flu_subtype.txt" ]; then
-        echo "No abricate subtype" > "${meta.id}.abricate_flu_subtype.txt"
+    # Find INSaFLU subtype if no flu type was found
+    if grep -q "No abricate type" $abricate_type; then
+    # H1N1
+        if grep -q "H1" $abricate_hits && grep -q "N1" $abricate_hits; then
+            echo "H1N1" > $abricate_subtype
+    # H2N2
+        elif grep -q "H2" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H2N2" > $abricate_subtype
+    # H3N2
+        elif grep -q "H3" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H3N2" > $abricate_subtype
+    # H5N1
+        elif grep -q "H5" $abricate_hits && grep -q "N1" $abricate_hits; then
+            echo "H5N1" > $abricate_subtype
+    # H7N3
+        elif grep -q "H7" $abricate_hits && grep -q "N3" $abricate_hits; then
+            echo "H7N3" > $abricate_subtype
+    # H7N7
+        elif grep -q "H7" $abricate_hits && grep -q "N7" $abricate_hits; then
+            echo "H7N7" > $abricate_subtype
+    # H7N9
+        elif grep -q "H7" $abricate_hits && grep -q "N9" $abricate_hits; then
+            echo "H7N9" > $abricate_subtype
+    # H9N2
+        elif grep -q "H9" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H9N2" > $abricate_subtype
+    # H10N8
+        elif grep -q "H10" $abricate_hits && grep -q "N8" $abricate_hits; then
+            echo "H10N8" > $abricate_subtype
+    # Victoria
+        elif grep -q "Victoria" $abricate_hits; then
+            echo "Victoria" > $abricate_subtype
+    # Yamagata
+        elif grep -q "Yamagata" $abricate_hits; then
+            echo "Yamagata" > $abricate_subtype
+        else
+            echo "No abricate subtype" > $abricate_subtype
+        fi
     fi
+
+    # Writing results to respective output files
+    echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype" > "${prefix}.abricate_InsaFlu.typing.tsv"
+    echo -e "$prefix\t\$(cat $abricate_type)\t\$(cat $abricate_subtype)" >> "${prefix}.abricate_InsaFlu.typing.tsv"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         abricate: \$(echo \$(abricate --version 2>&1) | sed 's/^.*abricate //' )
     END_VERSIONS
-"""
+    """
 }
-

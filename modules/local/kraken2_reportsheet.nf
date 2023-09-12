@@ -18,7 +18,7 @@ process KRAKEN2_REPORTSHEET {
     script:
     def args = task.ext.args ?: ''
     """
-    printf \"Sample\\tkraken2 Homo sapiens percentage\\tkraken2 Influenza A virus percentage\\tkraken2 Influenza B virus percentage\\n\" > kraken2_report.tsv
+    printf \"Sample\\tkraken2 Homo sapiens percentage\\tkraken2 Influenza A percentage\\tkraken2 Influenza B percentage\\tkraken2 unclassified percentage\\n\" > kraken2_report.tsv
     sort ${kraken_lines} > sorted_kraken.tsv
     cat sorted_kraken.tsv >> kraken2_report.tsv
     """

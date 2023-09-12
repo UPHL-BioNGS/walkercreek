@@ -1,4 +1,5 @@
 process IRMA_ABRICATE_REPORT {
+    tag "$meta.id"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::pandas=1.1.5" : null)
@@ -7,27 +8,17 @@ process IRMA_ABRICATE_REPORT {
         'quay.io/biocontainers/pandas:1.1.5' }"
 
     input:
-    tuple val(irma_meta), path(irma_type)
-    tuple val(irma_meta), path(irma_subtype)
-    tuple val(abricate_meta), path(abricate_type)
-    tuple val(abricate_meta), path(abricate_subtype)
+    tuple val(meta), path(irma_tsv), path(abricate_tsv)
 
     output:
-    tuple val(irma_meta), path("${irma_meta.id}_irma_abricate_output.txt"), emit: irma_abricate_line
-
-    when:
-    task.ext.when == null || task.ext.when
+    tuple val(meta), path("*.combined.typing.tsv"), emit: tsv_combined
 
     script:
-    def args = task.ext.args ?: ''
-    def irma_prefix = task.ext.prefix ?: "${irma_meta.id}"
-    def abricate_prefix = task.ext.prefix ?: "${abricate_meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def output_tsv = "${prefix}.combined.typing.tsv"
+
     """
-    python $projectDir/bin/irma_abricate_to_tsv.py \\
-        --sample ${irma_meta.id} \\
-        --irma_type $irma_type \\
-        --irma_subtype $irma_subtype \\
-        --abricate_type $abricate_type \\
-        --abricate_subtype $abricate_subtype > ${irma_meta.id}_irma_abricate_output.txt
+    awk 'BEGIN{FS=OFS="\t"} NR==FNR {a[\$1]=\$2 FS \$3; next} \$1 in a {print \$1, a[\$1], \$2, \$3}' \
+        $irma_tsv $abricate_tsv > $output_tsv
     """
 }

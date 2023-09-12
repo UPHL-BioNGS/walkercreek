@@ -5,11 +5,11 @@
 */
 
 include { IRMA                                 } from '../../modules/local/irma.nf'
-//include { IRMA_CONSENSUS_QC                    } from '../../modules/local/irma_consensus_qc.nf'
+include { IRMA_CONSENSUS_QC                    } from '../../modules/local/irma_consensus_qc.nf'
+include { IRMA_CONSENSUS_QC_REPORTSHEET        } from '../../modules/local/irma_consensus_qc_reportsheet.nf'
 include { ABRICATE_FLU                         } from '../../modules/local/abricate_flu.nf'
 include { IRMA_ABRICATE_REPORT                 } from '../../modules/local/irma_abricate_report'
 include { IRMA_ABRICATE_REPORTSHEET            } from '../../modules/local/irma_abricate_reportsheet.nf'
-include { IRMA_ABRICATE_TSV                    } from '../../modules/local/irma_abricate_tsv.nf'
 include { NEXTCLADE_VARIABLES                  } from '../../modules/local/nextclade_variables.nf'
 
 /*
@@ -21,11 +21,6 @@ include { NEXTCLADE_VARIABLES                  } from '../../modules/local/nextc
 def irma_module = 'FLU'
 if (params.irma_module) {
     irma_module = params.irma_module
-}
-
-def genome_length = 13500
-if (params.genome_length) {
-    genome_length = params.genome_length
 }
 
 /*
@@ -50,26 +45,57 @@ workflow FLU_ASSEMBLY_TYPING_CLADE_VARIABLES {
     ch_dataset                    = Channel.empty()
     ch_reference                  = Channel.empty()
     ch_tag                        = Channel.empty()
+    ch_typing                     = Channel.empty()
 
     IRMA(clean_reads, irma_module)
     ch_assembly = IRMA.out.assembly
     ch_HA = ch_HA.mix(IRMA.out.HA.collect{it}.ifEmpty([]))
     ch_NA = ch_NA.mix(IRMA.out.NA.collect{it}.ifEmpty([]))
-    ch_irma_txt = IRMA.out.txt
     ch_versions = ch_versions.mix(IRMA.out.versions)
 
     //IRMA_CONSENSUS_QC(IRMA.out.assembly, irma_reference)
 
     ABRICATE_FLU(IRMA.out.assembly)
-    ch_abricate_txt = ABRICATE_FLU.out.txt
     ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
 
-    IRMA_ABRICATE_REPORT(IRMA.out.irma_type, IRMA.out.irma_subtype, ABRICATE_FLU.out.abricate_type, ABRICATE_FLU.out.abricate_subtype)
+    ch_irma_abricate_report_input = IRMA.out.tsv.join(ABRICATE_FLU.out.tsv)
 
-    IRMA_ABRICATE_REPORTSHEET(IRMA_ABRICATE_REPORT.out.irma_abricate_line)
-    ch_irma_abricate_tsv_input = IRMA_ABRICATE_REPORTSHEET.out.sample_typing_reports.collect()
-    IRMA_ABRICATE_TSV(ch_irma_abricate_tsv_input)
+    IRMA_ABRICATE_REPORT(ch_irma_abricate_report_input)
+    tsv_files = IRMA_ABRICATE_REPORT.out.tsv_combined
 
+    // Process files, remove duplicates and combine content
+    ch_combined_results = tsv_files
+        .unique { meta, file_path -> meta.id }  // Use unique identifier to remove duplicates, assume 'id' is the unique key in meta
+        .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
+        .flatten()  // Flatten the channel to process each line individually
+        .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
+        .collect()  // Collects all the lines into a list
+        .map { list ->
+            // Include the header only once at the start of the combined file
+            def header = list[0].split("\n")[0]
+            def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+            return ([header] + contentWithoutHeaders).join("\n")
+        }
+
+    IRMA_ABRICATE_REPORTSHEET(ch_combined_results)
+
+    IRMA_CONSENSUS_QC(IRMA.out.assembly)
+    irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
+
+    ch_irma_consensus_qc_results = irma_consensus_qc_files
+        .unique { meta, file_path -> meta.id }  // Use unique identifier to remove duplicates, assume 'id' is the unique key in meta
+        .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
+        .flatten()  // Flatten the channel to process each line individually
+        .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
+        .collect()  // Collects all the lines into a list
+        .map { list ->
+            // Include the header only once at the start of the combined file
+            def qc_header = list[0].split("\n")[0]
+            def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != qc_header }
+            return ([qc_header] + qc_contentWithoutHeaders).join("\n")
+        }
+
+    IRMA_CONSENSUS_QC_REPORTSHEET(ch_irma_consensus_qc_results)
 
     ch_nextclade_variables_input = ABRICATE_FLU.out.abricate_subtype
 

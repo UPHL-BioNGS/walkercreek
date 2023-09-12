@@ -574,3 +574,216 @@ process ABRICATE_FLU {
     END_VERSIONS
     """
 }
+
+
+ch_sorted_results = IRMA_ABRICATE_REPORT.out.combined_tsv
+        .map { file_path ->
+            def file_content = file_path.text
+            return file_content
+        } // Convert each file to its textual content
+        .flatten() // Flatten the channel to process each line individually
+        .filter { line ->
+            line && line.trim() != ''
+        } // Filter out null or empty strings
+        .collect() // Collects all the items into a list
+        .map { list -> list.sort().join("\n") } // Sort the list and then join with line breaks
+
+
+
+        process ABRICATE_FLU {
+    tag "$meta.id"
+    label 'process_high'
+
+    conda "bioconda::abricate=1.0.1"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' :
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' }"
+
+    input:
+    tuple val(meta), path(assembly)
+
+    output:
+    tuple val(meta), path("*.tsv")                         , emit: report
+    tuple val(meta), path("*.abricate_flu_type.txt")       , emit: abricate_type
+    tuple val(meta), path("*.abricate_flu_subtype.txt")    , emit: abricate_subtype
+    tuple val(meta), path("*.abricate_fail.txt")           , optional:true, emit: abricate_fail
+    tuple val(meta), path("*.abricate_type_fail.txt")      , optional:true, emit: abricate_failed_type
+    tuple val(meta), path("*.abricate_subtype_fail.txt")   , optional:true, emit: abricate_failed_subtype
+    tuple val(meta), path("*.abricate_InsaFlu.typing.tsv") , emit: tsv
+    path "versions.yml"                                    , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def abricate_type = ''
+    def abricate_subtype = ''
+
+    """
+    abricate \\
+        $assembly \\
+        $args \\
+        --nopath \\
+        --threads $task.cpus > ${prefix}_abricate_hits.tsv
+
+    if [ \$(wc -l < "${prefix}_abricate_hits.tsv") -eq 1 ]; then
+        echo "No sequences in ${prefix}.irma.consensus.fasta match or align with genes present in INSaFLU database" > "${prefix}.abricate_fail.txt"
+        echo "No abricate type" > "${prefix}.abricate_flu_type.txt"
+        echo "No abricate subtype" > "${prefix}.abricate_flu_subtype.txt"
+    else
+        if ! grep -q "M1" "${prefix}_abricate_hits.tsv"; then
+            echo "No 'M1' found in ${prefix}_abricate_hits.tsv" > "${prefix}.abricate_type_fail.txt"
+            if grep -qE "HA|NA" "${prefix}_abricate_hits.tsv"; then
+                grep -E "HA|NA" "${prefix}_abricate_hits.tsv" | awk -F '\t' '
+                    BEGIN {OFS="\t"; print "Sample", "abricate_InsaFlu_type", "abricate_InsaFlu_subtype"}
+                    { if (\$6 == "HA") ha = \$15; if (\$6 == "NA") na = \$15 }
+                    END { print "${prefix}", "", ha na }' > "${prefix}.abricate_InsaFlu.typing.tsv"
+
+                grep -E "HA|NA" "${prefix}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' | tr -d '[:space:]' > ${prefix}_abricate_flu_subtype
+                if [ -s "${prefix}_abricate_flu_subtype" ]; then
+                    cat "${prefix}_abricate_flu_subtype" > "${prefix}.abricate_flu_subtype.txt"
+                else
+                    echo "No abricate subtype" > "${prefix}.abricate_flu_subtype.txt"
+                fi
+            else
+                echo "No 'HA' or 'NA' found in ${prefix}_abricate_hits.tsv" > "${prefix}.abricate_subtype_fail.txt"
+                # Include the failure files in the output
+                echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype" > "${prefix}.abricate_InsaFlu.typing.tsv"
+                echo -e "${prefix}\tFAIL\tFAIL" >> "${prefix}.abricate_InsaFlu.typing.tsv"
+                echo "No abricate type" > "${prefix}.abricate_flu_type.txt"
+                echo "No abricate subtype" > "${prefix}.abricate_flu_subtype.txt"
+                cat "${prefix}.abricate_subtype_fail.txt" >> "${prefix}.abricate_InsaFlu.typing.tsv"
+            fi
+        else
+            grep -E "M1|HA|NA" "${prefix}_abricate_hits.tsv" | awk -F '\t' '
+                BEGIN {OFS="\t"; print "Sample", "abricate_InsaFlu_type", "abricate_InsaFlu_subtype"}
+                { if (\$6 == "M1") type = \$15; if (\$6 == "HA") ha = \$15; if (\$6 == "NA") na = \$15 }
+                END { print "${prefix}", type, ha na }' > "${prefix}.abricate_InsaFlu.typing.tsv"
+
+            grep -E "M1" "${prefix}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' > ${prefix}_abricate_flu_type
+            if [ -s "${prefix}_abricate_flu_type" ]; then
+                cat "${prefix}_abricate_flu_type" > "${prefix}.abricate_flu_type.txt"
+            else
+                echo "No abricate type" > "${prefix}.abricate_flu_type.txt"
+            fi
+
+            grep -E "HA|NA" "${prefix}_abricate_hits.tsv" | awk -F '\t' '{ print \$15 }' | tr -d '[:space:]' > ${prefix}_abricate_flu_subtype
+            if [ -s "${prefix}_abricate_flu_subtype" ]; then
+                cat "${prefix}_abricate_flu_subtype" > "${prefix}.abricate_flu_subtype.txt"
+            else
+                echo "No abricate subtype" > "${prefix}.abricate_flu_subtype.txt"
+            fi
+        fi
+    fi
+
+    # Check if abricate_flu_type.txt exists and create if missing
+    if [ ! -f "${prefix}.abricate_flu_type.txt" ]; then
+        echo "No abricate type" > "${prefix}.abricate_flu_type.txt"
+    fi
+
+    # Check if abricate_flu_subtype.txt exists and create if missing
+    if [ ! -f "${prefix}.abricate_flu_subtype.txt" ]; then
+        echo "No abricate subtype" > "${prefix}.abricate_flu_subtype.txt"
+    fi
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        abricate: \$(echo \$(abricate --version 2>&1) | sed 's/^.*abricate //' )
+    END_VERSIONS
+"""
+}
+
+
+process ABRICATE_FLU {
+    tag "$meta.id"
+    label 'process_high'
+
+    conda "bioconda::abricate=1.0.1"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' :
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' }"
+
+    input:
+    tuple val(meta), path(assembly)
+
+    output:
+    tuple val(meta), path("*.tsv")                         , emit: report
+    tuple val(meta), path("*.abricate_flu_type.txt")       , emit: abricate_type
+    tuple val(meta), path("*.abricate_flu_subtype.txt")    , emit: abricate_subtype
+    tuple val(meta), path("*.abricate_fail.txt")           , optional:true, emit: abricate_fail
+    tuple val(meta), path("*.abricate_type_fail.txt")      , optional:true, emit: abricate_failed_type
+    tuple val(meta), path("*.abricate_subtype_fail.txt")   , optional:true, emit: abricate_failed_subtype
+    tuple val(meta), path("*.abricate_InsaFlu.typing.tsv") , emit: tsv
+    path "versions.yml"                                    , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def abricate_hits = "${prefix}_abricate_hits.tsv"
+    def abricate_type_file = "${prefix}.abricate_flu_type.txt"
+    def abricate_subtype_file = "${prefix}.abricate_flu_subtype.txt"
+    def subtype = ''
+
+    """
+    abricate \\
+        $assembly \\
+        $args \\
+        --nopath \\
+        --threads $task.cpus > $abricate_hits
+
+    # Function to extract information from the abricate hits tsv file
+    extract_info_from_tsv() {
+        echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype" # Adding header
+        grep -E "\$1" "$abricate_hits" | awk -v prefix="$prefix" -F '\t' '
+            BEGIN {OFS="\t"; ha=""; na=""; type=""}
+            { if (\$6 == "M1") type = \$15; if (\$6 == "HA") ha = \$15; if (\$6 == "NA") na = \$15 }
+            END { print prefix, type, ha na }'
+    }
+
+    # Check for the number of lines in the "${prefix}_abricate_hits.tsv" file
+    if [ \$(wc -l < "$abricate_hits") -le 1 ]; then
+        # If there are 1 or fewer lines:
+        echo "No sequences in ${prefix}.irma.consensus.fasta align with genes present in INSaFLU database" > "${prefix}.abricate_fail.txt"
+        echo "No abricate type" > "$abricate_type_file"
+        echo "No abricate subtype" > "$abricate_subtype_file"
+        echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype\n${prefix}\tNo abricate type\tNo abricate subtype" > "${prefix}.abricate_InsaFlu.typing.tsv"
+
+    elif [ \$(wc -l < "$abricate_hits") -ge 2 ] && grep -q "M1" "$abricate_hits" && grep -qE "HA|NA" "$abricate_hits"; then
+        # Extract information from abricate hits TSV when all gene markers (M1, HA, NA) are present
+        extract_info_from_tsv "M1|HA|NA" > "${prefix}.abricate_InsaFlu.typing.tsv"
+        extract_info_from_tsv "M1" | awk 'NR>1 { print \$2 }' > "$abricate_type_file"
+        extract_info_from_tsv "HA|NA" | awk 'NR>1 { print \$3 }' > "$abricate_subtype_file"
+
+    elif [ \$(wc -l < "$abricate_hits") -ge 2 ]; then
+        # If there are 2 or more lines with either M1 or HA|NA hits
+        if ! grep -q "M1" "$abricate_hits" && grep -qE "HA|NA" "$abricate_hits"; then
+            echo "No 'M1' found in $abricate_hits" > "${prefix}.abricate_type_fail.txt"
+            extract_info_from_tsv "HA|NA" > "${prefix}.abricate_InsaFlu.typing.tsv"
+            echo "No abricate type" > "$abricate_type_file"
+            extract_info_from_tsv "HA|NA" | awk 'NR>1 { print \$3 }' > "$abricate_subtype_file"
+        elif grep -q "M1" "$abricate_hits" && ! grep -qE "HA|NA" "$abricate_hits"; then
+            extract_info_from_tsv "M1" > "${prefix}.abricate_InsaFlu.typing.tsv"
+            extract_info_from_tsv "M1" | awk 'NR>1 { print \$2 }' > "$abricate_type_file"
+            echo "No abricate subtype" > "$abricate_subtype_file"
+        else
+            echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype\n${prefix}\tNo abricate type\tNo abricate subtype" > "${prefix}.abricate_InsaFlu.typing.tsv"
+            echo "No abricate type" > "$abricate_type_file"
+            echo "No abricate subtype" > "$abricate_subtype_file"
+        fi
+    fi
+
+    # Ensure output files exist, and if not, create them with default content
+    [ ! -f "$abricate_type_file" ] && echo "No abricate type" > "$abricate_type_file"
+    [ ! -f "$abricate_subtype_file" ] && echo "No abricate subtype" > "$abricate_subtype_file"
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        abricate: \$(echo \$(abricate --version 2>&1) | sed 's/^.*abricate //' )
+    END_VERSIONS
+    """
+}

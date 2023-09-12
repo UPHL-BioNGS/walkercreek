@@ -1,0 +1,20 @@
+3132451-UT-M70330-230523_S26	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132531-UT-M70330-230523_S18	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132488-UT-M70330-230523_S14	Type_A	H1N1	No abricate type	H1N1
+3132536-UT-M70330-230523_S22	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132635-UT-M70330-230523_S10	Type_A	H1N1	Type_A	H1N1
+3132451-UT-M70330-230523_S26	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132531-UT-M70330-230523_S18	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132536-UT-M70330-230523_S22	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132635-UT-M70330-230523_S10	Type_A	H1N1	Type_A	H1N1
+3132488-UT-M70330-230523_S14	Type_A	H1N1	No abricate type	H1N1
+3132635-UT-M70330-230523_S10	Type_A	H1N1	Type_A	H1N1
+3132531-UT-M70330-230523_S18	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132451-UT-M70330-230523_S26	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132536-UT-M70330-230523_S22	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132635-UT-M70330-230523_S10	Type_A	H1N1	Type_A	H1N1
+3132488-UT-M70330-230523_S14	Type_A	H1N1	No abricate type	H1N1
+3132531-UT-M70330-230523_S18	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132488-UT-M70330-230523_S14	Type_A	H1N1	No abricate type	H1N1
+3132536-UT-M70330-230523_S22	Type_A	No IRMA subtype	No abricate type	No abricate subtype
+3132451-UT-M70330-230523_S26	Type_A	No IRMA subtype	No abricate type	No abricate subtype

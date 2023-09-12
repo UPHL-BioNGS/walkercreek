@@ -81,7 +81,6 @@ include { FLU_NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/fl
 include { FASTQC                              } from '../modules/nf-core/fastqc/main'
 include { QC_REPORTSHEET                      } from '../modules/local/qc_reportsheet.nf'
 include { FLU_SUMMARY_REPORT                  } from '../modules/local/flu_summary_report'
-include { UNTAR       as UNTAR_KRAKEN         } from '../modules/nf-core/untar/main'
 include { NEXTCLADE_REPORTSHEET               } from '../modules/local/nextclade_reportsheet.nf'
 include { MULTIQC                             } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS         } from '../modules/nf-core/custom/dumpsoftwareversions/main'
@@ -119,17 +118,43 @@ workflow FLUDEVPIPELINE {
         ch_versions  = ch_versions.mix(INPUT_CHECK.out.versions)
     }
 
-    // parsing kraken2 database
+    // Parsing kraken2 database
+    // Create data directory for kraken 2 db
+    if (!new File(params.project_db_dir).exists()) {
+        new File(params.project_db_dir).mkdirs()
+    }
+    // Create kraken_db directory for untarring kraken 2 db
+    if (!new File(params.kraken_db_dir).exists()) {
+        new File(params.kraken_db_dir).mkdirs()
+    }
+
+    db_file_path = "${params.project_db_dir}/${params.krakendb.split('/').last()}"
+    untar_dir = "${params.kraken_db_dir}/${params.krakendb.split('/').last().replace('.tar.gz', '')}"
 
     ch_krakendb = Channel.empty()
 
     if (!params.skip_kraken2) {
         if (params.krakendb.endsWith('.tar.gz')) {
-            UNTAR_KRAKEN(
-                [ [:], params.krakendb ]
-            )
-            ch_krakendb = UNTAR_KRAKEN.out.untar.map { it[1] }
-            ch_versions = ch_versions.mix(UNTAR_KRAKEN.out.versions)
+            def untarDirFile = new File(params.kraken_db_dir)
+            // Check if untarred database already exists and directory is not empty
+            if (untarDirFile.exists() && untarDirFile.list().length > 0) {
+                println "Kraken 2 database is untarred. Checking for compressed version..."
+                if (file(db_file_path).exists()) {
+                    println "Compressed Kraken 2 database found. Removing to save space..."
+                    file(db_file_path).delete()
+                }
+            } else if (!file(db_file_path).exists()) {
+                println "Kraken 2 database not found locally. Downloading..."
+                "curl -o ${db_file_path} ${params.krakendb}".execute().text
+                println "Untarring the Kraken 2 database locally..."
+                "tar -xzf ${db_file_path} -C ${params.kraken_db_dir}".execute().waitFor()
+                file(db_file_path).delete() // Deleting the compressed version after untarring
+            } else {
+                println "Untarring the Kraken 2 database locally..."
+                "tar -xzf ${db_file_path} -C ${params.kraken_db_dir}".execute().waitFor()
+                file(db_file_path).delete() // Deleting the compressed version after untarring
+            }
+            ch_krakendb = params.krakendb ? file(params.kraken_db_dir, checkIfExists: true) : file("$projectDir/data/kraken_db", checkIfExists: true)
         } else {
             ch_krakendb = Channel.value(file(params.krakendb))
         }

@@ -5,7 +5,7 @@ from os.path import exists
 import argparse
 import pandas as pd
 
-# Argument parser: get arguments from FAQCS, IRMA, and NCBI SRA HUMAN SCRUBBER text files
+# Argument parser: get arguments from FAQCS
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--sample")
 parser.add_argument("--stats", type=argparse.FileType("r"))

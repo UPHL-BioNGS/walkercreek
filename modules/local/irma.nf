@@ -13,19 +13,18 @@ process IRMA {
     val(irma_module)
 
     output:
-    tuple val(meta), path("${meta.id}/")                                  , emit: irma
-    tuple val(meta), path("${meta.id}.irma.consensus.fasta")              , optional:true, emit: assembly
-    tuple val(meta), path("${meta.id}_LOW_ABUNDANCE.txt")                 , optional:true, emit: failed_assembly
-    tuple val(meta), path("${meta.id}_HA.fasta")                          , optional:true, emit: HA
-    tuple val(meta), path("${meta.id}_HA_FILE_NOT_FOUND.txt")             , optional:true, emit: failed_HA
-    tuple val(meta), path("${meta.id}_NA.fasta")                          , optional:true, emit: NA
-    tuple val(meta), path("${meta.id}_NA_FILE_NOT_FOUND.txt")             , optional:true, emit: failed_NA
-    tuple val(meta), path("${meta.id}.irma_type.txt")                     , emit: irma_type
-    tuple val(meta), path("${meta.id}.irma_subtype.txt")                  , emit: irma_subtype
-    tuple val(meta), path('*.txt')                                        , optional:true, emit: txt
-    tuple val(meta), path("${meta.id}.irma.typing.tsv")                   , emit: tsv
-    path "*.irma.log"                                                     , emit: log
-    path "versions.yml"                                                   , emit: versions
+    tuple val(meta), path("${meta.id}/")               , emit: irma
+    tuple val(meta), path("*.irma.consensus.fasta")    , optional:true, emit: assembly
+    tuple val(meta), path("*_LOW_ABUNDANCE.txt")       , optional:true, emit: failed_assembly
+    tuple val(meta), path("*_HA.fasta")                , optional:true, emit: HA
+    tuple val(meta), path("*_HA_FILE_NOT_FOUND.txt")   , optional:true, emit: failed_HA
+    tuple val(meta), path("*_NA.fasta")                , optional:true, emit: NA
+    tuple val(meta), path("*_NA_FILE_NOT_FOUND.txt")   , optional:true, emit: failed_NA
+    tuple val(meta), path("*.irma_type.txt")           , emit: irma_type
+    tuple val(meta), path("*.irma_subtype.txt")        , emit: irma_subtype
+    tuple val(meta), path("*.irma.typing.tsv")         , emit: tsv
+    path "*.irma.log"                                  , emit: log
+    path "versions.yml"                                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -35,6 +34,8 @@ process IRMA {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def irma_config = "DEL_TYPE=\"NNN\"\nALIGN_PROG=\"BLAT\""
     def irma_log = "${meta.id}.irma.log"
+    def file = ''
+    def found_coverage_files = ''
 
     """
     echo 'SINGLE_LOCAL_PROC=${task.cpus}' > irma_config.sh
@@ -46,53 +47,53 @@ process IRMA {
 
     IRMA $irma_module $reads $meta.id
 
-    if [ -d "${meta.id}" ] && [ -n "\$(ls -A "${meta.id}"/*.fasta)" ]; then
-        cat "${meta.id}"/*.fasta > "${meta.id}.irma.consensus.fasta"
+    if [ -d "${prefix}" ] && [ -n "\$(ls -A "${prefix}"/*.fasta)" ]; then
+        cat "${prefix}"/*.fasta > "${prefix}.irma.consensus.fasta"
     else
-        echo "No consensus fasta due to a low abundance of read patterns per gene segment" > "${meta.id}_LOW_ABUNDANCE"
-        cat "${meta.id}_LOW_ABUNDANCE" > "${meta.id}_LOW_ABUNDANCE.txt"
+        echo "No consensus fasta due to a low abundance of read patterns per gene segment" > "${prefix}_LOW_ABUNDANCE"
+        cat "${prefix}_LOW_ABUNDANCE" > "${prefix}_LOW_ABUNDANCE.txt"
     fi
 
-    if [ -d "${meta.id}" ] && [ -n "\$(ls -A "${meta.id}"/*.fasta)" ]; then
-        echo "Type_\$(basename \$(find "${meta.id}" -name "*.fasta" | head -n1) | cut -d_ -f1)" > "${meta.id}_IRMA_TYPE"
-        cat "${meta.id}_IRMA_TYPE" > "${meta.id}.irma_type.txt"
+    if [ -d "${prefix}" ] && [ -n "\$(ls -A "${prefix}"/*.fasta)" ]; then
+        echo "Type_\$(basename \$(find "${prefix}" -name "*.fasta" | head -n1) | cut -d_ -f1)" > "${prefix}_IRMA_TYPE"
+        cat "${prefix}_IRMA_TYPE" > "${prefix}.irma_type.txt"
     else
-        echo "No IRMA type" > "${meta.id}_IRMA_TYPE"
-        cat "${meta.id}_IRMA_TYPE" > "${meta.id}.irma_type.txt"
+        echo "No IRMA type" > "${prefix}_IRMA_TYPE"
+        cat "${prefix}_IRMA_TYPE" > "${prefix}.irma_type.txt"
     fi
 
-    if [ -d "${meta.id}" ] && [ -n "\$(ls -A ${meta.id}/*HA_H*.fasta)" ]; then
-        echo "\$(basename \$(find ${meta.id} -name "*HA_H*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${meta.id}_HA_SUBTYPE"
+    if [ -d "${prefix}" ] && [ -n "\$(ls -A ${prefix}/*HA_H*.fasta)" ]; then
+        echo "\$(basename \$(find ${prefix} -name "*HA_H*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${prefix}_HA_SUBTYPE"
     else
-        echo "NoIRMAsubtype " > "${meta.id}_HA_SUBTYPE"
+        echo "NoIRMAsubtype " > "${prefix}_HA_SUBTYPE"
     fi
 
-    if [ -d "${meta.id}" ] && [ -n "\$(ls -A ${meta.id}/*NA_N*.fasta)" ]; then
-        echo "\$(basename \$(find ${meta.id} -name "*NA_N*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${meta.id}_NA_SUBTYPE"
+    if [ -d "${prefix}" ] && [ -n "\$(ls -A ${prefix}/*NA_N*.fasta)" ]; then
+        echo "\$(basename \$(find ${prefix} -name "*NA_N*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${prefix}_NA_SUBTYPE"
     else
-        echo "-NoIRMAsubtype" > "${meta.id}_NA_SUBTYPE"
+        echo "-NoIRMAsubtype" > "${prefix}_NA_SUBTYPE"
     fi
 
-    if [ -s "${meta.id}_HA_SUBTYPE" ] && [ -s "${meta.id}_NA_SUBTYPE" ]; then
-        cat "${meta.id}_HA_SUBTYPE" "${meta.id}_NA_SUBTYPE" > "${meta.id}.subtype.txt"
-        awk '{sub(".fasta","",\$1); printf \$1}' "${meta.id}.subtype.txt" | sed 's/NoIRMAsubtype-NoIRMAsubtype/No IRMA subtype/' > "${meta.id}.irma_subtype.txt"
+    if [ -s "${prefix}_HA_SUBTYPE" ] && [ -s "${prefix}_NA_SUBTYPE" ]; then
+        cat "${prefix}_HA_SUBTYPE" "${prefix}_NA_SUBTYPE" > "${prefix}.subtype.txt"
+        awk '{sub(".fasta","",\$1); printf \$1}' "${prefix}.subtype.txt" | sed 's/NoIRMAsubtype-NoIRMAsubtype/No IRMA subtype/' > "${prefix}.irma_subtype.txt"
     fi
 
-    echo -e "Sample\tIRMA_type\tIRMA_subtype" > ${meta.id}.irma.typing.tsv
-    echo -e "${meta.id}\t\$(cat ${meta.id}.irma_type.txt)\t\$(cat ${meta.id}.irma_subtype.txt)" >> ${meta.id}.irma.typing.tsv
+    echo -e "Sample\tIRMA_type\tIRMA_subtype" > ${prefix}.irma.typing.tsv
+    echo -e "${prefix}\t\$(cat ${prefix}.irma_type.txt)\t\$(cat ${prefix}.irma_subtype.txt)" >> ${prefix}.irma.typing.tsv
 
-    if [ -f "${meta.id}/amended_consensus/${meta.id}_4.fa" ]; then
-        cat "${meta.id}/amended_consensus/${meta.id}_4.fa" > "${meta.id}_HA.fasta"
+    if [ -f "${prefix}/amended_consensus/${prefix}_4.fa" ]; then
+        cat "${prefix}/amended_consensus/${prefix}_4.fa" > "${prefix}_HA.fasta"
     else
-        echo "No file found at ${meta.id}/amended_consensus/${meta.id}_4.fa" > "${meta.id}_HA_FILE_NOT_FOUND"
-        cat "${meta.id}_HA_FILE_NOT_FOUND" > "${meta.id}_HA_FILE_NOT_FOUND.txt"
+        echo "No file found at ${prefix}/amended_consensus/${prefix}_4.fa" > "${prefix}_HA_FILE_NOT_FOUND"
+        cat "${prefix}_HA_FILE_NOT_FOUND" > "${prefix}_HA_FILE_NOT_FOUND.txt"
     fi
 
-    if [ -f "${meta.id}/amended_consensus/${meta.id}_6.fa" ]; then
-        cat "${meta.id}/amended_consensus/${meta.id}_6.fa" > "${meta.id}_NA.fasta"
+    if [ -f "${prefix}/amended_consensus/${prefix}_6.fa" ]; then
+        cat "${prefix}/amended_consensus/${prefix}_6.fa" > "${prefix}_NA.fasta"
     else
-        echo "No file found at ${meta.id}/amended_consensus/${meta.id}_6.fa" > "${meta.id}_NA_FILE_NOT_FOUND"
-        cat "${meta.id}_NA_FILE_NOT_FOUND" > "${meta.id}_NA_FILE_NOT_FOUND.txt"
+        echo "No file found at ${prefix}/amended_consensus/${prefix}_6.fa" > "${prefix}_NA_FILE_NOT_FOUND"
+        cat "${prefix}_NA_FILE_NOT_FOUND" > "${prefix}_NA_FILE_NOT_FOUND.txt"
     fi
 
     ln -s .command.log $irma_log
@@ -104,3 +105,4 @@ process IRMA {
     """
 
 }
+
