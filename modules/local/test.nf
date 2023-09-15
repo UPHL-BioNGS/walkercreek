@@ -1,3 +1,6 @@
+ch_irma_reference = Channel.empty()
+    ch_irma_reference = params.irma_reference ? file(params.irma_reference, checkIfExists: true) : file("$projectDir}/data/irma_reference", checkIfExists: true)
+
 #!/usr/bin/env python
 
 from Bio import SeqIO
@@ -590,7 +593,7 @@ ch_sorted_results = IRMA_ABRICATE_REPORT.out.combined_tsv
 
 
 
-        process ABRICATE_FLU {
+    process ABRICATE_FLU {
     tag "$meta.id"
     label 'process_high'
 
@@ -787,3 +790,480 @@ process ABRICATE_FLU {
     END_VERSIONS
     """
 }
+
+
+
+process ABRICATE_FLU {
+    tag "$meta.id"
+    label 'process_high'
+
+    conda "bioconda::abricate=1.0.1"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' :
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' }"
+
+    input:
+    tuple val(meta), path(assembly)
+
+    output:
+    tuple val(meta), path("*.tsv")                         , emit: report
+    tuple val(meta), path("*.abricate_flu_type.txt")       , emit: abricate_type
+    tuple val(meta), path("*.abricate_flu_subtype.txt")    , emit: abricate_subtype
+    tuple val(meta), path("*.abricate_fail.txt")           , optional:true, emit: abricate_fail
+    tuple val(meta), path("*.abricate_type_fail.txt")      , optional:true, emit: abricate_failed_type
+    tuple val(meta), path("*.abricate_subtype_fail.txt")   , optional:true, emit: abricate_failed_subtype
+    tuple val(meta), path("*.abricate_InsaFlu.typing.tsv") , emit: tsv
+    path "versions.yml"                                    , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def abricate_hits = "${prefix}_abricate_hits.tsv"
+    def abricate_type_file = "${prefix}.abricate_flu_type.txt"
+    def abricate_subtype_file = "${prefix}.abricate_flu_subtype.txt"
+    def subtype = ''
+
+    """
+    abricate \\
+        $assembly \\
+        $args \\
+        --nopath \\
+        --threads $task.cpus > $abricate_hits
+
+    # Function to extract information from the abricate hits tsv file
+    extract_info_from_tsv() {
+        echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype" # Adding header
+        grep -E "\$1" "$abricate_hits" | awk -v prefix="$prefix" -F '\t' '
+            BEGIN {OFS="\t"; ha=""; na=""; type=""}
+            { if (\$6 == "M1") type = \$15; if (\$6 == "HA") ha = \$15; if (\$6 == "NA") na = \$15 }
+            END { print prefix, type, ha na }'
+    }
+
+    # Check for the number of lines in the "${prefix}_abricate_hits.tsv" file
+    if [ \$(wc -l < "$abricate_hits") -le 1 ]; then
+        # If there are 1 or fewer lines:
+        echo "No sequences in ${prefix}.irma.consensus.fasta align with genes present in INSaFLU database" > "${prefix}.abricate_fail.txt"
+        echo "No abricate type" > "$abricate_type_file"
+        echo "No abricate subtype" > "$abricate_subtype_file"
+        echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype\n${prefix}\tNo abricate type\tNo abricate subtype" > "${prefix}.abricate_InsaFlu.typing.tsv"
+
+    elif [ \$(wc -l < "$abricate_hits") -ge 2 ] && grep -q "M1" "$abricate_hits" && grep -qE "HA|NA" "$abricate_hits"; then
+        # Extract information from abricate hits TSV when all gene markers (M1, HA, NA) are present
+        extract_info_from_tsv "M1|HA|NA" > "${prefix}.abricate_InsaFlu.typing.tsv"
+        extract_info_from_tsv "M1" | awk 'NR>1 { print \$2 }' > "$abricate_type_file"
+        extract_info_from_tsv "HA|NA" | awk 'NR>1 { print \$3 }' > "$abricate_subtype_file"
+
+    elif [ \$(wc -l < "$abricate_hits") -ge 2 ]; then
+        # If there are 2 or more lines with either M1 or HA|NA hits
+        if ! grep -q "M1" "$abricate_hits" && grep -qE "HA|NA" "$abricate_hits"; then
+            echo "No 'M1' found in $abricate_hits" > "${prefix}.abricate_type_fail.txt"
+            extract_info_from_tsv "HA|NA" > "${prefix}.abricate_InsaFlu.typing.tsv"
+            echo "No abricate type" > "$abricate_type_file"
+            extract_info_from_tsv "HA|NA" | awk 'NR>1 { print \$3 }' > "$abricate_subtype_file"
+        elif grep -q "M1" "$abricate_hits" && ! grep -qE "HA|NA" "$abricate_hits"; then
+            extract_info_from_tsv "M1" > "${prefix}.abricate_InsaFlu.typing.tsv"
+            extract_info_from_tsv "M1" | awk 'NR>1 { print \$2 }' > "$abricate_type_file"
+            echo "No abricate subtype" > "$abricate_subtype_file"
+        else
+            echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype\n${prefix}\tNo abricate type\tNo abricate subtype" > "${prefix}.abricate_InsaFlu.typing.tsv"
+            echo "No abricate type" > "$abricate_type_file"
+            echo "No abricate subtype" > "$abricate_subtype_file"
+        fi
+    fi
+
+    # Ensure output files exist, and if not, create them with default content
+    [ ! -f "$abricate_type_file" ] && echo "No abricate type" > "$abricate_type_file"
+    [ ! -f "$abricate_subtype_file" ] && echo "No abricate subtype" > "$abricate_subtype_file"
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        abricate: \$(echo \$(abricate --version 2>&1) | sed 's/^.*abricate //' )
+    END_VERSIONS
+    """
+}
+
+
+
+process ABRICATE_FLU {
+    tag "$meta.id"
+    label 'process_high'
+
+    conda "bioconda::abricate=1.0.1"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' :
+        'quay.io/staphb/abricate:1.0.1-insaflu-220727' }"
+
+    input:
+    tuple val(meta), path(assembly)
+
+    output:
+    tuple val(meta), path("*.tsv")                         , emit: report
+    tuple val(meta), path("*.abricate_flu_type.txt")       , emit: abricate_type
+    tuple val(meta), path("*.abricate_flu_subtype.txt")    , emit: abricate_subtype
+    tuple val(meta), path("*.abricate_InsaFlu.typing.tsv") , emit: tsv
+    path "versions.yml"                                    , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def abricate_hits = "${prefix}_abricate_hits.tsv"
+    def abricate_type = "${prefix}.abricate_flu_type.txt"
+    def abricate_subtype = "${prefix}.abricate_flu_subtype.txt"
+
+    """
+    abricate \\
+        $assembly \\
+        $args \\
+        --nopath \\
+        --threads $task.cpus > $abricate_hits
+
+    # Check for influenza Type
+    if grep -q "A_MP" $abricate_hits; then
+        echo "Type_A" > $abricate_type
+    elif grep -q "B_MP" $abricate_hits; then
+        echo "Type_B" > $abricate_type
+    else
+        echo "No abricate type" > $abricate_type
+    fi
+
+    # Check for influenza subtypes for Type A
+    if grep -q "Type_A" $abricate_type; then
+    # H1N1
+        if grep -q "H1" $abricate_hits && grep -q "N1" $abricate_hits; then
+            echo "H1N1" > $abricate_subtype
+    # H2N2
+        elif grep -q "H2" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H2N2" > $abricate_subtype
+    # H3N2
+        elif grep -q "H3" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H3N2" > $abricate_subtype
+    # H5N1
+        elif grep -q "H5" $abricate_hits && grep -q "N1" $abricate_hits; then
+            echo "H5N1" > $abricate_subtype
+    # H7N3
+        elif grep -q "H7" $abricate_hits && grep -q "N3" $abricate_hits; then
+            echo "H7N3" > $abricate_subtype
+    # H7N7
+        elif grep -q "H7" $abricate_hits && grep -q "N7" $abricate_hits; then
+            echo "H7N7" > $abricate_subtype
+    # H7N9
+        elif grep -q "H7" $abricate_hits && grep -q "N9" $abricate_hits; then
+            echo "H7N9" > $abricate_subtype
+    # H9N2
+        elif grep -q "H9" $abricate_hits && grep -q "N2" $abricate_hits; then
+            echo "H9N2" > $abricate_subtype
+    # H10N8
+        elif grep -q "H10" $abricate_hits && grep -q "N8" $abricate_hits; then
+            echo "H10N8" > $abricate_subtype
+        else
+            echo "No abricate subtype" > $abricate_subtype
+        fi
+    fi
+
+    # Check for influenza B lineage (Victoria or Yamagata)
+    if grep -q "Type_B" $abricate_type; then
+        if grep -q "Victoria" $abricate_hits; then
+            echo "Victoria" > $abricate_subtype
+        elif grep -q "Yamagata" $abricate_hits; then
+            echo "Yamagata" > $abricate_subtype
+        else
+            echo "No abricate subtype" > $abricate_subtype
+        fi
+    fi
+
+    # If no genes are found in the consensus fasta file
+    if grep -q "No abricate type" $abricate_type; then
+        echo "No abricate subtype" > $abricate_subtype
+    fi
+
+    # Writing results to respective output files
+    echo -e "Sample\tabricate_InsaFlu_type\tabricate_InsaFlu_subtype" > "${prefix}.abricate_InsaFlu.typing.tsv"
+    echo -e "$prefix\t\$(cat $abricate_type)\t\$(cat $abricate_subtype)" >> "${prefix}.abricate_InsaFlu.typing.tsv"
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        abricate: \$(echo \$(abricate --version 2>&1) | sed 's/^.*abricate //' )
+    END_VERSIONS
+    """
+}
+
+process IRMA_ABRICATE_TSV {
+    tag "$meta.id"
+    label 'process_low'
+
+    conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/python:3.8.3' :
+        'quay.io/biocontainers/python:3.8.3' }"
+
+    input:
+    tuple val(meta), path(sample_typing_reports)
+
+    output:
+    path("typing_report.tsv"), emit: combined_typing_reports
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
+    """
+    cat "${meta.id}_typing_report.tsv" > "tmp_typing_report.tsv"
+
+    echo -e "Sample\tIRMA type\tIRMA subtype\tabricate INSaFLU type\tabricate INSaFLU subtype" > "temp.tsv"
+
+    cat "temp.tsv" "tmp_typing_report.tsv" > "typing_report.tsv"
+
+    """
+}
+
+    // parsing kraken2 database
+
+    ch_krakendb = Channel.empty()
+
+    if (!params.skip_kraken2) {
+        if (params.krakendb.endsWith('.tar.gz')) {
+            UNTAR_KRAKEN(
+                [ [:], params.krakendb ]
+            )
+            ch_krakendb = UNTAR_KRAKEN.out.untar.map { it[1] }
+            ch_versions = ch_versions.mix(UNTAR_KRAKEN.out.versions)
+        } else {
+            ch_krakendb = Channel.value(file(params.krakendb))
+        }
+    }
+
+    db = ch_krakendb
+
+    // Parsing kraken2 database
+    // Ensure the data directory exists to download kraken 2 db
+    if (!new File(params.project_db_dir).exists()) {
+        new File(params.project_db_dir).mkdirs()
+    }
+    // Ensure the kraken_db directory exists for untarring kraken 2 db
+    if (!new File(params.kraken_db_dir).exists()) {
+        new File(params.kraken_db_dir).mkdirs()
+    }
+
+    db_file_path = "${params.project_db_dir}/${params.krakendb.split('/').last()}"
+    untar_dir = "${params.kraken_db_dir}/${params.krakendb.split('/').last().replace('.tar.gz', '')}"
+
+    ch_krakendb = Channel.empty()
+
+    if (!params.skip_kraken2) {
+        if (params.krakendb.endsWith('.tar.gz')) {
+            // Check if db exists locally, if not download it
+            if (!file(db_file_path).exists()) {
+                println "Kraken 2 database not found locally. Downloading..."
+                "curl -o ${db_file_path} ${params.krakendb}".execute().text
+            } else {
+                println "Kraken 2 database found locally. Skipping download..."
+            }
+            // Check if kraken_db directory exists locally, if not untar the db file
+            if (!new File(untar_dir).exists()) {
+                println "Untarring the Kraken 2 database locally..."
+                "tar -xzf ${db_file_path} -C ${params.kraken_db_dir}".execute().waitFor() // Note the change to kraken_db_dir here
+            } else {
+                println "Kraken 2 database is untarred. Skipping untar..."
+            }
+            ch_krakendb = params.krakendb ? file(params.kraken_db_dir, checkIfExists: true) : file("$projectDir}/data/kraken_db", checkIfExists: true)
+        } else {
+            ch_krakendb = Channel.value(file(params.krakendb))
+        }
+    }
+
+    db = ch_krakendb
+
+
+
+
+workflow FLU_NEXTCLADE_DATASET_AND_ANALYSIS {
+
+    take:
+    dataset
+    reference
+    tag
+    assembly
+    nextclade_db
+
+    main:
+    ch_versions               = Channel.empty()
+    ch_flu_summary_tsv        = Channel.empty()
+    ch_nextclade_db           = Channel.empty()
+    ch_nextclade_report       = Channel.empty()
+    ch_aligned_fasta          = Channel.empty()
+
+    if (!params.skip_nextclade) {
+        if (params.nextclade_dataset) {
+            if (params.nextclade_dataset.endsWith('.tar.gz')) {
+                UNTAR_NEXTCLADE_DB (
+                    [ [:], params.nextclade_dataset ]
+                )
+                ch_nextclade_db = UNTAR_NEXTCLADE_DB.out.untar.map { it[1] }
+                ch_versions     = ch_versions.mix(UNTAR_NEXTCLADE_DB.out.versions)
+            } else {
+                ch_nextclade_db = Channel.value(file(params.nextclade_dataset))
+            }
+        } else {
+            NEXTCLADE_DATASETGET (dataset, reference, tag)
+            ch_nextclade_db = NEXTCLADE_DATASETGET.out.dataset
+            nextclade_db    = ch_nextclade_db
+            ch_versions     = ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
+            NEXTCLADE_RUN (assembly, nextclade_db)
+            ch_aligned_fasta    = ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
+            ch_nextclade_report = NEXTCLADE_RUN.out.csv
+            ch_versions         = ch_versions.mix(NEXTCLADE_RUN.out.versions.first())
+            NEXTCLADE_PARSER (NEXTCLADE_RUN.out.tsv)
+            ch_nextclade_report_input = NEXTCLADE_PARSER.out.tsv
+            ch_flu_summary_tsv = ch_flu_summary_tsv.mix(NEXTCLADE_PARSER.out.tsv)
+            NEXTCLADE_REPORT (ch_nextclade_report_input)
+            ch_nextclade_report = NEXTCLADE_REPORT.out.nextclade_report_lines
+        }
+    }
+
+    emit:
+    fasta_aligned              = NEXTCLADE_RUN.out.fasta_aligned
+    tsv                        = NEXTCLADE_RUN.out.tsv
+    nextclade_report           = ch_nextclade_report
+    tsv                        = ch_flu_summary_tsv
+    nextclade_db               = ch_nextclade_db
+    nextclade_report_lines     = ch_nextclade_report
+    versions                   = ch_versions
+
+}
+
+
+
+#!/usr/bin/env python
+from genericpath import sameopenfile
+from importlib.resources import path
+import os
+from os.path import exists
+import argparse
+import pandas as pd
+
+# Define the dataset, reference, and tag for each flu subtype
+flu_subtypes = {
+    "H1N1": {
+        "dataset": "flu_h1n1pdm_ha",
+        "reference": "CY121680",
+        "tag": "2023-04-02T12:00:00Z",
+    },
+    "H3N2": {
+        "dataset": "flu_h3n2_ha",
+        "reference": "CY163680",
+        "tag": "2023-04-02T12:00:00Z",
+    },
+    "Victoria": {
+        "dataset": "flu_vic_ha",
+        "reference": "KX058884",
+        "tag": "2023-04-02T12:00:00Z",
+    },
+    "Yamagata": {
+        "dataset": "flu_yam_ha",
+        "reference": "JN993010",
+        "tag": "2022-07-27T12:00:00Z",
+    },
+}
+
+
+flu_nextclade_variables.py
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Outputs the dataset, reference, and tag for the HA gene of a given flu subtype.")
+parser.add_argument("--sample")
+args = parser.parse_args()
+
+# Sample name variable
+sample_name = args.sample
+
+for sample_name in args.sample:
+    # Get the flu subtype from the input file
+    input_file_path = f"{sample_name}.abricate_flu_subtype.txt"
+    if not os.path.exists(input_file_path):
+        print(f"Error: Input file '{input_file_path}' does not exist")
+        continue
+
+    with open(input_file_path, "r") as f:
+        flu_subtype = f.read().strip()
+
+    # Check if the flu subtype is valid
+    if flu_subtype not in flu_subtypes:
+        print(f"Error: Invalid flu subtype '{flu_subtype}' for sample '{sample_name}'")
+        continue
+
+    # Output the individual files for each dataset, reference, and tag
+    for item in ["dataset", "reference", "tag"]:
+        file_path = flu_subtypes[flu_subtype][item]
+        with open(file_path, "w") as f:
+            f.write(f"{flu_subtypes[flu_subtype][item]}\n")
+            print(f"  {item}: {flu_subtypes[flu_subtype][item]} (output to {file_path})")
+
+process NEXTCLADE_VARIABLES {
+    tag "$meta.id"
+    label 'process_low'
+
+    conda (params.enable_conda ? "bioconda::pandas=1.1.5" : null)
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/pandas:1.1.5' :
+        'quay.io/biocontainers/pandas:1.1.5' }"
+
+    input:
+    tuple val(meta), path(abricate_subtype)
+
+    output:
+    tuple val(meta), path("flu_h1n1pdm_ha")       , optional:true, emit: dataset_H1N1
+    tuple val(meta), path("CY121680")             , optional:true, emit: reference_H1N1
+    tuple val(meta), path("2023-04-02T12:00:00Z") , optional:true, emit: tag_H1N1
+    tuple val(meta), path("flu_h3n2_ha")          , optional:true, emit: dataset_H3N2
+    tuple val(meta), path("CY163680")             , optional:true, emit: reference_H3N2
+    tuple val(meta), path("2023-04-02T12:00:00Z") , optional:true, emit: tag_H3N2
+    tuple val(meta), path("flu_vic_ha")           , optional:true, emit: dataset_Victoria
+    tuple val(meta), path("KX058884")             , optional:true, emit: reference_Victoria
+    tuple val(meta), path("2023-04-02T12:00:00Z") , optional:true, emit: tag_Victoria
+    tuple val(meta), path("flu_yam_ha")           , optional:true, emit: dataset_Yamagata
+    tuple val(meta), path("JN993010")             , optional:true, emit: reference_Yamagata
+    tuple val(meta), path("2022-07-27T12:00:00Z") , optional:true, emit: tag_Yamagata
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
+    """
+    python $projectDir/bin/flu_nextclade_variables.py \\
+        --sample ${meta.id}
+    """
+}
+
+    ch_nextclade_variables_input = ABRICATE_FLU.out.abricate_subtype
+
+    NEXTCLADE_VARIABLES(ch_nextclade_variables_input)
+    ch_dataset = ch_dataset.mix(NEXTCLADE_VARIABLES.out.dataset_H1N1,
+                                NEXTCLADE_VARIABLES.out.dataset_H3N2,
+                                NEXTCLADE_VARIABLES.out.dataset_Victoria,
+                                NEXTCLADE_VARIABLES.out.dataset_Yamagata
+                                )
+    ch_reference = ch_reference.mix(NEXTCLADE_VARIABLES.out.reference_H1N1,
+                                    NEXTCLADE_VARIABLES.out.reference_H3N2,
+                                    NEXTCLADE_VARIABLES.out.reference_Victoria,
+                                    NEXTCLADE_VARIABLES.out.reference_Yamagata
+                                    )
+    ch_tag = ch_tag.mix(NEXTCLADE_VARIABLES.out.tag_H1N1,
+                        NEXTCLADE_VARIABLES.out.tag_H3N2,
+                        NEXTCLADE_VARIABLES.out.tag_Victoria,
+                        NEXTCLADE_VARIABLES.out.tag_Yamagata
+                        )
+
+    dataset                    = ch_dataset
+    reference                  = ch_reference
+    tag                        = ch_tag

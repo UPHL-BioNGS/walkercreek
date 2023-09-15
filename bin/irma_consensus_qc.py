@@ -56,7 +56,7 @@ def main(consensus_fasta, meta_id):
         writer = csv.writer(f, delimiter="\t")
 
         # Write the header row
-        writer.writerow(["Sample Name", "% Coverage", "ACTG Count", "Degenerate Count", "N Count", "Total Count"])
+        writer.writerow(["Sample", "% Coverage", "ACTG Count", "Degenerate Count", "N Count", "Total Count"])
 
         # Write the calculated data for the sample
         writer.writerow([meta_id, percent_coverage, actg_count, degenerate_count, n_count, total_count])

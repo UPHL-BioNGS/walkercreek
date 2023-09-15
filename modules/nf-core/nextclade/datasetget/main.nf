@@ -13,7 +13,7 @@ process NEXTCLADE_DATASETGET {
     tuple val(meta), path(tag)
 
     output:
-    tuple val(meta), path("$prefix") , emit: dataset
+    tuple val(meta), path("$prefix") , emit: dataset_2
     path "versions.yml"              , emit: versions
 
     when:

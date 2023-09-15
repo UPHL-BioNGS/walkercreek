@@ -10,7 +10,7 @@ process KRAKEN2_REPORTSHEET {
     path(kraken_lines)
 
     output:
-    path("kraken2_report.tsv"), emit: tsv
+    path("kraken2_report.tsv"), emit: kraken2_reportsheet_tsv
 
     when:
     task.ext.when == null || task.ext.when

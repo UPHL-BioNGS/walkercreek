@@ -21,51 +21,49 @@ workflow FLU_NEXTCLADE_DATASET_AND_ANALYSIS {
     dataset
     reference
     tag
-    assembly
+    HA
     nextclade_db
 
     main:
-    ch_versions               = Channel.empty()
-    ch_flu_summary_tsv        = Channel.empty()
-    ch_nextclade_db           = Channel.empty()
-    ch_nextclade_report       = Channel.empty()
-    ch_aligned_fasta          = Channel.empty()
+    ch_versions = Channel.empty()
+    ch_nextclade_report = Channel.empty()
+    ch_aligned_fasta = Channel.empty()
+    ch_nextclade_db = Channel.empty()
 
-    if (!params.skip_nextclade) {
-        if (params.nextclade_dataset) {
-            if (params.nextclade_dataset.endsWith('.tar.gz')) {
-                UNTAR_NEXTCLADE_DB (
-                    [ [:], params.nextclade_dataset ]
-                )
-                ch_nextclade_db = UNTAR_NEXTCLADE_DB.out.untar.map { it[1] }
-                ch_versions     = ch_versions.mix(UNTAR_NEXTCLADE_DB.out.versions)
-            } else {
-                ch_nextclade_db = Channel.value(file(params.nextclade_dataset))
-            }
-        } else {
-            NEXTCLADE_DATASETGET (dataset, reference, tag)
-            ch_nextclade_db = NEXTCLADE_DATASETGET.out.dataset
-            nextclade_db    = ch_nextclade_db
-            ch_versions     = ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
-            NEXTCLADE_RUN (assembly, nextclade_db)
-            ch_aligned_fasta    = ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
-            ch_nextclade_report = NEXTCLADE_RUN.out.csv
-            ch_versions         = ch_versions.mix(NEXTCLADE_RUN.out.versions.first())
-            NEXTCLADE_PARSER (NEXTCLADE_RUN.out.tsv)
-            ch_nextclade_report_input = NEXTCLADE_PARSER.out.tsv
-            ch_flu_summary_tsv = ch_flu_summary_tsv.mix(NEXTCLADE_PARSER.out.tsv)
-            NEXTCLADE_REPORT (ch_nextclade_report_input)
-            ch_nextclade_report = NEXTCLADE_REPORT.out.nextclade_report_lines
+    if (params.skip_nextclade) return
+
+    NEXTCLADE_DATASETGET(dataset, reference, tag)
+    ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
+    ch_nextclade_db = NEXTCLADE_DATASETGET.out.dataset_2
+
+    NEXTCLADE_RUN(HA, ch_nextclade_db)
+    ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
+    ch_nextclade_report = NEXTCLADE_RUN.out.csv
+
+    NEXTCLADE_PARSER(NEXTCLADE_RUN.out.tsv)
+    parser_tsv_files = NEXTCLADE_PARSER.out.nextclade_parser_tsv
+
+    ch_combined_parser_tsv_results = parser_tsv_files
+        .unique { meta, file_path -> meta.id }  // Use unique identifier to remove duplicates, assume 'id' is the unique key in meta
+        .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
+        .flatten()  // Flatten the channel to process each line individually
+        .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
+        .collect()  // Collects all the lines into a list
+        .map { list ->
+            // Include the header only once at the start of the combined file
+            def parser_header = list[0].split("\n")[0]
+            def parser_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != parser_header }
+            return ([parser_header] + parser_contentWithoutHeaders).join("\n")
         }
-    }
+
+    NEXTCLADE_REPORT(ch_combined_parser_tsv_results)
+    nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
 
     emit:
-    fasta_aligned              = NEXTCLADE_RUN.out.fasta_aligned
-    tsv                        = NEXTCLADE_RUN.out.tsv
-    nextclade_report           = ch_nextclade_report
-    tsv                        = ch_flu_summary_tsv
-    nextclade_db               = ch_nextclade_db
-    nextclade_report_lines     = ch_nextclade_report
-    versions                   = ch_versions
-
+    fasta_aligned = NEXTCLADE_RUN.out.fasta_aligned
+    tsv = NEXTCLADE_RUN.out.tsv
+    nextclade_report = ch_nextclade_report
+    nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
+    nextclade_db = ch_nextclade_db
+    versions = ch_versions
 }

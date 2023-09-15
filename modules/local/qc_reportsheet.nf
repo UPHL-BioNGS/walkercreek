@@ -10,7 +10,7 @@ process QC_REPORTSHEET {
     path(qc_lines)
 
     output:
-    path("qc_report.tsv"), emit: tsv
+    path("qc_report.tsv"), emit: qc_reportsheet_tsv
 
     when:
     task.ext.when == null || task.ext.when

@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from genericpath import sameopenfile
-from importlib.resources import path
 import os
 from os.path import exists
 import argparse
@@ -30,33 +28,31 @@ flu_subtypes = {
     },
 }
 
-# Parse command-line arguments
-parser = argparse.ArgumentParser(description="Outputs the dataset, reference, and tag for the HA gene of a given flu subtype.")
-parser.add_argument("--sample")
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser(description="Outputs the dataset, reference, and tag for the HA gene of a given flu subtype.")
+    parser.add_argument("--sample", required=True, help="Sample name")
+    args = parser.parse_args()
 
-# Sample name variable
-sample_name = args.sample
+    input_file_path = f"{args.sample}.abricate_flu_subtype.txt"
 
-for sample_name in args.sample:
-    # Get the flu subtype from the input file
-    input_file_path = f"{sample_name}.abricate_flu_subtype.txt"
     if not os.path.exists(input_file_path):
         print(f"Error: Input file '{input_file_path}' does not exist")
-        continue
+        return
 
     with open(input_file_path, "r") as f:
         flu_subtype = f.read().strip()
 
-    # Check if the flu subtype is valid
     if flu_subtype not in flu_subtypes:
-        print(f"Error: Invalid flu subtype '{flu_subtype}' for sample '{sample_name}'")
-        continue
+        print(f"Error: Invalid flu subtype '{flu_subtype}' for sample '{args.sample}'")
+        return
 
-    # Output the individual files for each dataset, reference, and tag
     for item in ["dataset", "reference", "tag"]:
         file_path = flu_subtypes[flu_subtype][item]
         with open(file_path, "w") as f:
             f.write(f"{flu_subtypes[flu_subtype][item]}\n")
             print(f"  {item}: {flu_subtypes[flu_subtype][item]} (output to {file_path})")
+
+if __name__ == "__main__":
+    main()
+
 

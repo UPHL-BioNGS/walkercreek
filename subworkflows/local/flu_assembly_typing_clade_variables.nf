@@ -34,8 +34,6 @@ workflow FLU_ASSEMBLY_TYPING_CLADE_VARIABLES {
     take:
     clean_reads
     assembly
-    irma_reference
-
 
     main:
     ch_versions                   = Channel.empty()
@@ -52,8 +50,6 @@ workflow FLU_ASSEMBLY_TYPING_CLADE_VARIABLES {
     ch_HA = ch_HA.mix(IRMA.out.HA.collect{it}.ifEmpty([]))
     ch_NA = ch_NA.mix(IRMA.out.NA.collect{it}.ifEmpty([]))
     ch_versions = ch_versions.mix(IRMA.out.versions)
-
-    //IRMA_CONSENSUS_QC(IRMA.out.assembly, irma_reference)
 
     ABRICATE_FLU(IRMA.out.assembly)
     ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
@@ -78,6 +74,7 @@ workflow FLU_ASSEMBLY_TYPING_CLADE_VARIABLES {
         }
 
     IRMA_ABRICATE_REPORTSHEET(ch_combined_results)
+    typing_report_tsv = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
 
     IRMA_CONSENSUS_QC(IRMA.out.assembly)
     irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
@@ -96,6 +93,7 @@ workflow FLU_ASSEMBLY_TYPING_CLADE_VARIABLES {
         }
 
     IRMA_CONSENSUS_QC_REPORTSHEET(ch_irma_consensus_qc_results)
+    irma_consensus_qc_tsv = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
 
     ch_nextclade_variables_input = ABRICATE_FLU.out.abricate_subtype
 
@@ -119,6 +117,8 @@ workflow FLU_ASSEMBLY_TYPING_CLADE_VARIABLES {
     emit:
     HA                         = ch_HA
     NA                         = ch_NA
+    typing_report_tsv          = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
+    irma_consensus_qc_tsv      = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
     assembly                   = ch_assembly
     dataset                    = ch_dataset
     reference                  = ch_reference

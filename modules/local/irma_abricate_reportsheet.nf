@@ -10,7 +10,7 @@ process IRMA_ABRICATE_REPORTSHEET {
     val combined_data
 
     output:
-    path("typing_report.tsv"), emit: tsv
+    path("typing_report.tsv"), emit: typing_report_tsv
 
     when:
     task.ext.when == null || task.ext.when

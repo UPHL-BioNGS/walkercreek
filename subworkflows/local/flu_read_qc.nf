@@ -56,23 +56,25 @@ workflow FLU_READ_QC {
         KRAKEN2REPORT_SUMMARY(ch_kraken2report_summary_input)
         ch_kraken2reportsheet = KRAKEN2REPORT_SUMMARY.out.kraken_lines.collect()
         KRAKEN2_REPORTSHEET(ch_kraken2reportsheet)
-        ch_flu_summary_tsv = KRAKEN2_REPORTSHEET.out.tsv.collect()
+        kraken2_reportsheet_tsv = KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv
 
     emit:
-    report              = KRAKEN2_KRAKEN2.out.report
-    classified_reads    = KRAKEN2_KRAKEN2.out.classified_reads_assignment
-    kraken_lines        = ch_kraken2reportsheet
-    clean_reads         = BBMAP_BBDUK.out.clean_reads
+    report                  = KRAKEN2_KRAKEN2.out.report
+    classified_reads        = KRAKEN2_KRAKEN2.out.classified_reads_assignment
+    kraken_lines            = ch_kraken2reportsheet
+    kraken2_reportsheet_tsv = KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv
+    clean_reads             = BBMAP_BBDUK.out.clean_reads
     }
 
     emit:
-    clean_reads         = BBMAP_BBDUK.out.clean_reads
-    stats               = FAQCS.out.stats
-    adapters_stats      = BBMAP_BBDUK.out.adapters_stats
-    qc_report           = FAQCS.out.statspdf
-    versions            = ch_versions
-    qc_lines            = ch_qcreport
-    txt                 = ch_flu_summary_txt
+    clean_reads             = BBMAP_BBDUK.out.clean_reads
+    stats                   = FAQCS.out.stats
+    adapters_stats          = BBMAP_BBDUK.out.adapters_stats
+    kraken2_reportsheet_tsv = KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv
+    qc_report               = FAQCS.out.statspdf
+    versions                = ch_versions
+    qc_lines                = ch_qcreport
+    txt                     = ch_flu_summary_txt
 
 }
 

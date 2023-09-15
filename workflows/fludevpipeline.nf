@@ -80,8 +80,7 @@ include { FLU_NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/fl
 //
 include { FASTQC                              } from '../modules/nf-core/fastqc/main'
 include { QC_REPORTSHEET                      } from '../modules/local/qc_reportsheet.nf'
-include { FLU_SUMMARY_REPORT                  } from '../modules/local/flu_summary_report'
-include { NEXTCLADE_REPORTSHEET               } from '../modules/local/nextclade_reportsheet.nf'
+include { SUMMARY_REPORT                      } from '../modules/local/summary_report'
 include { MULTIQC                             } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS         } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -170,6 +169,7 @@ workflow FLUDEVPIPELINE {
     */
     FLU_READ_QC(ch_all_reads, adapters, phix, ch_krakendb)
     ch_all_reads = ch_all_reads.mix(FLU_READ_QC.out.clean_reads)
+    ch_kraken2_reportsheet_tsv = FLU_READ_QC.out.kraken2_reportsheet_tsv
     ch_versions = ch_versions.mix(FLU_READ_QC.out.versions)
 
     //
@@ -177,6 +177,7 @@ workflow FLUDEVPIPELINE {
     //
     ch_qcreportsheet = FLU_READ_QC.out.qc_lines.collect()
     QC_REPORTSHEET(ch_qcreportsheet)
+    ch_qc_reportsheet_tsv = QC_REPORTSHEET.out.qc_reportsheet_tsv
 
     ch_assembly = Channel.empty()
     ch_HA = Channel.empty()
@@ -190,11 +191,7 @@ workflow FLUDEVPIPELINE {
         SUBWORKFLOW: FLU_ASSEMBLY_TYPING_CLADE_VARIABLES
     */
 
-    ch_irma_reference = Channel.empty()
-    ch_irma_reference = params.irma_reference ? file(params.irma_reference, checkIfExists: true) : file("$projectDir}/data/irma_reference", checkIfExists: true)
-
-    FLU_ASSEMBLY_TYPING_CLADE_VARIABLES(ch_all_reads, ch_assembly, ch_irma_reference)
-
+    FLU_ASSEMBLY_TYPING_CLADE_VARIABLES(ch_all_reads, ch_assembly)
     ch_versions = ch_versions.mix(FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
     ch_dataset = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_reference = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.reference
@@ -202,6 +199,8 @@ workflow FLUDEVPIPELINE {
     ch_assembly = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA = ch_HA.mix(FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA.collect{it}.ifEmpty([]))
     ch_NA = ch_NA.mix(FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA.collect{it}.ifEmpty([]))
+    ch_typing_report_tsv = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
+    ch_irma_consensus_qc_tsv = FLU_ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_consensus_qc_tsv
 
     ch_nextclade_db = Channel.empty()
     nextclade_db = ch_nextclade_db
@@ -209,14 +208,12 @@ workflow FLUDEVPIPELINE {
     /*
         SUBWORKFLOW: FLU_NEXTCLADE_DATASET_AND_ANALYSIS
     */
+
     FLU_NEXTCLADE_DATASET_AND_ANALYSIS(ch_dataset, ch_reference, ch_tag, ch_HA, ch_nextclade_db)
+    ch_nextclade_report_tsv = FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.nextclade_report_tsv
     ch_versions = ch_versions.mix(FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.versions)
 
     ch_nextclade_multiqc = Channel.empty()
-
-    ch_nextclade_reportsheet = FLU_NEXTCLADE_DATASET_AND_ANALYSIS.out.nextclade_report_lines.collect()
-
-    NEXTCLADE_REPORTSHEET(ch_nextclade_reportsheet)
 
     //
     // MODULE: Run FastQC
@@ -252,8 +249,7 @@ workflow FLUDEVPIPELINE {
     multiqc_report = MULTIQC.out.report.toList()
     ch_multiqc_report = MULTIQC.out.report.toList()
 
-   //flu_summary_script = Channel.fromPath(workflow.projectDir + "/bin/flu_summary.py", type: "file")
-    //FLU_SUMMARY_REPORT(ch_flu_summary_tsv, ch_flu_summary_txt, ch_flu_qc_summary_tsv)
+    SUMMARY_REPORT(ch_typing_report_tsv, ch_qc_reportsheet_tsv, ch_irma_consensus_qc_tsv, ch_kraken2_reportsheet_tsv, ch_nextclade_report_tsv)
 }
 
 /*
