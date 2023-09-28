@@ -1,6 +1,6 @@
 {
-    "name": "nf-core/fludevpipeline",
-    "homePage": "https://github.com/nf-core/fludevpipeline",
+    "name": "nf-core/walkercreek",
+    "homePage": "https://github.com/nf-core/walkercreek",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {

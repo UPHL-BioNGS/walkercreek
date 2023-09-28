@@ -1,12 +1,12 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nf-core/fludevpipeline
+    nf-core/walkercreek
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/nf-core/fludevpipeline
+    Github : https://github.com/nf-core/walkercreek
 
-    Website: https://nf-co.re/fludevpipeline
-    Slack  : https://nfcore.slack.com/channels/fludevpipeline
+    Website: https://nf-co.re/walkercreek
+    Slack  : https://nfcore.slack.com/channels/walkercreek
 ----------------------------------------------------------------------------------------
 */
 
@@ -26,13 +26,13 @@ WorkflowMain.initialise(workflow, params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { FLUDEVPIPELINE } from './workflows/fludevpipeline'
+include { WALKERCREEK } from './workflows/walkercreek'
 
 //
-// WORKFLOW: Run main nf-core/fludevpipeline analysis pipeline
+// WORKFLOW: Run main nf-core/walkercreek analysis pipeline
 //
-workflow NFCORE_FLUDEVPIPELINE {
-    FLUDEVPIPELINE ()
+workflow NFCORE_WALKERCREEK {
+    WALKERCREEK ()
 }
 
 /*
@@ -46,7 +46,7 @@ workflow NFCORE_FLUDEVPIPELINE {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    NFCORE_FLUDEVPIPELINE ()
+    NFCORE_WALKERCREEK ()
 }
 
 /*

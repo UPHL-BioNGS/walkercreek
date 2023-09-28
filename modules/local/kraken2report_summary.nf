@@ -23,7 +23,6 @@ process KRAKEN2REPORT_SUMMARY {
     python $projectDir/bin/kraken2report_to_tsv.py \\
         --sample ${meta.id} \\
         --report ${meta.id}.kraken2.report.txt > ${meta.id}_read_percentages.txt
-
     """
 }
 

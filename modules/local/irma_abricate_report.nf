@@ -18,6 +18,7 @@ process IRMA_ABRICATE_REPORT {
     def output_tsv = "${prefix}.combined.typing.tsv"
 
     """
+    # Merge the contents of the irma_tsv and abricate_tsv files based on sample ids
     awk 'BEGIN{FS=OFS="\t"} NR==FNR {a[\$1]=\$2 FS \$3; next} \$1 in a {print \$1, a[\$1], \$2, \$3}' \
         $irma_tsv $abricate_tsv > $output_tsv
     """

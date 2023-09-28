@@ -1,9 +1,17 @@
-//
-// Check input samplesheet and get read channels
-//
+/*
+=================================================================================================================
+    Input Check Subworkflow Modules
+=================================================================================================================
+*/
 
 include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
 include { LANE_MERGE        } from '../../modules/local/lane_merge'
+
+/*
+========================================================================================================
+    Run Input Check Subworkflow
+========================================================================================================
+*/
 
 workflow INPUT_CHECK {
     take:
@@ -57,5 +65,4 @@ def stage_fastq(ArrayList row) {
     array = [ meta, filesarray]
     return array
 }
-
 // Taken from https://github.com/CDCgov/mycosnp-nf/blob/master/subworkflows/local/input_check.nf

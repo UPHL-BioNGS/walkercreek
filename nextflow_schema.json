@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/nf-core/fludevpipeline/master/nextflow_schema.json",
-    "title": "nf-core/fludevpipeline pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/nf-core/walkercreek/master/nextflow_schema.json",
+    "title": "nf-core/walkercreek pipeline parameters",
     "description": "A nextflow pipeline for influenza genomic analysis",
     "type": "object",
     "definitions": {
@@ -19,7 +19,7 @@
                     "pattern": "^\\S+\\.csv$",
                     "schema": "assets/schema_input.json",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/fludevpipeline/usage#samplesheet-input).",
+                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/walkercreek/usage#samplesheet-input).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "add_sra_file": {
@@ -243,8 +243,8 @@
                 }
             }
         },
-        "fludevpipeline_options": {
-            "title": "fludevpipeline Options",
+        "walkercreek_options": {
+            "title": "walkercreek Options",
             "type": "object",
             "description": "",
             "default": "",
@@ -276,10 +276,7 @@
                         "FLU-utr",
                         "FLU-alt",
                         "FLU-avian",
-                        "FLU-lowQC",
-                        "FLU-pacbio",
-                        "FLU-ref",
-                        "FLU-secondary"
+                        "FLU-lowQC"
                     ]
                 },
                 "keep_ref_deletions": {
@@ -361,7 +358,7 @@
             "$ref": "#/definitions/generic_options"
         },
         {
-            "$ref": "#/definitions/fludevpipeline_options"
+            "$ref": "#/definitions/walkercreek_options"
         }
     ]
 }

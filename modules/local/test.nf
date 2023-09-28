@@ -1267,3 +1267,265 @@ process NEXTCLADE_VARIABLES {
     dataset                    = ch_dataset
     reference                  = ch_reference
     tag                        = ch_tag
+
+
+
+process NEXTCLADE_VARIABLES {
+    tag "$meta.id"
+    label 'process_low'
+
+    conda (params.enable_conda ? "bioconda::pandas=1.1.5" : null)
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/pandas:1.1.5' :
+        'quay.io/biocontainers/pandas:1.1.5' }"
+
+    input:
+    tuple val(meta), path(abricate_subtype)
+
+    output:
+    tuple val(meta), path("flu_h1n1pdm_ha")       , optional:true, emit: dataset_H1N1
+    tuple val(meta), path("CY121680")             , optional:true, emit: reference_H1N1
+    tuple val(meta), path("2023-04-02T12:00:00Z") , optional:true, emit: tag_H1N1
+    tuple val(meta), path("flu_h3n2_ha")          , optional:true, emit: dataset_H3N2
+    tuple val(meta), path("CY163680")             , optional:true, emit: reference_H3N2
+    tuple val(meta), path("2023-04-02T12:00:00Z") , optional:true, emit: tag_H3N2
+    tuple val(meta), path("flu_vic_ha")           , optional:true, emit: dataset_Victoria
+    tuple val(meta), path("KX058884")             , optional:true, emit: reference_Victoria
+    tuple val(meta), path("2023-04-02T12:00:00Z") , optional:true, emit: tag_Victoria
+    tuple val(meta), path("flu_yam_ha")           , optional:true, emit: dataset_Yamagata
+    tuple val(meta), path("JN993010")             , optional:true, emit: reference_Yamagata
+    tuple val(meta), path("2022-07-27T12:00:00Z") , optional:true, emit: tag_Yamagata
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
+    """
+    python $projectDir/bin/flu_nextclade_variables.py \\
+        --sample ${meta.id}
+    """
+}
+
+
+#!/usr/bin/env python
+import os
+from os.path import exists
+import argparse
+import pandas as pd
+
+# Define the dataset, reference, and tag for each flu subtype
+flu_subtypes = {
+    "H1N1": {
+        "dataset": "flu_h1n1pdm_ha",
+        "reference": "CY121680",
+        "tag": "2023-04-02T12:00:00Z",
+    },
+    "H3N2": {
+        "dataset": "flu_h3n2_ha",
+        "reference": "CY163680",
+        "tag": "2023-04-02T12:00:00Z",
+    },
+    "Victoria": {
+        "dataset": "flu_vic_ha",
+        "reference": "KX058884",
+        "tag": "2023-04-02T12:00:00Z",
+    },
+    "Yamagata": {
+        "dataset": "flu_yam_ha",
+        "reference": "JN993010",
+        "tag": "2022-07-27T12:00:00Z",
+    },
+}
+
+def main():
+    parser = argparse.ArgumentParser(description="Outputs the dataset, reference, and tag for the HA gene of a given flu subtype.")
+    parser.add_argument("--sample", required=True, help="Sample name")
+    args = parser.parse_args()
+
+    input_file_path = f"{args.sample}.abricate_flu_subtype.txt"
+
+    if not os.path.exists(input_file_path):
+        print(f"Error: Input file '{input_file_path}' does not exist")
+        return
+
+    with open(input_file_path, "r") as f:
+        flu_subtype = f.read().strip()
+
+    if flu_subtype not in flu_subtypes:
+        print(f"Error: Invalid flu subtype '{flu_subtype}' for sample '{args.sample}'")
+        return
+
+    for item in ["dataset", "reference", "tag"]:
+        file_path = flu_subtypes[flu_subtype][item]
+        with open(file_path, "w") as f:
+            f.write(f"{flu_subtypes[flu_subtype][item]}\n")
+            print(f"  {item}: {flu_subtypes[flu_subtype][item]} (output to {file_path})")
+
+if __name__ == "__main__":
+    main()
+
+process NEXTCLADE_DATASETGET {
+    tag "$meta.id"
+    label 'process_low'
+
+    conda "bioconda::nextclade=2.12.0"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/nextclade:2.12.0--h9ee0642_0' :
+        'quay.io/biocontainers/nextclade:2.12.0--h9ee0642_0' }"
+
+    input:
+    tuple val(meta), path(dataset)
+    tuple val(meta), path(reference)
+    tuple val(meta), path(tag)
+
+    output:
+    tuple val(meta), path("$prefix") , emit: dataset_2
+    path "versions.yml"              , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    prefix = task.ext.prefix ?: "${dataset}_2"
+    def fasta = reference ? "--reference ${reference}" : ''
+    def version = tag ? "--tag ${tag}" : ''
+
+    """
+    nextclade \\
+        dataset \\
+        get \\
+        $args \\
+        --name $dataset \\
+        $fasta \\
+        $version \\
+        --output-dir $prefix
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        nextclade: \$(echo \$(nextclade --version 2>&1) | sed 's/^.*nextclade //; s/ .*\$//')
+    END_VERSIONS
+    """
+}
+
+
+process NEXTCLADE_RUN {
+    tag "$meta.id"
+    label 'process_low'
+
+    conda "bioconda::nextclade=2.12.0"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/nextclade:2.12.0--h9ee0642_0' :
+        'quay.io/biocontainers/nextclade:2.12.0--h9ee0642_0' }"
+
+    input:
+    tuple val(meta), path(HA)
+    tuple val(meta), path(dataset)
+
+    output:
+    tuple val(meta), path("${prefix}.csv")           , optional:true, emit: csv
+    tuple val(meta), path("${prefix}.errors.csv")    , optional:true, emit: csv_errors
+    tuple val(meta), path("${prefix}.insertions.csv"), optional:true, emit: csv_insertions
+    tuple val(meta), path("${prefix}.tsv")           , optional:true, emit: tsv
+    tuple val(meta), path("${prefix}.json")          , optional:true, emit: json
+    tuple val(meta), path("${prefix}.auspice.json")  , optional:true, emit: json_auspice
+    tuple val(meta), path("${prefix}.ndjson")        , optional:true, emit: ndjson
+    tuple val(meta), path("${prefix}.aligned.fasta") , emit: fasta_aligned
+    tuple val(meta), path("*.translation.fasta")     , optional:true, emit: fasta_translation
+    path "versions.yml"                              , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    nextclade \\
+        run \\
+        $args \\
+        --jobs $task.cpus \\
+        --input-dataset $dataset \\
+        --output-all ./ \\
+        --output-basename ${prefix} \\
+        $HA
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        nextclade: \$(echo \$(nextclade --version 2>&1) | sed 's/^.*nextclade //; s/ .*\$//')
+    END_VERSIONS
+    """
+}
+
+
+/*
+========================================================================================
+    Flu Nextclade Dataset and Analysis Subworkflow Modules
+========================================================================================
+*/
+
+include { UNTAR as UNTAR_NEXTCLADE_DB                     } from '../../modules/nf-core/untar/main'
+include { NEXTCLADE_DATASETGET                            } from '../../modules/nf-core/nextclade/datasetget/main'
+include { NEXTCLADE_RUN                                   } from '../../modules/nf-core/nextclade/run/main'
+include { NEXTCLADE_PARSER                                } from '../../modules/local/nextclade_parser.nf'
+include { NEXTCLADE_REPORT                                } from '../../modules/local/nextclade_report.nf'
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RUN Flu Nextclade Dataset and Analysis Subworkflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+workflow FLU_NEXTCLADE_DATASET_AND_ANALYSIS {
+
+    take:
+    dataset
+    reference
+    tag
+    HA
+    nextclade_db
+
+    main:
+    ch_versions = Channel.empty()
+    ch_nextclade_report = Channel.empty()
+    ch_aligned_fasta = Channel.empty()
+    ch_nextclade_db = Channel.empty()
+
+    if (params.skip_nextclade) return
+
+    NEXTCLADE_DATASETGET(dataset, reference, tag)
+    ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
+    ch_nextclade_db = NEXTCLADE_DATASETGET.out.dataset_2
+
+    NEXTCLADE_RUN(HA, ch_nextclade_db)
+    ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
+    ch_nextclade_report = NEXTCLADE_RUN.out.csv
+
+    NEXTCLADE_PARSER(NEXTCLADE_RUN.out.tsv)
+    parser_tsv_files = NEXTCLADE_PARSER.out.nextclade_parser_tsv
+
+    ch_combined_parser_tsv_results = parser_tsv_files
+        .unique { meta, file_path -> meta.id }  // Use unique identifier to remove duplicates, assume 'id' is the unique key in meta
+        .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
+        .flatten()  // Flatten the channel to process each line individually
+        .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
+        .collect()  // Collects all the lines into a list
+        .map { list ->
+            // Include the header only once at the start of the combined file
+            def parser_header = list[0].split("\n")[0]
+            def parser_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != parser_header }
+            return ([parser_header] + parser_contentWithoutHeaders).join("\n")
+        }
+
+    NEXTCLADE_REPORT(ch_combined_parser_tsv_results)
+    nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
+
+    emit:
+    fasta_aligned = NEXTCLADE_RUN.out.fasta_aligned
+    tsv = NEXTCLADE_RUN.out.tsv
+    nextclade_report = ch_nextclade_report
+    nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
+    nextclade_db = ch_nextclade_db
+    versions = ch_versions

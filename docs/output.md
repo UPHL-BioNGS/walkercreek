@@ -1,4 +1,4 @@
-# nf-core/fludevpipeline: Output
+# nf-core/walkercreek: Output
 
 ## Introduction
 

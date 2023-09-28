@@ -10,8 +10,6 @@ from collections import Counter
 from pathlib import Path
 
 logger = logging.getLogger()
-
-
 class RowChecker:
     """
     Define a service that can validate and transform each given row.
@@ -21,7 +19,6 @@ class RowChecker:
             validated and transformed row. The order of rows is maintained.
 
     """
-
     VALID_FORMATS = (
         ".fq.gz",
         ".fastq.gz",

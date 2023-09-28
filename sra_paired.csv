@@ -1,0 +1,4 @@
+sample,r1,r2,r3,r4
+SRR14242341,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu_dev_pipeline_testing/sra_flu_fastq_paired/SRR14242341_1.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu_dev_pipeline_testing/sra_flu_fastq_paired/SRR14242341_2.fastq.gz
+SRR15196408,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu_dev_pipeline_testing/sra_flu_fastq_paired/SRR15196408_1.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu_dev_pipeline_testing/sra_flu_fastq_paired/SRR15196408_2.fastq.gz
+SRR18682785,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu_dev_pipeline_testing/sra_flu_fastq_paired/SRR18682785_1.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu_dev_pipeline_testing/sra_flu_fastq_paired/SRR18682785_2.fastq.gz

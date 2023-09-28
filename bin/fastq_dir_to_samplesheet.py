@@ -1,160 +1,132 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import glob
+"""
+This script is modified from nf-core/viralrecon script:
+https://github.com/nf-core/viralrecon/blob/a85d5969f9025409e3618d6c280ef15ce417df65/bin/fastq_dir_to_samplesheet.py#L1
+
+Modifications:
+- regex to extract the sample name from FASTQ filenames instead of stripping away forward/reverse read file suffixes.
+- remove "Undetermined_*.fastq.gz" sample and reads from samplesheet
+- defaults for input dir (current directory: '.') and output samplesheet ("samplesheet.csv")
+
+USAGE:
+python fastq_dir_to_samplesheet.py -i /path/to/fastq_directory -o samplesheet.csv
+"""
+
 import argparse
+import logging
+import re
+import sys
+from collections import defaultdict
+from pathlib import Path
 
 
-def parse_args(args=None):
-    Description = (
-        "Generate nf-core/viralrecon samplesheet from a directory of FastQ files."
-    )
-    Epilog = "Example usage: python fastq_dir_to_samplesheet.py <FASTQ_DIR> <SAMPLESHEET_FILE>"
+def parse_args(args=None) -> argparse.Namespace:
+    desc = "Generate a samplesheet.csv from a directory of FastQ files."
+    epilog = "Example usage: python fastq_dir_to_samplesheet.py -i <FASTQ_DIR> -o <SAMPLESHEET_FILE>"
 
-    parser = argparse.ArgumentParser(description=Description, epilog=Epilog)
-    parser.add_argument("FASTQ_DIR", help="Folder containing raw FastQ files.")
-    parser.add_argument("SAMPLESHEET_FILE", help="Output samplesheet file.")
+    parser = argparse.ArgumentParser(description=desc, epilog=epilog)
     parser.add_argument(
-        "-r1",
-        "--read1_extension",
+        "-i",
+        "--input-dir",
         type=str,
-        dest="READ1_EXTENSION",
-        default="_R1_001.fastq.gz",
-        help="File extension for read 1.",
+        default=".",
+        help="Directory containing Illumina FASTQ files.",
     )
     parser.add_argument(
-        "-r2",
-        "--read2_extension",
+        "-o",
+        "--output",
         type=str,
-        dest="READ2_EXTENSION",
-        default="_R2_001.fastq.gz",
-        help="File extension for read 2.",
+        default="samplesheet.csv",
+        help="Output samplesheet CSV file.",
     )
     parser.add_argument(
-        "-se",
-        "--single_end",
-        dest="SINGLE_END",
+        "--sample-name-regex",
+        type=str,
+        default=r"(.+)_S\d+_L\d{3}_R[12]_001\.fastq\.gz",
+        help="Sample name regular expression where first matching group is the desired sample name.",
+    )
+    parser.add_argument(
+        "-f", "--force", action="store_true", help="Overwrite samplesheet CSV?"
+    )
+    parser.add_argument(
+        "--keep-undetermined",
         action="store_true",
-        help="Single-end information will be auto-detected but this option forces paired-end FastQ files to be treated as single-end so only read 1 information is included in the samplesheet.",
-    )
-    parser.add_argument(
-        "-sn",
-        "--sanitise_name",
-        dest="SANITISE_NAME",
-        action="store_true",
-        help="Whether to further sanitise FastQ file name to get sample id. Used in conjunction with --sanitise_name_delimiter and --sanitise_name_index.",
-    )
-    parser.add_argument(
-        "-sd",
-        "--sanitise_name_delimiter",
-        type=str,
-        dest="SANITISE_NAME_DELIMITER",
-        default="_",
-        help="Delimiter to use to sanitise sample name.",
-    )
-    parser.add_argument(
-        "-si",
-        "--sanitise_name_index",
-        type=int,
-        dest="SANITISE_NAME_INDEX",
-        default=1,
-        help="After splitting FastQ file name by --sanitise_name_delimiter all elements before this index (1-based) will be joined to create final sample name.",
+        help='Keep the "Undetermined*R1/2*.fastq.gz" files? Default is to remove these reads from the samplesheet.',
     )
     return parser.parse_args(args)
 
 
-def fastq_dir_to_samplesheet(
-    fastq_dir,
-    samplesheet_file,
-    read1_extension="_R1_001.fastq.gz",
-    read2_extension="_R2_001.fastq.gz",
-    single_end=False,
-    sanitise_name=False,
-    sanitise_name_delimiter="_",
-    sanitise_name_index=1,
-):
-    def sanitize_sample(path, extension):
-        """Retrieve sample id from filename"""
-        sample = os.path.basename(path).replace(extension, "")
-        if sanitise_name:
-            sample = sanitise_name_delimiter.join(
-                os.path.basename(path).split(sanitise_name_delimiter)[
-                    :sanitise_name_index
-                ]
-            )
-        return sample
+def fastq_dir_to_samplesheet(fastq_dir: Path,
+                             samplesheet_file: Path,
+                             sample_name_regex: str,
+                             keep_undetermined: bool = False) -> None:
+    sample_name_regex = re.compile(sample_name_regex)
+    read_dict = defaultdict(list)
+    for path in fastq_dir.glob("*"):
+        m = sample_name_regex.match(path.name)
+        if m:
+            sample = m.group(1)
+            read_dict[sample].append(str(path.absolute()))
+    if not keep_undetermined and 'Undetermined' in read_dict:
+        logging.info(f'Removing Undetermined FASTQ files from samplesheet.')
+        del read_dict['Undetermined']
 
-    def get_fastqs(extension):
-        """
-        Needs to be sorted to ensure R1 and R2 are in the same order
-        when merging technical replicates. Glob is not guaranteed to produce
-        sorted results.
-        See also https://stackoverflow.com/questions/6773584/how-is-pythons-glob-glob-ordered
-        """
-        return sorted(
-            glob.glob(os.path.join(fastq_dir, f"*{extension}"), recursive=False)
-        )
-
-    read_dict = {}
-
-    ## Get read 1 files
-    for read1_file in get_fastqs(read1_extension):
-        sample = sanitize_sample(read1_file, read1_extension)
-        if sample not in read_dict:
-            read_dict[sample] = {"R1": [], "R2": []}
-        read_dict[sample]["R1"].append(read1_file)
-
-    ## Get read 2 files
-    if not single_end:
-        for read2_file in get_fastqs(read2_extension):
-            sample = sanitize_sample(read2_file, read2_extension)
-            read_dict[sample]["R2"].append(read2_file)
-
-    ## Write to file
-    if len(read_dict) > 0:
-        out_dir = os.path.dirname(samplesheet_file)
-        if out_dir and not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-
+    logging.info(f'Found {len(read_dict)} samples with {sum(len(v) for v in read_dict.values())} FASTQ files.')
+    if read_dict:
         with open(samplesheet_file, "w") as fout:
             header = ["sample", "fastq_1", "fastq_2"]
             fout.write(",".join(header) + "\n")
-            for sample, reads in sorted(read_dict.items()):
-                for idx, read_1 in enumerate(reads["R1"]):
-                    read_2 = ""
-                    if idx < len(reads["R2"]):
-                        read_2 = reads["R2"][idx]
-                    sample_info = ",".join([sample, read_1, read_2])
-                    fout.write(f"{sample_info}\n")
+            for sample, reads in read_dict.items():
+                sample_info = ",".join([sample] + reads)
+                if len(reads) == 1:
+                    sample_info += ","
+                fout.write(f"{sample_info}\n")
+        logging.info(f'Wrote samplesheet to "{samplesheet_file}".')
     else:
         error_str = (
-            "\nWARNING: No FastQ files found so samplesheet has not been created!\n\n"
+            "No FastQ files found so samplesheet has not been created!"
+            "Please check the values provided for the:\n"
+            "  - Path to the directory containing the FastQ files\n"
+            "  - '--read1_extension' parameter\n"
+            "  - '--read2_extension' parameter"
         )
-        error_str += "Please check the values provided for the:\n"
-        error_str += "  - Path to the directory containing the FastQ files\n"
-        error_str += "  - '--read1_extension' parameter\n"
-        error_str += "  - '--read2_extension' parameter\n"
-        print(error_str)
+        logging.error(error_str)
         sys.exit(1)
 
 
 def main(args=None):
     args = parse_args(args)
 
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s: %(message)s [in %(filename)s:%(lineno)d]",
+        level=logging.INFO,
+    )
+
+    inputdir = Path(args.input_dir)
+    if not (inputdir.exists() and inputdir.is_dir()):
+        raise NotADirectoryError(
+            f'Input FASTQ directory "{inputdir}" does not exist! '
+            f"Please provide an input directory that exists to `-i/--inputdir`"
+        )
+
+    output = Path(args.output)
+    if output.exists():
+        if not args.force:
+            raise FileExistsError(
+                f'Samplesheet file already exists at "{output}"! Overwrite with `-f/--force`'
+            )
+        else:
+            logging.warning(f'Overwriting existing samplesheet at "{output}"!')
+
     fastq_dir_to_samplesheet(
-        fastq_dir=args.FASTQ_DIR,
-        samplesheet_file=args.SAMPLESHEET_FILE,
-        read1_extension=args.READ1_EXTENSION,
-        read2_extension=args.READ2_EXTENSION,
-        single_end=args.SINGLE_END,
-        sanitise_name=args.SANITISE_NAME,
-        sanitise_name_delimiter=args.SANITISE_NAME_DELIMITER,
-        sanitise_name_index=args.SANITISE_NAME_INDEX,
+        fastq_dir=inputdir,
+        samplesheet_file=output,
+        sample_name_regex=args.sample_name_regex,
     )
 
 
 if __name__ == "__main__":
     sys.exit(main())
 
-# Taken from https://github.com/CDCgov/mycosnp-nf/blob/master/bin/fastq_dir_to_samplesheet.py
+# Taken from https://github.com/peterk87/nf-flu/blob/master/bin/fastq_dir_to_samplesheet.py

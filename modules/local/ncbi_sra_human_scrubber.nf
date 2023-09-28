@@ -27,23 +27,23 @@ process NCBI_SRA_HUMAN_SCRUBBER {
     def read2 = reads[1] ?: ''
 
     """
-    # Unzip read1 if necessary
+    # Unzip the first read file if it's gzipped
     if [[ "$read1" == *.gz ]]; then
         echo "Decompressing $read1"
         gunzip -c $read1 > r1.fastq
     fi
 
-    # Unzip read2 if necessary
+    # Unzip the second read file if it's gzipped
     if [[ "$read2" == *.gz ]]; then
         echo "Decompressing $read2"
         gunzip -c $read2 > r2.fastq
     fi
 
-    # dehost reads
+    # Run the scrubbing tool on each read and capture the count of masked reads
     scrub.sh r1.fastq |& tail -n1 | awk -F" " '{print \$1}' > FWD_SPOTS_REMOVED
     scrub.sh r2.fastq |& tail -n1 | awk -F" " '{print \$1}' > REV_SPOTS_REMOVED
 
-    # gzip dehosted reads
+    # Compress the dehosted/cleaned reads into gzipped fastq format
     gzip r1.fastq.clean -c > ${meta.id}_R1_dehosted.fastq.gz
     gzip r2.fastq.clean -c > ${meta.id}_R2_dehosted.fastq.gz
 
@@ -51,11 +51,12 @@ process NCBI_SRA_HUMAN_SCRUBBER {
         cat "FWD_SPOTS_REMOVED" > "${meta.id}.FWD_SPOTS_REMOVED.txt"
     fi
 
+    # Rename and save the counts of masked reads for forward and reverse reads
     if [ -f "REV_SPOTS_REMOVED" ]; then
         cat "REV_SPOTS_REMOVED" > "${meta.id}.REV_SPOTS_REMOVED.txt"
     fi
 
-    # Calculate total spots removed
+    ## Calculate the total spots masked across both forward and reverse reads
     if [ -f "${meta.id}.FWD_SPOTS_REMOVED.txt" ] && [ -f "${meta.id}.REV_SPOTS_REMOVED.txt" ]; then
         awk '{s+=\$1} END {print s}' ${meta.id}.FWD_SPOTS_REMOVED.txt ${meta.id}.REV_SPOTS_REMOVED.txt > TOTAL_SPOTS_REMOVED
     fi

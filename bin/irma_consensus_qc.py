@@ -27,7 +27,7 @@ def main(consensus_fasta, meta_id):
     total_count = len(combined_seq)
 
     # Calculate percent coverage using a predefined genome length due to IRMA's
-    percent_coverage = calculate_coverage(combined_seq, 14200) #14200 used as a avg combo for fluA and fluB genome lengths
+    percent_coverage = calculate_coverage(combined_seq, 14050) #14050 used as a avg combo for fluA and fluB genome lengths
 
     # Write the counts and coverage values to individual output files
     with open("n_count", "w") as f:

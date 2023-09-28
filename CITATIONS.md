@@ -1,4 +1,4 @@
-# nf-core/fludevpipeline: Citations
+# nf-core/walkercreek: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 

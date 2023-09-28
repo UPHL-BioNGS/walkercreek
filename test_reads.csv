@@ -1,4 +1,4 @@
 sample,r1,r2,r3,r4
-1813989-H3N2,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-fludevpipeline/fastq/1813989-H3N2_R1_001.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-fludevpipeline/fastq/1813989-H3N2_R2_001.fastq.gz
-1814165-H1N1,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-fludevpipeline/fastq/1814165-H1N1_R1_001.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-fludevpipeline/fastq/1814165-H1N1_R2_001.fastq.gz
-1864320-victoria,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-fludevpipeline/fastq/1864320-victoria_R1_001.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-fludevpipeline/fastq/1864320-victoria_R2_001.fastq.gz
+1813989-H3N2,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-walkercreek/fastq/1813989-H3N2_R1_001.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-walkercreek/fastq/1813989-H3N2_R2_001.fastq.gz
+1814165-H1N1,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-walkercreek/fastq/1814165-H1N1_R1_001.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-walkercreek/fastq/1814165-H1N1_R2_001.fastq.gz
+1864320-victoria,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-walkercreek/fastq/1864320-victoria_R1_001.fastq.gz,/Volumes/IDGenomics_NAS/Bioinformatics/tiverson/flu-amd/nf-core-walkercreek/fastq/1864320-victoria_R2_001.fastq.gz

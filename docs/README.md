@@ -1,6 +1,6 @@
-# nf-core/fludevpipeline: Documentation
+# nf-core/walkercreek: Documentation
 
-The nf-core/fludevpipeline documentation is split into the following pages:
+The nf-core/walkercreek documentation is split into the following pages:
 
 - [Usage](usage.md)
   - An overview of how the pipeline works, how to run it and a description of all of the different command-line flags.
