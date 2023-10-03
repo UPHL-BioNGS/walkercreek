@@ -36,4 +36,4 @@ Pipeline Configuration:
 
 --
 nf-core/walkercreek
-https://github.com/nf-core/walkercreek
+https://github.com/uphl-biongs/walkercreek

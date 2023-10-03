@@ -2,19 +2,83 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
+**nf-core/walkercreek** is a bioinformatics best-practice analysis pipeline designed for the assembly, classification, and clade assignment of Illumina paired-end influenza data. As of now, this pipeline accepts the influenza modules provided by [IRMA](https://wonder.cdc.gov/amd/flu/irma/) with "FLU" set as the default module. Future versions plan to support the analysis of other viral pathogens found in [IRMA's](https://wonder.cdc.gov/amd/flu/irma/) modules, including RSV upon its release.
+
+This document describes the output produced by the pipeline.
 
 The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
-<!-- TODO nf-core: Write this documentation describing your workflow's output -->
+```bash
+results/
+├── abricate_flu
+├── bbduk
+├── consensus
+├── faqcs
+├── fastq
+├── hemagglutinin
+├── irma
+├── irma_abricate_report
+├── irma_consensus_qc
+├── kraken2
+├── lane
+├── multiqc
+├── ncbi_human_read_scrubber
+├── neuraminidase
+├── nextclade_dataset_get
+├── nextclade_parser
+├── nextclade_run
+├── nextclade_variables
+├── pipeline_info
+├── qc_report
+├── reports
+└── SUMMARY_REPORT
+```
 
 ## Pipeline overview
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
-- [FastQC](#fastqc) - Raw read QC
-- [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
-- [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
+- [nf-core/walkercreek: Output](#UPHL-BioNGS-walkercreek-output)
+	- [Introduction](#introduction)
+	- [Pipeline Overview](#pipeline-overview)
+- [SRA Sequence File Addition](#sra-sequence-file-addition)
+- [Sample QC and Preprocessing](#sample-qc-preprocessing)
+- [Assembly, Viral Classification, and Nextclade Variable Gathering](#assembly-viral-classification-and-nextclade-variable-gathering)
+- [Influenza Clade Determination and Analysis](#influenza-clade-determination-and-analysis)
+- [Summary Files](#summary-files)
+	- [FastQC](#fastqc)
+	- [QC report](#qc-report)
+	- [MultiQC](#multiqc)
+  - [SUMMARY REPORT](#summary-report)
+- [Pipeline Information](#pipeline-information)
+
+## SRA Sequence File Addition
+
+### Extract FASTQ files from optional input file of SRA accessions
+
+</details>
+
+> **Downloading of FASTQ files from input file of SRA accessions using modules .**
+* Prefetch sequencing reads in SRA format (`SRATools_PreFetch`)
+* Convert the SRA format into one or more compressed FASTQ files (`SRATools_FasterQDump`)
+
+## Sample QC and Preprocessing
+
+### Prepares influenza samples (paired-end FASTQ files) for assembly
+
+</details>
+
+## Assembly, Viral Classification, and Nextclade Variable Gathering
+
+### Assembly and influenza classification
+
+</details>
+
+## Influenza Clade Determination and Analysis
+
+### Nextclade influenza genome analysis
+
+</details>
 
 ### FastQC
 

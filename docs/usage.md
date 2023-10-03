@@ -1,16 +1,43 @@
 # nf-core/walkercreek: Usage
 
-## :warning: Please read this documentation on the nf-core website: [https://nf-co.re/walkercreek/usage](https://nf-co.re/walkercreek/usage)
+## :warning: Please read this documentation on the UPHL-BioNGS walkercreek website: [https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md](https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md)
 
 > _Documentation of pipeline parameters is generated automatically from the pipeline schema and can no longer be found in markdown files._
 
 ## Introduction
 
-<!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
+`UPHL-BioNGS/walkercreek` is a bioinformatics best-practice analysis pipeline written to [nf-core](https://nf-co.re/) standards. It is designed for the assembly, classification, and clade assignment of Illumina paired-end influenza data. This document will describe how to prepare input files and run the pipeline.
+
+## Requirements
+
+* Nextflow >= 21.10.3
+* Java 8 or later
+* Python 3 or later
+* Bash 3.2 or later
+* Singularity _(Optional/Recommended)_
+* Docker _(Optional/Recommended)_
+* Conda _(Optional/Recommended)_
+
+## Installation
+
+* walkercreek is written in [Nextflow](https://www.nextflow.io/), and as such requires Nextflow installation to run. Please see [nextflow installation documents](https://www.nextflow.io/docs/latest/getstarted.html#installation) for instructions.
+
+* Alternatively, you can install nextflow and other dependencies via conda like so:
+
+```console
+conda create -n nextflow -c bioconda -c conda-forge nf-core=2.2 nextflow=21.10.6 git=2.35.0 openjdk=8.0.312 graphviz
+conda activate nextflow
+```
+
+*  To clone [walkercreek github repo](https://github.com/UPHL-BioNGS/walkercreek)
+
+```console
+git clone https://github.com/UPHL-BioNGS/walkercreek
+```
 
 ## Samplesheet input
 
-You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row as shown in the examples below.
+You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use this `--input` parameter to specify its location. It has to be a comma-separated (csv) file with at least 3 columns, and a header row as shown in the examples below.
 
 ```bash
 --input '[path to samplesheet file]'
@@ -52,12 +79,43 @@ TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
 
+## Samplesheet creation - automated
+
+A bash script is available to create a samplesheet from a directory of fastq files. The script will search 1 directory deep and attempt to determine sample id names and pairing/multilane information and will automatically create a samplesheet. Please review the samplesheet for accuracy before using it in the pipeline.
+
+```console
+walkercreek/bin/full_samplesheet.sh <directory of fastq files> > new_samplesheet.csv
+```
+There is also a provided Python script available to create a samplesheet csv from a directory of fastq files. Again, please review the samplesheet for accuracy before using it in the pipeline.
+
+```console
+walkercreek/bin/fastq_dir_to_samplesheet.py -i <directory of fastq files> -o new_samplesheet.csv
+```
+
+## SRA sequence file additions
+
+You may provide a list of SRA ids as additional inputs sequences into the pipeline. Use the `--add_sra_file` parameter to specify its location. It has to be a comma-separated file (csv) with one or 2 columns, and NO header row as shown in the examples below.
+
+```console
+--add_sra_file '[path to samplesheet file: assets/sra_small.csv]'
+```
+
+Example File:
+
+If two fields are provided, the first field will be used as the sequence name, and the second field will be used to specify the SRA id to download. If one field is provided, it must be the SRA id, and this SRA id will be used as the sequence name.
+
+```console
+B12352,SRR7909282
+SRR7909249
+B13520,SRR7909394
+```
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/walkercreek --input samplesheet.csv --outdir <OUTDIR> --genome GRCh37 -profile docker
+nextflow run main.nf -profile docker --input samplesheet.csv --outdir <OUTDIR>
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
@@ -71,19 +129,25 @@ work                # Directory containing the nextflow working files
 # Other nextflow hidden files, eg. history of pipeline runs and old logs.
 ```
 
+Additional example using singularity profile and SRA file input.
+
+```console
+nextflow run main.nf -profile singularity --add_sra_file sra_file.csv --outdir <OUTDIR>
+```
+
 ### Updating the pipeline
 
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
 
 ```bash
-nextflow pull nf-core/walkercreek
+nextflow pull UPHL-BioNGS/walkercreek
 ```
 
 ### Reproducibility
 
 It is a good idea to specify a pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
-First, go to the [nf-core/walkercreek releases page](https://github.com/nf-core/walkercreek/releases) and find the latest pipeline version - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`. Of course, you can switch to another version by changing the number after the `-r` flag.
+First, go to the [UPHL-BioNGS/walkercreek releases page](https://github.com/uphl-biongs/walkercreek/releases) and find the latest pipeline version - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`. Of course, you can switch to another version by changing the number after the `-r` flag.
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future. For example, at the bottom of the MultiQC reports.
 

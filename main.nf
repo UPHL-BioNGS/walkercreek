@@ -3,10 +3,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     nf-core/walkercreek
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/nf-core/walkercreek
-
-    Website: https://nf-co.re/walkercreek
-    Slack  : https://nfcore.slack.com/channels/walkercreek
+    Github : https://github.com/uphl-biongs/walkercreek
 ----------------------------------------------------------------------------------------
 */
 
