@@ -24,7 +24,6 @@ ch_input = null;
 if (params.input) {
     ch_input = file(params.input)
 }
-
 // If an SRA file is added, validate its existence and parse its contents
 if(params.add_sra_file) {
     sra_file = file(params.add_sra_file, checkIfExists: true)
@@ -195,13 +194,12 @@ workflow WALKERCREEK {
     QC_REPORTSHEET(ch_qcreportsheet)
     ch_qc_reportsheet_tsv = QC_REPORTSHEET.out.qc_reportsheet_tsv
 
-    ch_assembly   = Channel.empty()
-    ch_HA         = Channel.empty()
-    ch_NA         = Channel.empty()
-    ch_dataset    = Channel.empty()
-    ch_reference  = Channel.empty()
-    ch_tag        = Channel.empty()
-    ch_output_tsv = Channel.empty()
+    ch_assembly      = Channel.empty()
+    ch_HA            = Channel.empty()
+    ch_NA            = Channel.empty()
+    ch_dataset       = Channel.empty()
+    ch_reference     = Channel.empty()
+    ch_tag           = Channel.empty()
 
     /*
         SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'

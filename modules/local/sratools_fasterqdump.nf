@@ -37,6 +37,18 @@ process SRATOOLS_FASTERQDUMP {
         $args \\
         --threads $task.cpus \\
         ${sra.name}
+    # Start of FASTQ header modification to allow for accurate IRMA output
+    if [ -f  ${sra.name}_1.fastq ]; then
+        awk '{if(NR%2==1) \$0=sprintf(\$1); print;}' ${sra.name}_1.fastq > ${sra.name}_1a.fastq
+        awk '{if(NR%4==1) \$0=sprintf(\$1" 1:N:18:NULL"); print;}' ${sra.name}_1a.fastq > ${sra.name}_1.fastq
+        rm ${sra.name}_1a.fastq
+    fi
+    if [ -f  ${sra.name}_2.fastq ]; then
+        awk '{if(NR%2==1) \$0=sprintf(\$1); print;}' ${sra.name}_2.fastq > ${sra.name}_2a.fastq
+        awk '{if(NR%4==1) \$0=sprintf(\$1" 2:N:18:NULL"); print;}' ${sra.name}_2a.fastq > ${sra.name}_2.fastq
+        rm ${sra.name}_2a.fastq
+    fi
+    # End of FASTQ header modification to allow for accurate IRMA output
     pigz \\
         $args2 \\
         --no-name \\
@@ -62,4 +74,4 @@ process SRATOOLS_FASTERQDUMP {
     END_VERSIONS
     """
 }
-// taken from [nf-core/fetchngs](https://github.com/nf-core/fetchngs/blob/master/modules/local/sratools_fasterqdump.nf)
+// modified to accommodate IRMAs output format from [nf-core/fetchngs](https://github.com/nf-core/fetchngs/blob/master/modules/local/sratools_fasterqdump.nf)

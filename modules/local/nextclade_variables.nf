@@ -37,4 +37,3 @@ process NEXTCLADE_VARIABLES {
     """
 }
 
-

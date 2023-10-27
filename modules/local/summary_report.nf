@@ -11,7 +11,7 @@ process SUMMARY_REPORT {
     path (typing_report_tsv) // from irma_abricate_reportsheet.nf
     path (irma_consensus_qc_tsv) // from irma_consensus_qc_reportsheet.nf
     path (kraken2_reportsheet_tsv) // from kraken2_reportsheet.nf
-    path (nextclade_report_tsv) // from nextclade_report.nf
+    path (nextclade_report_tsv) // from nextclade_report_ha.nf
 
     output:
     path ("summary_report.tsv") , emit: summary_report_tsv
