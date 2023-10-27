@@ -10,10 +10,17 @@
 
 [![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23walkercreek-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/walkercreek)[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
-# ![nf-core/walkercreek](docs/images/walker_creek_1.png) ![nf-core/walkercreek](docs/images/Statue_of_Chief_Walkara_at_Pioneer_Heritage_Gardens_in_Manti_UT.png)
+
+## Sunset Peak
+# ![nf-core/walkercreek](docs/images/walker_creek_1.png)
+
 ## Walker Creek
 
 **nf-core/walkercreek** is named after the Walker Creek canyon trail that leads to Sunset Peak (elevation 10088 ft) east of Meadow, UT. Within the upper western facing rocky slope of the canyon lies the resting place of Chief Walker, also known as Chief Walkara, a renowned Shoshone leader of the Utah Timpanogo and Sanpete Band. His piercing eyes earned him the nickname “Hawk of the Mountains.” He was a renowned diplomat, horseman, warrior, and a military leader, famous for his involvement in raiding parties and the Wakara War. He was a prominent Native American chief in Utah when the Mormon Pioneers arrived in 1847 and was known for his trading skills, dealing with both European settlers and his own people. Chief Walker died of "lung fever" on January 29, 1855, and was buried with significant rituals, including the sacrifice of horses and family members — a testament to the high esteem in which he was held by his community.
+
+# ![nf-core/walkercreek](docs/images/Statue_of_Chief_Walkara_at_Pioneer_Heritage_Gardens_in_Manti_UT.png)
+
+## Introduction
 
 **nf-core/walkercreek** is a bioinformatics best-practice analysis pipeline designed for the assembly, classification, and clade assignment of Illumina paired-end influenza data. Currently, this pipeline accepts the influenza modules provided by [IRMA](https://wonder.cdc.gov/amd/flu/irma/) with "FLU" designated as the default module. Future versions plan to support the analysis of other viral pathogens found in [IRMA's](https://wonder.cdc.gov/amd/flu/irma/) modules, including RSV upon its release.
 
