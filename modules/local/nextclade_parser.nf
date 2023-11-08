@@ -8,7 +8,7 @@ process NEXTCLADE_PARSER {
         'quay.io/biocontainers/pandas:1.1.5' }"
 
     input:
-    tuple val(meta), path(tsv)
+    tuple val(meta), path(parser_input)
 
     output:
     tuple val(meta), path('NEXTCLADE_CLADE.tsv')     , emit: clades

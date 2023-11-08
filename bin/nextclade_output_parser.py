@@ -4,6 +4,7 @@ from importlib.resources import path
 from os.path import exists
 import argparse
 import pandas as pd
+import re
 
 # Argument parser: get arguments
 parser = argparse.ArgumentParser()
@@ -24,6 +25,17 @@ tsv_data['coverage'] = (tsv_data['coverage'] * 100).round(2)
 
 # Write the output TSV files using pandas
 tsv_data.loc[:, ['clade']].to_csv(f"NEXTCLADE_CLADE.tsv", sep='\t', header=False)
+
+# Check if 'short_clade' and 'subclade' columns exist in the input TSV file
+if 'short_clade' in tsv_data.columns:
+    df_short_clade = tsv_data.loc[:, ['short_clade']]
+else:
+    df_short_clade = pd.DataFrame(columns=["short_clade"])
+
+if 'subclade' in tsv_data.columns:
+    df_subclade = tsv_data.loc[:, ['subclade']]
+else:
+    df_subclade = pd.DataFrame(columns=["subclade"])
 
 # If the 'lineage' column exists in the input TSV file, read in the 'NEXTCLADE_LINEAGE.tsv' output file
 if 'lineage' in tsv_data.columns:
@@ -55,10 +67,23 @@ sample_name = id_name.rsplit('.', 1)[0]
 df_sample = pd.DataFrame({'Sample': [sample_name]})
 
 # Concatenate all the dataframes horizontally
-df_combined = pd.concat([df_sample, df_clade, df_qc_score, df_qc_status, df_substitutions, df_coverage], axis=1)
+df_combined = pd.concat([df_sample, df_clade, df_short_clade, df_subclade, df_qc_score, df_qc_status, df_substitutions, df_coverage], axis=1)
 
 if 'lineage' in tsv_data.columns:
     df_combined = pd.concat([df_combined, df_lineage], axis=1)
+
+# Create a dictionary to rename columns with the desired prefix
+column_prefix = "Nextclade_"
+column_mapping = {col: f"{column_prefix}{col}" for col in df_combined.columns}
+
+# Remove the prefix for the df_sample, df_clade, and df_subclade columns
+column_mapping['Sample'] = 'Sample'
+column_mapping['clade'] = 'clade'
+column_mapping['subclade'] = 'subclade'
+column_mapping['short_clade'] = 'short_clade'
+
+# Rename the columns using the dictionary
+df_combined = df_combined.rename(columns=column_mapping)
 
 # Write the combined dataframe to a TSV file as final report
 df_combined.to_csv(f"{sample_name}.nextclade_report.tsv", sep="\t", index=False)

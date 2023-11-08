@@ -11,11 +11,13 @@ process IRMA_CONSENSUS_QC {
     tuple val(meta), path(assembly)
 
     output:
-    tuple val(meta), path("n_count")                          , emit: count_N
-    tuple val(meta), path("actg_count")                       , emit: count_ACTG
-    tuple val(meta), path("percent_coverage")                 , emit: percent_reference_coverage
-    tuple val(meta), path("degenerate_count")                 , emit: degenerate_count
-    tuple val(meta), path("total_count")                      , emit: total_count
+    tuple val(meta), path("n_count")                          , emit: assembly_count_N
+    tuple val(meta), path("actg_count")                       , emit: assembly_count_ACTG
+    tuple val(meta), path("degenerate_count")                 , emit: assembly_degenerate_count
+    tuple val(meta), path("total_count")                      , emit: assembly_total_count
+    tuple val(meta), path("segment_count")                    , emit: assembly_segment_count
+    tuple val(meta), path("n50")                              , emit: assembly_n50
+    tuple val(meta), path("gc_content")                       , emit: assembly_gc_content
     tuple val(meta), path("${meta.id}.irma_consensus_qc.tsv") , emit: irma_consensus_qc
 
     when:

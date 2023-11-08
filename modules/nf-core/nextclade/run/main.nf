@@ -4,18 +4,18 @@ process NEXTCLADE_RUN {
 
     conda "bioconda::nextclade=2.12.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/nextclade:2.12.0--h9ee0642_0' :
-        'quay.io/biocontainers/nextclade:2.12.0--h9ee0642_0' }"
+        'https://depot.galaxyproject.org/singularity/nextclade:2.14.0--h9ee0642_0' :
+        'quay.io/biocontainers/nextclade:2.14.0--h9ee0642_0' }"
 
     input:
-    tuple val(meta), path(HA)
-    tuple val(meta), path(dataset)
+    tuple val(meta), path(dataset_2)
+    tuple val(meta), path(fasta)
 
     output:
     tuple val(meta), path("${prefix}.csv")           , optional:true, emit: csv
     tuple val(meta), path("${prefix}.errors.csv")    , optional:true, emit: csv_errors
     tuple val(meta), path("${prefix}.insertions.csv"), optional:true, emit: csv_insertions
-    tuple val(meta), path("${prefix}.tsv")           , optional:true, emit: tsv
+    tuple val(meta), path("${prefix}.tsv")           , optional:true, emit: parser_input
     tuple val(meta), path("${prefix}.json")          , optional:true, emit: json
     tuple val(meta), path("${prefix}.auspice.json")  , optional:true, emit: json_auspice
     tuple val(meta), path("${prefix}.ndjson")        , optional:true, emit: ndjson
@@ -29,15 +29,16 @@ process NEXTCLADE_RUN {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${meta.id}"
+
     """
     nextclade \\
         run \\
         $args \\
         --jobs $task.cpus \\
-        --input-dataset $dataset \\
+        --input-dataset $dataset_2 \\
         --output-all ./ \\
         --output-basename ${prefix} \\
-        $HA
+        $fasta
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

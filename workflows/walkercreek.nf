@@ -194,37 +194,24 @@ workflow WALKERCREEK {
     QC_REPORTSHEET(ch_qcreportsheet)
     ch_qc_reportsheet_tsv = QC_REPORTSHEET.out.qc_reportsheet_tsv
 
-    ch_assembly      = Channel.empty()
-    ch_HA            = Channel.empty()
-    ch_NA            = Channel.empty()
-    ch_dataset       = Channel.empty()
-    ch_reference     = Channel.empty()
-    ch_tag           = Channel.empty()
-
     /*
         SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'
     */
 
     ASSEMBLY_TYPING_CLADE_VARIABLES(ch_all_reads)
-    ch_versions = ch_versions.mix(ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
-    ch_dataset = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
-    ch_reference = ASSEMBLY_TYPING_CLADE_VARIABLES.out.reference
-    ch_tag = ASSEMBLY_TYPING_CLADE_VARIABLES.out.tag
     ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
-    ch_HA = ch_HA.mix(ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA.collect{it}.ifEmpty([]))
-    ch_NA = ch_NA.mix(ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA.collect{it}.ifEmpty([]))
+    ch_HA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
+    ch_NA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
+    ch_dataset = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_typing_report_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
     ch_irma_consensus_qc_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_consensus_qc_tsv
-
-    // Initialize channel for the Nextclade database
-    ch_nextclade_db = Channel.empty()
-    nextclade_db = ch_nextclade_db
+    ch_versions = ch_versions.mix(ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
 
     /*
         SUBWORKFLOW: NEXTCLADE_DATASET_AND_ANALYSIS - Nextclade dataset creation and analysis based on flu 'abricate_subtype'
     */
 
-    NEXTCLADE_DATASET_AND_ANALYSIS(ch_dataset, ch_reference, ch_tag, ch_HA, ch_nextclade_db)
+    NEXTCLADE_DATASET_AND_ANALYSIS(ch_dataset, ch_HA)
     ch_nextclade_report_tsv = NEXTCLADE_DATASET_AND_ANALYSIS.out.nextclade_report_tsv
     ch_versions = ch_versions.mix(NEXTCLADE_DATASET_AND_ANALYSIS.out.versions)
 

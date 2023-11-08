@@ -4,13 +4,11 @@ process NEXTCLADE_DATASETGET {
 
     conda "bioconda::nextclade=2.12.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/nextclade:2.12.0--h9ee0642_0' :
-        'quay.io/biocontainers/nextclade:2.12.0--h9ee0642_0' }"
+        'https://depot.galaxyproject.org/singularity/nextclade:2.14.0--h9ee0642_0' :
+        'quay.io/biocontainers/nextclade:2.14.0--h9ee0642_0' }"
 
     input:
     tuple val(meta), path(dataset)
-    tuple val(meta), path(reference)
-    tuple val(meta), path(tag)
 
     output:
     tuple val(meta), path("$prefix") , emit: dataset_2
@@ -22,18 +20,14 @@ process NEXTCLADE_DATASETGET {
     script:
     def args = task.ext.args ?: ''
     prefix = task.ext.prefix ?: "${dataset}_2"
-    def fasta = reference ? "--reference ${reference}" : ''
-    def version = tag ? "--tag ${tag}" : ''
-    
+
     """
     nextclade \\
         dataset \\
         get \\
         $args \\
         --name $dataset \\
-        $fasta \\
-        $version \\
-        --output-dir $prefix 
+        --output-dir $prefix
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

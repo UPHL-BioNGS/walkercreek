@@ -34,17 +34,18 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     clean_reads // file: /path/to/BBMAP_BBDUK/'*.clean*.fastq.gz'
 
     main:
-    ch_versions      = Channel.empty()
-    ch_assembly      = Channel.empty()
-    ch_HA            = Channel.empty()
-    ch_NA            = Channel.empty()
-    ch_dataset       = Channel.empty()
-    ch_reference     = Channel.empty()
-    ch_tag           = Channel.empty()
+    ch_versions            = Channel.empty()
+    ch_assembly            = Channel.empty()
+    ch_HA                  = Channel.empty()
+    ch_NA                  = Channel.empty()
+    ch_dataset             = Channel.empty()
 
     IRMA(clean_reads, irma_module)
-    ch_assembly = IRMA.out.assembly
+    ch_assembly = IRMA.out.assembly.view()
     ch_versions = ch_versions.mix(IRMA.out.versions)
+
+    ch_HA = IRMA.out.HA.view()
+    ch_NA = IRMA.out.NA.view()
 
     IRMA_CONSENSUS_QC(IRMA.out.assembly)
     irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
@@ -64,9 +65,6 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
     IRMA_CONSENSUS_QC_REPORTSHEET(ch_irma_consensus_qc_results)
     irma_consensus_qc_tsv = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
-
-    ch_HA = ch_HA.mix(IRMA.out.HA.collect{it}.ifEmpty([]))
-    ch_NA = ch_NA.mix(IRMA.out.NA.collect{it}.ifEmpty([]))
 
     ABRICATE_FLU(IRMA.out.assembly)
     ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
@@ -95,31 +93,24 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     ch_nextclade_variables_input = ABRICATE_FLU.out.abricate_subtype
 
     NEXTCLADE_VARIABLES(ch_nextclade_variables_input)
-    ch_dataset = ch_dataset.mix(NEXTCLADE_VARIABLES.out.dataset_H1N1,
-                                NEXTCLADE_VARIABLES.out.dataset_H3N2,
-                                NEXTCLADE_VARIABLES.out.dataset_Victoria,
-                                NEXTCLADE_VARIABLES.out.dataset_Yamagata
-                                )
-    ch_reference = ch_reference.mix(NEXTCLADE_VARIABLES.out.reference_H1N1,
-                                    NEXTCLADE_VARIABLES.out.reference_H3N2,
-                                    NEXTCLADE_VARIABLES.out.reference_Victoria,
-                                    NEXTCLADE_VARIABLES.out.reference_Yamagata
+
+    ch_dataset_H1N1_ha = NEXTCLADE_VARIABLES.out.dataset_H1N1_ha
+    ch_dataset_H3N2_ha = NEXTCLADE_VARIABLES.out.dataset_H3N2_ha
+    ch_dataset_Victoria_ha = NEXTCLADE_VARIABLES.out.dataset_Victoria_ha
+    ch_dataset_Yamagata_ha = NEXTCLADE_VARIABLES.out.dataset_Yamagata_ha
+    ch_dataset = ch_dataset_H1N1_ha.mix(ch_dataset_H3N2_ha,
+                                    ch_dataset_Victoria_ha,
+                                    ch_dataset_Yamagata_ha
                                     )
-    ch_tag = ch_tag.mix(NEXTCLADE_VARIABLES.out.tag_H1N1,
-                        NEXTCLADE_VARIABLES.out.tag_H3N2,
-                        NEXTCLADE_VARIABLES.out.tag_Victoria,
-                        NEXTCLADE_VARIABLES.out.tag_Yamagata
-                        )
+                                    .view()
 
     emit:
-    HA                         = ch_HA
-    NA                         = ch_NA
+    HA                         = IRMA.out.HA
+    NA                         = IRMA.out.NA
     typing_report_tsv          = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
     irma_consensus_qc_tsv      = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
     assembly                   = ch_assembly
     dataset                    = ch_dataset
-    reference                  = ch_reference
-    tag                        = ch_tag
     versions                   = ch_versions
 
 }

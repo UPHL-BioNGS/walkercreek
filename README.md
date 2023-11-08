@@ -10,15 +10,10 @@
 
 [![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23walkercreek-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/walkercreek)[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
-
-## Sunset Peak
 # ![nf-core/walkercreek](docs/images/walker_creek_1.png)
-
 ## Walker Creek
 
-**nf-core/walkercreek** is named after the Walker Creek canyon trail that leads to Sunset Peak (elevation 10088 ft) east of Meadow, UT. Within the upper western facing rocky slope of the canyon lies the resting place of Chief Walker, also known as Chief Walkara, a renowned Shoshone leader of the Utah Timpanogo and Sanpete Band. His piercing eyes earned him the nickname “Hawk of the Mountains.” He was a renowned diplomat, horseman, warrior, and a military leader, famous for his involvement in raiding parties and the Wakara War. He was a prominent Native American chief in Utah when the Mormon Pioneers arrived in 1847 and was known for his trading skills, dealing with both European settlers and his own people. Chief Walker died of "lung fever" on January 29, 1855, and was buried with significant rituals, including the sacrifice of horses and family members — a testament to the high esteem in which he was held by his community.
-
-# ![nf-core/walkercreek](docs/images/Statue_of_Chief_Walkara_at_Pioneer_Heritage_Gardens_in_Manti_UT.png)
+**nf-core/walkercreek** is named after Walker Creek that runs through Sunset canyon and leads to Sunset Peak (elevation 10088 ft) east of Meadow, UT. Within the upper western facing rocky slope of the canyon lies the resting place of Chief Walker, also known as Chief Walkara, a renowned Shoshone leader of the Utah Timpanogo and Sanpete Band. His piercing eyes earned him the nickname “Hawk of the Mountains.” He was a renowned diplomat, horseman, warrior, and a military leader, famous for his involvement in raiding parties and the Wakara War. He was a prominent Native American chief in Utah when the Mormon Pioneers arrived in 1847 and was known for his trading skills, dealing with both European settlers and his own people. Chief Walker died of "lung fever" on January 29, 1855, and was buried with significant rituals — a testament to the high esteem in which he was held by his community.
 
 ## Introduction
 
@@ -42,29 +37,29 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 > **Currently prepares influenza samples (paired-end FASTQ files) for assembly. These steps also provide different quality reports for sample evaluation.**
 
 * Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
-* Remove human read data with the ([`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber)
+* Remove human read data with the ([`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber) for uploading reads to to public repositories for DNA sequencing data.
 * Filter unpaired reads from FASTQ files (`SeqKit_Pair`).
 * Trim reads and assess quality (`FaQCs`).
 * Remove adapter sequences and phix reference with (`BBMap_BBDuk`).
-* Generate a QC report by extracting data from FaQCs report data (`QC_Report`).
+* Generate a QC report by extracting data from the FaQCs report data (`QC_Report`).
 * Assess read data with (`Kraken2_Kraken2`) to identify the species represented.
-* Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-* Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+* [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) - Filtered reads QC
+* [`MultiQC`](http://multiqc.info/) - Aggregate report describing results and QC from the whole pipeline
 
 ### Assembly, Viral Classification, and Nextclade Variable Gathering
 
 > **Clean read data undergo assembly and influenza typing and subtyping. Based on the subtype information, Nextclade variables are gathered.**
 
-* Assembly of Influenza gene segments with (`IRMA`) using the built-in FLU module. Also, Influenza typing and H/N subtype classifications are made.
+* Assembly of influenza gene segments with (`IRMA`) using the built-in FLU module. Also, influenza typing and H/N subtype classifications are made.
 * QC of consensus assembly (`IRMA_Consensus_QC`).
 * Generate IRMA consensus QC report (`IRMA_Consensus_QC_Reportsheet`)
-* Influenza A type and H/N subtype classification as well as Influenza B type and lineage determination using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
+* Influenza A type and H/N subtype classification as well as influenza B type and lineage classification using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
 * Generate a summary report for influenza classification results (`IMRA_Abricate_Reportsheet`).
-* Gather corresponding Nextclade dataset, reference, and tag from Abricate_Flu classifcation results (`Nextclade_Variables`).
+* Gather corresponding Nextclade dataset using the Abricate_Flu classifcation results (`Nextclade_Variables`).
 
 ### Influenza Clade Determination and Analysis
 
-> **Obtains datasets for Nextclade influenza genome analysis from the dataset, reference, and tag variables determined by flu classification. Performs clade assignment, mutation calling, and sequence quality checks, followed by parsing the output report from Nextclade.**
+> **Obtains datasets for Nextclade influenza genome analysis from the dataset determined by flu classification. Performs clade assignment, mutation calling, and sequence quality checks, followed by parsing the output report from Nextclade.**
 
 * Acquire the dataset necessary for influenza genome clade assignment with (`Nextclade_DatasetGet`).
 * Determine influenza genome clade assignment, perform mutation calling, and run sequence quality checks with (`Nextclade_Run`). Additionally, for each sample processed through (`Nextclade_Run`), a phylogenomic dataset is generated named nextclade.auspice.json. This can be visualized using the [auspice.us](https://auspice.us/) platform.

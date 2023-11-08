@@ -12,17 +12,17 @@ flu_subtypes = {
     "H1N1": {
         "dataset": "flu_h1n1pdm_ha",
         "reference": "CY121680",
-        "tag": "2023-04-02T12:00:00Z",
+        "tag": "2023-08-10T12:00:00Z",
     },
     "H3N2": {
         "dataset": "flu_h3n2_ha",
         "reference": "CY163680",
-        "tag": "2023-04-02T12:00:00Z",
+        "tag": "2023-08-10T12:00:00Z",
     },
     "Victoria": {
         "dataset": "flu_vic_ha",
         "reference": "KX058884",
-        "tag": "2023-04-02T12:00:00Z",
+        "tag": "2023-08-10T12:00:00Z",
     },
     "Yamagata": {
         "dataset": "flu_yam_ha",
@@ -63,4 +63,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

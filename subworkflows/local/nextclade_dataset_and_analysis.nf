@@ -18,28 +18,26 @@ include { NEXTCLADE_REPORT                   } from '../../modules/local/nextcla
 workflow NEXTCLADE_DATASET_AND_ANALYSIS {
     take:
     dataset
-    reference
-    tag
     HA
-    nextclade_db
 
     main:
-    ch_versions           = Channel.empty()
-    ch_nextclade_report   = Channel.empty()
-    ch_aligned_fasta      = Channel.empty()
-    ch_nextclade_db       = Channel.empty()
+    ch_versions              = Channel.empty()
+    ch_nextclade_report      = Channel.empty()
+    ch_aligned_fasta         = Channel.empty()
+    ch_nextclade_run_input   = Channel.empty()
 
     if (params.skip_nextclade) return // conditional check on param.skip_nextclade. If true, subworkflow will not execute.
 
-    NEXTCLADE_DATASETGET(dataset, reference, tag)
-    ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
-    ch_nextclade_db = NEXTCLADE_DATASETGET.out.dataset_2
+    NEXTCLADE_DATASETGET(dataset)
+    ch_versions = ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
 
-    NEXTCLADE_RUN(HA, ch_nextclade_db)
+    dataset_2 = NEXTCLADE_DATASETGET.out.dataset_2
+
+    NEXTCLADE_RUN(dataset_2, HA)
     ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
     ch_nextclade_report = NEXTCLADE_RUN.out.csv
 
-    NEXTCLADE_PARSER(NEXTCLADE_RUN.out.tsv)
+    NEXTCLADE_PARSER(NEXTCLADE_RUN.out.parser_input)
     parser_tsv_files = NEXTCLADE_PARSER.out.nextclade_parser_tsv
 
     ch_combined_parser_tsv_results = parser_tsv_files
@@ -60,9 +58,8 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
 
     emit:
     fasta_aligned          = NEXTCLADE_RUN.out.fasta_aligned
-    tsv                    = NEXTCLADE_RUN.out.tsv
+    parser_input           = NEXTCLADE_RUN.out.parser_input
     nextclade_report       = ch_nextclade_report
     nextclade_report_tsv   = NEXTCLADE_REPORT.out.nextclade_report_tsv
-    nextclade_db           = ch_nextclade_db
     versions               = ch_versions
 }

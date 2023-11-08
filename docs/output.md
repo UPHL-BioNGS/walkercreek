@@ -64,21 +64,80 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 ## Sample QC and Preprocessing
 
-### Prepares influenza samples (paired-end FASTQ files) for assembly
+### Prepares influenza samples (paired-end FASTQ files) for assembly. These steps also provide different quality reports for sample evaluation.
 
-</details>
+* Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
+* Remove human read data with the ([`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber) for uploading reads to to public repositories for DNA sequencing data.
+* Filter unpaired reads from FASTQ files (`SeqKit_Pair`).
+* Trim reads and assess quality (`FaQCs`).
+* Remove adapter sequences and phix reference with (`BBMap_BBDuk`).
+* Generate a QC report by extracting data from the FaQCs report data (`QC_Report`).
+* Assess read data with (`Kraken2_Kraken2`) to identify the species represented.
+* [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) - Filtered reads QC
+* [`MultiQC`](http://multiqc.info/) - Aggregate report describing results and QC from the whole pipeline
+
+**Important output files from this section:**
+
+| File          | Path                                                              |
+| ---           | ---                                                               |
+| Trimmed Reads |  `(faqcs/<sampleID>*.fastq.gz)`                                   |
+| Masked Reads  |  `(ncbi_sra_human_read_scrubber/<sampleID>/*_dehosted.fastq.gz)`  |
+| QC Report     |  `(qc_report/qc_report.tsv)`                                      |
+| MultiQC       |  `(multiqc/*)`                                                    |
 
 ## Assembly, Viral Classification, and Nextclade Variable Gathering
 
-### Assembly and influenza classification
+### Clean read data undergo assembly and influenza typing and subtyping. Based on the subtype information, Nextclade variables are gathered.
 
-</details>
+* Assembly of influenza gene segments with (`IRMA`) using the built-in FLU module. Also, influenza typing and H/N subtype classifications are made.
+* QC of consensus assembly (`IRMA_Consensus_QC`).
+* Generate IRMA consensus QC report (`IRMA_Consensus_QC_Reportsheet`)
+* Influenza A type and H/N subtype classification as well as influenza B type and lineage classification using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
+* Generate a summary report for influenza classification results (`IMRA_Abricate_Reportsheet`).
+* Gather corresponding Nextclade dataset using the Abricate_Flu classifcation results (`Nextclade_Variables`).
+
+**Important output files from this section:**
+
+| File                                      | Path                                                        |
+| ---                                       | ---                                                         |
+|  IRMA Consensus fasta                     |  `(irma/<sampleID>/*.irma.consensus.fasta)`                 |
+|  IRMA flu type                            |  `(irma/<sampleID>/*.irma_type.txt)`                        |
+|  IRMA flu subtype                         |  `(irma/<sampleID>/*.irma_subtype.txt)`                     |
+|  IRMA Consensus QC                        |  `(irma_consensus_qc/irma_consensus_qc_report.tsv)`         |
+|  Abricate flu type                        |  `(abricate_flu/<sampleID>/*.abricate_flu_type.txt)`        |
+|  Abricate flu subtype                     |  `(abricate_flu/<sampleID>/*.abricate_flu_subtype.txt)`     |
+|  Typing Report                            |  `(reports/typing_report.tsv)`                              |
+|  Nextclade Variables dataset              |  `(nextclade_variables/<sampleID>/*)`                       |
 
 ## Influenza Clade Determination and Analysis
 
-### Nextclade influenza genome analysis
+### Obtains datasets for Nextclade influenza genome analysis from the dataset determined by flu classification. Performs clade assignment, mutation calling, and sequence quality checks, followed by parsing the output report from Nextclade.
 
-</details>
+* Acquire the dataset necessary for influenza genome clade assignment with (`Nextclade_DatasetGet`).
+* Determine influenza genome clade assignment, perform mutation calling, and run sequence quality checks with (`Nextclade_Run`). Additionally, for each sample processed through (`Nextclade_Run`), a phylogenomic dataset is generated named nextclade.auspice.json. This can be visualized using the [auspice.us](https://auspice.us/) platform.
+* Parse the Nextclade output (`Nextclade_Parser`) and generate a report (`Nextclade_Report`).
+
+**Important output files from this section:**
+
+| File                                      | Path                                         |
+| ---                                       | ---                                          |
+|  Auspice json                             |  `(nextclade_run/<sampleID>/*.auspice.json)` |
+|  Nextclade Report                         |  `(reports/nextclade_report.tsv)`            |
+
+### QC Report
+The QC report values are generated from FAQCS text file outputs.
+
+| QC Metric                                  | Source   |
+|--------------------------------------------|----------|
+| Reads Before Trimming                      | FAQCS    |
+| GC Before Trimming                         | FAQCS    |
+| Average Q Score Before Trimming            | FAQCS    |
+| Reference Length Coverage Before Trimming  | FAQCS    |
+| Reads After Trimming                       | FAQCS    |
+| Paired Reads After Trimming                | FAQCS    |
+| Unpaired Reads After Trimming              | FAQCS    |
+| GC After Trimming                          | FAQCS    |
+| Average Q Score After Trimming             | FAQCS    |
 
 ### FastQC
 
@@ -111,11 +170,18 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
   - `multiqc_data/`: directory containing parsed statistics from the different tools used in the pipeline.
   - `multiqc_plots/`: directory containing static images from the report in various formats.
 
-</details>
-
 [MultiQC](http://multiqc.info) is a visualization tool that generates a single HTML report summarising all samples in your project. Most of the pipeline QC results are visualised in the report and further statistics are available in the report data directory.
 
 Results generated by MultiQC collate pipeline QC from supported tools e.g. FastQC. The pipeline has special steps which also allow the software versions to be reported in the MultiQC output for future traceability. For more information about how to use MultiQC reports, see <http://multiqc.info>.
+
+### SUMMARY REPORT
+#### A comprehensive report for the workflow detailed merged tsv outputs from various modules.
+
+**Important output files from this section:**
+
+| File                                      | Path                                         |
+| ---                                       | ---                                          |
+| Summary Report                            |  `(SUMMARY_REPORT/summary_report.tsv)`       |
 
 ### Pipeline information
 
