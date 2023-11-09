@@ -15,15 +15,31 @@
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
+- [abricate]()
+  > 
+
+- [irma]()
+  > 
+
+- [SRA human read scrubber]()
+  > 
+
+- [nextclade]()
+  > 
+
+- [bbduk]()
+  >
+
+- [faqcs]()
+  >
+
+- [kraken2]()
+  >
+
+- [seqkit]()
+  > 
+
 ## Software packaging/containerisation tools
-
-- [Anaconda](https://anaconda.com)
-
-  > Anaconda Software Distribution. Computer software. Vers. 2-2.4.0. Anaconda, Nov. 2016. Web.
-
-- [Bioconda](https://pubmed.ncbi.nlm.nih.gov/29967506/)
-
-  > Grüning B, Dale R, Sjödin A, Chapman BA, Rowe J, Tomkins-Tinch CH, Valieris R, Köster J; Bioconda Team. Bioconda: sustainable and comprehensive software distribution for the life sciences. Nat Methods. 2018 Jul;15(7):475-476. doi: 10.1038/s41592-018-0046-7. PubMed PMID: 29967506.
 
 - [BioContainers](https://pubmed.ncbi.nlm.nih.gov/28379341/)
 
