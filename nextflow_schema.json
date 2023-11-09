@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/nf-core/walkercreek/master/nextflow_schema.json",
-    "title": "nf-core/walkercreek pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/walkercreek/master/nextflow_schema.json",
+    "title": "UPHL-BioNGS/walkercreek pipeline parameters",
     "description": "A nextflow pipeline for influenza genomic analysis",
     "type": "object",
     "definitions": {
