@@ -1,4 +1,4 @@
-# nf-core/walkercreek: Usage
+# UPHL-BioNGS/walkercreek: Usage
 
 ## :warning: Please read this documentation on the UPHL-BioNGS walkercreek website: [https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md](https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md)
 
