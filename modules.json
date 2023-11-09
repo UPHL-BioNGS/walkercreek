@@ -1,6 +1,6 @@
 {
-    "name": "nf-core/walkercreek",
-    "homePage": "https://github.com/uphl-biongs/walkercreek",
+    "name": "UPHL-BioNGS/walkercreek",
+    "homePage": "https://github.com/UPHL-BioNGS/walkercreek",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {
