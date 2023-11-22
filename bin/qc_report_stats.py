@@ -31,9 +31,7 @@ paired_reads_after_trim = list[9].split(": ")[1].strip("\n")
 unpaired_reads_after_trim = list[11].split(": ")[1].strip("\n")
 
 # Calculate the GC content before trimming from base_content.txt file using Pandas
-df1 = pd.read_csv(
-    args.base_content_before_trim, delim_whitespace=True, header=None, index_col=None
-)
+df1 = pd.read_csv(args.base_content_before_trim, delim_whitespace=True, header=None, index_col=None)
 df1_subset = df1[df1[0] == "GC"]
 df1_subset[3] = df1[1] * df1[2]
 sum_reads = sum(df1_subset[2])
@@ -44,9 +42,7 @@ GC_content_before = "{:.2f}".format(GC_content_before)
 GC_content_before = str(GC_content_before + "%")
 
 # Calculate the GC content after trimming from base_content.txt file using Pandas
-df2 = pd.read_csv(
-    args.base_content_after_trim, delim_whitespace=True, header=None, index_col=None
-)
+df2 = pd.read_csv(args.base_content_after_trim, delim_whitespace=True, header=None, index_col=None)
 df2_subset = df2[df2[0] == "GC"]
 df2_subset[3] = df2[1] * df2[2]
 sum_reads = sum(df2_subset[2])
@@ -86,6 +82,6 @@ output_list = [
 ]
 
 # Creating tab delimited string for qc report generation
-print('\t'.join(output_list))
+print("\t".join(output_list))
 
 # Modified from https://github.com/CDCgov/mycosnp-nf/blob/master/bin/qc_report_stats.py

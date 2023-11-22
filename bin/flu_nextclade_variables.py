@@ -31,9 +31,12 @@ flu_subtypes = {
     },
 }
 
+
 def main():
     # Set up an argument parser to accept input arguments for the script
-    parser = argparse.ArgumentParser(description="Outputs the dataset, reference, and tag for the HA gene of a given flu subtype.")
+    parser = argparse.ArgumentParser(
+        description="Outputs the dataset, reference, and tag for the HA gene of a given flu subtype."
+    )
     parser.add_argument("--sample", required=True, help="Sample name")
     args = parser.parse_args()
 
@@ -60,6 +63,7 @@ def main():
         with open(file_path, "w") as f:
             f.write(f"{flu_subtypes[flu_subtype][item]}\n")
             print(f"  {item}: {flu_subtypes[flu_subtype][item]} (output to {file_path})")
+
 
 if __name__ == "__main__":
     main()

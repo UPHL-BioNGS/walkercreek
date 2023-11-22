@@ -46,9 +46,7 @@ def parse_args(args=None) -> argparse.Namespace:
         default=r"(.+)_S\d+_L\d{3}_R[12]_001\.fastq\.gz",
         help="Sample name regular expression where first matching group is the desired sample name.",
     )
-    parser.add_argument(
-        "-f", "--force", action="store_true", help="Overwrite samplesheet CSV?"
-    )
+    parser.add_argument("-f", "--force", action="store_true", help="Overwrite samplesheet CSV?")
     parser.add_argument(
         "--keep-undetermined",
         action="store_true",
@@ -57,10 +55,9 @@ def parse_args(args=None) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
-def fastq_dir_to_samplesheet(fastq_dir: Path,
-                             samplesheet_file: Path,
-                             sample_name_regex: str,
-                             keep_undetermined: bool = False) -> None:
+def fastq_dir_to_samplesheet(
+    fastq_dir: Path, samplesheet_file: Path, sample_name_regex: str, keep_undetermined: bool = False
+) -> None:
     sample_name_regex = re.compile(sample_name_regex)
     read_dict = defaultdict(list)
     for path in fastq_dir.glob("*"):
@@ -68,11 +65,11 @@ def fastq_dir_to_samplesheet(fastq_dir: Path,
         if m:
             sample = m.group(1)
             read_dict[sample].append(str(path.absolute()))
-    if not keep_undetermined and 'Undetermined' in read_dict:
-        logging.info(f'Removing Undetermined FASTQ files from samplesheet.')
-        del read_dict['Undetermined']
+    if not keep_undetermined and "Undetermined" in read_dict:
+        logging.info(f"Removing Undetermined FASTQ files from samplesheet.")
+        del read_dict["Undetermined"]
 
-    logging.info(f'Found {len(read_dict)} samples with {sum(len(v) for v in read_dict.values())} FASTQ files.')
+    logging.info(f"Found {len(read_dict)} samples with {sum(len(v) for v in read_dict.values())} FASTQ files.")
     if read_dict:
         with open(samplesheet_file, "w") as fout:
             header = ["sample", "fastq_1", "fastq_2"]
@@ -113,9 +110,7 @@ def main(args=None):
     output = Path(args.output)
     if output.exists():
         if not args.force:
-            raise FileExistsError(
-                f'Samplesheet file already exists at "{output}"! Overwrite with `-f/--force`'
-            )
+            raise FileExistsError(f'Samplesheet file already exists at "{output}"! Overwrite with `-f/--force`')
         else:
             logging.warning(f'Overwriting existing samplesheet at "{output}"!')
 
