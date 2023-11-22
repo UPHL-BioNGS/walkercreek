@@ -28,7 +28,9 @@ workflow PREPROCESSING_READ_QC {
     db // params.krakendb
 
     main:
-    ch_versions        = Channel.empty()
+    ch_versions                = Channel.empty()
+    ch_kraken2reportsheet      = Channel.empty()
+    ch_kraken2_reportsheet_tsv = Channel.empty()
 
     NCBI_SRA_HUMAN_SCRUBBER(reads)
     ch_versions = ch_versions.mix(NCBI_SRA_HUMAN_SCRUBBER.out.versions)
@@ -55,19 +57,27 @@ workflow PREPROCESSING_READ_QC {
         KRAKEN2REPORT_SUMMARY(ch_kraken2report_summary_input)
         ch_kraken2reportsheet = KRAKEN2REPORT_SUMMARY.out.kraken_lines.collect()
         KRAKEN2_REPORTSHEET(ch_kraken2reportsheet)
-        kraken2_reportsheet_tsv = KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv
+        // Populate ch_kraken2_reportsheet_tsv with actual data
+        ch_kraken2_reportsheet_tsv = KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv
+
+        emit:
+        report                     = KRAKEN2_KRAKEN2.out.report
+        classified_reads           = KRAKEN2_KRAKEN2.out.classified_reads_assignment
+        kraken_lines               = ch_kraken2reportsheet
+        kraken2_reportsheet_tsv    = KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv
+
+    } else {
+        // Populate ch_kraken2_reportsheet_tsv with an empty channel
+        ch_kraken2_reportsheet_tsv = Channel.empty()
     }
 
     emit:
-    report                  = KRAKEN2_KRAKEN2.out.report
-    classified_reads        = KRAKEN2_KRAKEN2.out.classified_reads_assignment
-    kraken_lines            = ch_kraken2reportsheet
-    kraken2_reportsheet_tsv = KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv
-    clean_reads             = BBMAP_BBDUK.out.clean_reads
-    stats                   = FAQCS.out.stats
-    adapters_stats          = BBMAP_BBDUK.out.adapters_stats
-    qc_report               = FAQCS.out.statspdf
-    versions                = ch_versions
-    qc_lines                = ch_qcreport
+    clean_reads                = BBMAP_BBDUK.out.clean_reads
+    stats                      = FAQCS.out.stats
+    adapters_stats             = BBMAP_BBDUK.out.adapters_stats
+    qc_report                  = FAQCS.out.statspdf
+    versions                   = ch_versions
+    qc_lines                   = ch_qcreport
+    kraken2_reportsheet_tsv    = (!params.skip_kraken2) ? KRAKEN2_REPORTSHEET.out.kraken2_reportsheet_tsv : Channel.empty()
 }
 

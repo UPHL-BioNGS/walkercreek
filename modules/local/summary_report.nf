@@ -6,11 +6,11 @@ process SUMMARY_REPORT {
         'quay.io/biocontainers/pandas:1.1.5' }"
 
     input:
-    path (qc_reportsheet_tsv) // from qc_reportsheet.nf
-    path (typing_report_tsv) // from irma_abricate_reportsheet.nf
-    path (irma_consensus_qc_tsv) // from irma_consensus_qc_reportsheet.nf
-    path (kraken2_reportsheet_tsv) // from kraken2_reportsheet.nf
-    path (nextclade_report_tsv) // from nextclade_report_ha.nf
+    tuple path(tsv1)
+    tuple path(tsv2)
+    tuple path(tsv3)
+    tuple path(tsv4)
+    tuple path(tsv5)
 
     output:
     path ("summary_report.tsv") , emit: summary_report_tsv
@@ -22,6 +22,6 @@ process SUMMARY_REPORT {
     def args = task.ext.args ?: ''
 
     """
-    python $projectDir/bin/merge_reports.py $qc_reportsheet_tsv $typing_report_tsv $irma_consensus_qc_tsv $kraken2_reportsheet_tsv $nextclade_report_tsv
+    python $projectDir/bin/merge_reports.py $tsv1 $tsv2 $tsv3 $tsv4 $tsv5
     """
 }

@@ -81,11 +81,11 @@ include { NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/nextcl
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                              } from '../modules/nf-core/fastqc/main'
-include { QC_REPORTSHEET                      } from '../modules/local/qc_reportsheet.nf'
-include { SUMMARY_REPORT                      } from '../modules/local/summary_report'
-include { MULTIQC                             } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS         } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { FASTQC                                      } from '../modules/nf-core/fastqc/main'
+include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
+include { SUMMARY_REPORT                              } from '../modules/local/summary_report.nf'
+include { MULTIQC                                     } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                 } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
 ============================================================================================================================
@@ -181,12 +181,19 @@ workflow WALKERCREEK {
     /*
         SUBWORKFLOW: PREPROCESSING_READ_QC - preprocessing and quality control on read data
     */
+
+    // Initialize an empty channel for Kraken2 report sheet
+    ch_kraken2_reportsheet_tsv = Channel.empty()
+
     PREPROCESSING_READ_QC(ch_all_reads, adapters, phix, ch_krakendb)
     ch_all_reads = ch_all_reads.mix(PREPROCESSING_READ_QC.out.clean_reads) // Mix the cleaned reads with the main read channel
-    ch_kraken2_reportsheet_tsv = PREPROCESSING_READ_QC.out.kraken2_reportsheet_tsv
     ch_versions = ch_versions.mix(PREPROCESSING_READ_QC.out.versions)
-
     ch_qcreportsheet = PREPROCESSING_READ_QC.out.qc_lines.collect() // Collect quality control lines for the report sheet module
+
+    // Conditionally assign the Kraken2 report sheet if Kraken2 is not skipped
+    if (!params.skip_kraken2) {
+        ch_kraken2_reportsheet_tsv = PREPROCESSING_READ_QC.out.kraken2_reportsheet_tsv
+    }
 
     //
     // MODULE: QC_REPORTSHEET
@@ -197,7 +204,6 @@ workflow WALKERCREEK {
     /*
         SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'
     */
-
     ASSEMBLY_TYPING_CLADE_VARIABLES(ch_all_reads)
     ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
@@ -227,7 +233,14 @@ workflow WALKERCREEK {
     //
     // MODULE: SUMMARY_REPORT
     //
-    SUMMARY_REPORT(ch_typing_report_tsv, ch_qc_reportsheet_tsv, ch_irma_consensus_qc_tsv, ch_kraken2_reportsheet_tsv, ch_nextclade_report_tsv)
+
+    SUMMARY_REPORT(
+        ch_typing_report_tsv,
+        ch_qc_reportsheet_tsv,
+        ch_irma_consensus_qc_tsv,
+        ch_nextclade_report_tsv,
+        ch_kraken2_reportsheet_tsv
+    )
 
     // Collate all software versions used in the workflow
     CUSTOM_DUMPSOFTWAREVERSIONS (ch_versions.unique().collectFile(name: 'collated_versions.yml'))
