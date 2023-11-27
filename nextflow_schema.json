@@ -10,8 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-            ],
+            "required": [],
             "properties": {
                 "input": {
                     "type": "string",
@@ -272,13 +271,7 @@
                     "default": "FLU",
                     "fa_icon": "fas fa-cube",
                     "description": "IRMA module used in analysis.",
-                    "enum": [
-                        "FLU",
-                        "FLU-utr",
-                        "FLU-alt",
-                        "FLU-avian",
-                        "FLU-lowQC"
-                    ]
+                    "enum": ["FLU", "FLU-utr", "FLU-alt", "FLU-avian", "FLU-lowQC"]
                 },
                 "keep_ref_deletions": {
                     "type": "boolean",
