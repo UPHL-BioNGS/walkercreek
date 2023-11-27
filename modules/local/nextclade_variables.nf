@@ -25,5 +25,10 @@ process NEXTCLADE_VARIABLES {
     """
     python $projectDir/bin/flu_nextclade_variables.py \\
         --sample ${meta.id}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
     """
 }

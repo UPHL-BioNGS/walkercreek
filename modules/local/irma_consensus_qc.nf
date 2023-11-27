@@ -28,5 +28,10 @@ process IRMA_CONSENSUS_QC {
 
     """
     python $projectDir/bin/irma_consensus_qc.py $assembly $meta.id
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
     """
 }

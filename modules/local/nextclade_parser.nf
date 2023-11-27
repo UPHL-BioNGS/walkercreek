@@ -24,5 +24,10 @@ process NEXTCLADE_PARSER {
     """
     python $projectDir/bin/nextclade_output_parser.py \\
         --id "${meta.id}.tsv"
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
     """
 }

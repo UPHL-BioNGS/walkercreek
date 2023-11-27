@@ -26,5 +26,10 @@ process QC_REPORT {
         --base_content_after_trim ${meta.id}.base_content.txt \\
         --qual_scores_before_trim qa.${meta.id}.for_qual_histogram.txt \\
         --qual_scores_after_trim ${meta.id}.for_qual_histogram.txt > ${meta.id}_output.txt
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
     """
 }

@@ -81,7 +81,7 @@ include { NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/nextcl
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                                      } from '../modules/nf-core/fastqc/main'
+include { FASTQC                                      } from '../modules/local/fastqc.nf'
 include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
 include { SUMMARY_REPORT                              } from '../modules/local/summary_report.nf'
 include { MULTIQC                                     } from '../modules/nf-core/multiqc/main'

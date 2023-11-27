@@ -23,5 +23,10 @@ process SUMMARY_REPORT {
 
     """
     python $projectDir/bin/merge_reports.py $tsv1 $tsv2 $tsv3 $tsv4 $tsv5
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
     """
 }
