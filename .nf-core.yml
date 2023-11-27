@@ -1,1 +1,8 @@
 repository_type: pipeline
+lint:
+  files_unchanged: False
+  files_exist: False
+  multiqc_config: False
+  actions_awstest: False
+  nextflow_config: False
+  modules_structure: False
