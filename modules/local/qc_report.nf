@@ -11,6 +11,7 @@ process QC_REPORT {
 
     output:
     path("*_output.txt"), emit: qc_line
+    path "versions.yml" , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

@@ -48,6 +48,7 @@ workflow PREPROCESSING_READ_QC {
     ch_qcreport_input = FAQCS.out.txt
     QC_REPORT(ch_qcreport_input)
     ch_qcreport = QC_REPORT.out.qc_line
+    ch_versions = ch_versions.mix(QC_REPORT.out.versions)
 
     if ( !params.skip_kraken2 ) {
         KRAKEN2_KRAKEN2(reads, db, false, true)

@@ -12,6 +12,9 @@ process IRMA_ABRICATE_REPORT {
     output:
     tuple val(meta), path("*.combined.typing.tsv"), emit: tsv_combined
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def output_tsv = "${prefix}.combined.typing.tsv"
