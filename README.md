@@ -1,5 +1,3 @@
-# ![uphl-biongs/walkercreek](docs/images/UPHL-BioNGS-walkercreek_logo_light.png#gh-light-mode-only) ![uphl-biongs/walkercreek](docs/images/UPHL-BioNGS-walkercreek_logo_dark.png#gh-dark-mode-only)
-
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A522.10.1-23aa62.svg)](https://www.nextflow.io/)
 
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
@@ -9,11 +7,11 @@
 
 # ![uphl-biongs/walkercreek](docs/images/walker_creek_1.png)
 
-# [Walker Creek]
+# Walker Creek
 
-## About Walker Creek
+### About Walker Creek
 
-**walkercreek** is named after Walker Creek that runs through Sunset canyon and leads to Sunset Peak (elevation 10088 ft) east of Meadow, UT. Within the upper western facing rocky slope of the canyon lies the resting place of Chief Walker, also known as Chief Walkara, a renowned Shoshone leader of the Utah Timpanogo and Sanpete Band. His piercing eyes earned him the nickname “Hawk of the Mountains.” He was a renowned diplomat, horseman, warrior, and a military leader, famous for his involvement in raiding parties and the Wakara War. He was a prominent Native American chief in Utah when the Mormon Pioneers arrived in 1847 and was known for his trading skills, dealing with both European settlers and his own people. Chief Walker died of "lung fever" on January 29, 1855, and was buried with significant rituals — a testament to the high esteem in which he was held by his community.
+**UPHL-BioNGS/walkercreek** is named after Walker Creek, which begins near Sunset Peak (elevation 10,088 ft) east of Meadow, Utah, and flows through Sunset Canyon. On the upper western-facing rocky slope of the canyon lies the resting place of Chief Walkara, also known as Chief Walker, a revered leader of the Utah Timpanogos and Sanpete Band of the Shoshone. Known for his penetrating gaze, he earned the nickname “Hawk of the Mountains.” He was a renowned diplomat, horseman, warrior, and military leader, famed for his role in raiding parties and the Wakara War. As a prominent Native American chief in Utah at the time of the Mormon Pioneers' arrival in 1847, he was renowned for his trading acumen, engaging with both European settlers and his own people. Chief Walker died of "lung fever" on January 29, 1855, and was buried with significant rituals, reflecting the deep respect he commanded within his community.
 
 ## Introduction
 
