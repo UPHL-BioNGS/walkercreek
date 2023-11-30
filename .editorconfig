@@ -28,10 +28,67 @@ indent_size = unset
 [/assets/email*]
 indent_size = unset
 
-# Exclude Synology specific directories
-[{**/@eaDir/**}]
+# These files have been edited and tested upstream
+[/conf/@eaDir/**}]
 end_of_line = unset
 insert_final_newline = unset
 trim_trailing_whitespace = unset
 indent_style = unset
 indent_size = unset
+
+# These files have been edited and tested upstream
+[/@eaDir/**}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+# These files have been edited and tested upstream
+[/docs/**}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+# These files have been edited and tested upstream
+[/assets/**}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+# These files have been edited and tested upstream
+[/bin/**}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+# These files have been edited and tested upstream
+[/modules/**}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+# These files have been edited and tested upstream
+[/.prettierignore}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+# These files have been edited and tested upstream
+[/walkercreek/**}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
