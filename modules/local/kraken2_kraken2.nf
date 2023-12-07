@@ -2,7 +2,6 @@ process KRAKEN2_KRAKEN2 {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::kraken2=2.1.2 conda-forge::pigz=2.6"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mulled-v2-5799ab18b5fc681e75923b2450abaa969907ec98:87fc08d11968d081f3e8a37131c1f1f6715b6542-0' :
         'quay.io/biocontainers/mulled-v2-5799ab18b5fc681e75923b2450abaa969907ec98:87fc08d11968d081f3e8a37131c1f1f6715b6542-0' }"
@@ -50,7 +49,7 @@ process KRAKEN2_KRAKEN2 {
 
     $compress_reads_command
 
-    cat <<-END_VERSIONS > versions.yml                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+    cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         kraken2: \$(echo \$(kraken2 --version 2>&1) | sed 's/^.*Kraken version //; s/ .*\$//')
         pigz: \$( pigz --version 2>&1 | sed 's/pigz //g' )

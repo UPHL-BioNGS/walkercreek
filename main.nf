@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nf-core/walkercreek
+    UPHL-BioNGS/walkercreek
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/uphl-biongs/walkercreek
+    Github : https://github.com/UPHL-BioNGS/walkercreek
 ----------------------------------------------------------------------------------------
 */
 
@@ -26,7 +26,7 @@ WorkflowMain.initialise(workflow, params, log)
 include { WALKERCREEK } from './workflows/walkercreek'
 
 //
-// WORKFLOW: Run main nf-core/walkercreek analysis pipeline
+// WORKFLOW: Run main UPHL-BioNGS/walkercreek analysis pipeline
 //
 workflow NFCORE_WALKERCREEK {
     WALKERCREEK ()
@@ -38,10 +38,6 @@ workflow NFCORE_WALKERCREEK {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-//
-// WORKFLOW: Execute a single named workflow for the pipeline
-// See: https://github.com/nf-core/rnaseq/issues/619
-//
 workflow {
     NFCORE_WALKERCREEK ()
 }

@@ -2,10 +2,7 @@ process ABRICATE_FLU {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::abricate=1.0.1"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'quay.io/staphb/abricate:1.0.1-insaflu-220727' :
-        'quay.io/staphb/abricate:1.0.1-insaflu-220727' }"
+    container 'quay.io/staphb/abricate:1.0.1-insaflu-220727'
 
     input:
     tuple val(meta), path(assembly)

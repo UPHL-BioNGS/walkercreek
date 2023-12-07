@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea for the nf-core/walkercreek pipeline
+description: Suggest an idea for the UPHL-BioNGS/walkercreek pipeline
 labels: enhancement
 body:
   - type: textarea

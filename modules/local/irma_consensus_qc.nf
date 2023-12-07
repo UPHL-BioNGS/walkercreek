@@ -2,7 +2,6 @@ process IRMA_CONSENSUS_QC {
     tag "$meta.id"
     label 'process_medium'
 
-    conda "conda-forge::biopython=1.78"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/biopython:1.78' :
         'quay.io/biocontainers/biopython:1.78' }"
@@ -29,5 +28,10 @@ process IRMA_CONSENSUS_QC {
 
     """
     python $projectDir/bin/irma_consensus_qc.py $assembly $meta.id
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
     """
 }

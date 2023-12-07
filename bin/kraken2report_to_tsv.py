@@ -59,4 +59,3 @@ else:
 # write the output to the output file
 with open(f"{sample_name}_read_percentages.txt", "w") as outfile:
     outfile.write(f"{args.sample}\t{percentage_human}\t{percentage_fluA}\t{percentage_fluB}\t{percentage_unclassified}")
-

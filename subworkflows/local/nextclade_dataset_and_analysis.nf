@@ -5,8 +5,8 @@
 */
 
 include { UNTAR as UNTAR_NEXTCLADE_DB        } from '../../modules/nf-core/untar/main'
-include { NEXTCLADE_DATASETGET               } from '../../modules/nf-core/nextclade/datasetget/main'
-include { NEXTCLADE_RUN                      } from '../../modules/nf-core/nextclade/run/main'
+include { NEXTCLADE_DATASETGET               } from '../../modules/local/nextclade_datasetget.nf'
+include { NEXTCLADE_RUN                      } from '../../modules/local/nextclade_run.nf'
 include { NEXTCLADE_PARSER                   } from '../../modules/local/nextclade_parser.nf'
 include { NEXTCLADE_REPORT                   } from '../../modules/local/nextclade_report.nf'
 /*

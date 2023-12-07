@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/nf-core/walkercreek/master/nextflow_schema.json",
-    "title": "nf-core/walkercreek pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/UPHL-BioNGS/walkercreek/master/nextflow_schema.json",
+    "title": "UPHL-BioNGS/walkercreek pipeline parameters",
     "description": "A nextflow pipeline for influenza genomic analysis",
     "type": "object",
     "definitions": {
@@ -10,8 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-            ],
+            "required": [],
             "properties": {
                 "input": {
                     "type": "string",
@@ -272,13 +271,7 @@
                     "default": "FLU",
                     "fa_icon": "fas fa-cube",
                     "description": "IRMA module used in analysis.",
-                    "enum": [
-                        "FLU",
-                        "FLU-utr",
-                        "FLU-alt",
-                        "FLU-avian",
-                        "FLU-lowQC"
-                    ]
+                    "enum": ["FLU", "FLU-utr", "FLU-alt", "FLU-avian", "FLU-lowQC"]
                 },
                 "keep_ref_deletions": {
                     "type": "boolean",

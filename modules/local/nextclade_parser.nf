@@ -2,7 +2,6 @@ process NEXTCLADE_PARSER {
     tag "$meta.id"
     label 'process_low'
 
-    conda (params.enable_conda ? "bioconda::pandas=1.1.5" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/pandas:1.1.5' :
         'quay.io/biocontainers/pandas:1.1.5' }"
@@ -25,5 +24,10 @@ process NEXTCLADE_PARSER {
     """
     python $projectDir/bin/nextclade_output_parser.py \\
         --id "${meta.id}.tsv"
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
     """
 }

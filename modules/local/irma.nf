@@ -2,11 +2,7 @@ process IRMA {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::irma=1.0.3"
-    container "${workflow.containerEngine == "singularity" && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/irma:1.0.3--pl5321hdfd78af_0' :
-        'quay.io/staphb/irma:1.0.3' }"
-
+    container 'quay.io/staphb/irma:1.1.3'
 
     input:
     tuple val(meta), path(reads)
