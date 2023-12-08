@@ -132,7 +132,7 @@ work                # Directory containing the nextflow working files
 Additional example using singularity profile and SRA file input.
 
 ```console
-nextflow run main.nf -profile singularity --add_sra_file sra_file.csv --outdir <OUTDIR>
+nextflow run main.nf -profile docker --add_sra_file sra_file.csv --outdir <OUTDIR>
 ```
 
 ### Updating the pipeline
