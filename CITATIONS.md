@@ -31,7 +31,7 @@
   > James Hadfield, Colin Megill, Sidney M Bell, John Huddleston, Barney Potter, Charlton Callender, Pavel Sagulenko, Trevor Bedford, Richard A Neher, Nextstrain: real-time tracking of pathogen evolution, 
   Bioinformatics, Volume 34, Issue 23, December 2018, Pages 4121–4123, https://doi.org/10.1093/bioinformatics/bty407
   
-- [bbduk](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/))
+- [bbduk](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/)
   > https://sourceforge.net/projects/bbmap/
   
 - [faqcs](https://github.com/LANL-Bioinformatics/FaQCs)
