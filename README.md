@@ -78,7 +78,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 3. Download the pipeline and test it on a minimal dataset with a single command:
 
    ```bash
-   nextflow run UPHL-BioNGS/walkercreek -profile test,YOURPROFILE --outdir <OUTDIR>
+   nextflow run main.nf -profile test,<docker/singularity> --outdir <OUTDIR>
    ```
 
    Note that some form of configuration will be needed so that Nextflow knows how to fetch the required software. This is usually done in the form of a config profile (`YOURPROFILE` in the example command above). You can chain multiple config profiles in a comma-separated string.
@@ -90,10 +90,14 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 4. Start running your own analysis!
 
    ```bash
-   nextflow run UPHL-BioNGS/walkercreek -profile <docker/singularity/podman/shifter/charliecloud> --input samplesheet.csv --outdir <OUTDIR>
+   nextflow run main.nf -profile <docker/singularity> --input samplesheet.csv --outdir <OUTDIR>
    ```
 
 7. It is advisable to delete large temporary or log files after the successful completion of the run. It takes a lot of space and may cause issues in future runs.
+
+   ```bash
+   rm -rf work/ .nextflow* .nextflow.log*
+   ```
 
 ## Documentation
 
