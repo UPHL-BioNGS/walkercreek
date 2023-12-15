@@ -41,11 +41,11 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     ch_dataset             = Channel.empty()
 
     IRMA(clean_reads, irma_module)
-    ch_assembly = IRMA.out.assembly.view()
+    ch_assembly = IRMA.out.assembly
     ch_versions = ch_versions.mix(IRMA.out.versions)
 
-    ch_HA = IRMA.out.HA.view()
-    ch_NA = IRMA.out.NA.view()
+    ch_HA = IRMA.out.HA
+    ch_NA = IRMA.out.NA
 
     IRMA_CONSENSUS_QC(IRMA.out.assembly)
     irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
@@ -102,7 +102,6 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
                                     ch_dataset_Victoria_ha,
                                     ch_dataset_Yamagata_ha
                                     )
-                                    .view()
 
     emit:
     HA                         = IRMA.out.HA
