@@ -14,9 +14,7 @@
 * Java 8 or later
 * Python 3 or later
 * Bash 3.2 or later
-* Singularity _(Optional/Recommended)_
-* Docker _(Optional/Recommended)_
-* Conda _(Optional/Recommended)_
+* Singularity, Docker, CharlieCloud, or Podman
 
 ## Installation
 
@@ -34,6 +32,14 @@ conda activate nextflow
 ```console
 git clone https://github.com/UPHL-BioNGS/walkercreek
 ```
+
+*  To pull with nextflow
+
+```console
+nextflow pull UPHL-BioNGS/walkercreek
+```
+
+This will likely clone the directory to the user's home directory at `~/.nextflow/assets/UPHL-BioNGS/walkercreek``.
 
 ## Samplesheet input
 
@@ -115,7 +121,7 @@ B13520,SRR7909394
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run main.nf -profile docker --input samplesheet.csv --outdir <OUTDIR>
+nextflow run UPHL-BioNGS/walkercreek -profile docker --input samplesheet.csv --outdir <OUTDIR>
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
@@ -132,7 +138,7 @@ work                # Directory containing the nextflow working files
 Additional example using singularity profile and SRA file input.
 
 ```console
-nextflow run main.nf -profile docker --add_sra_file sra_file.csv --outdir <OUTDIR>
+nextflow run UPHL-BioNGS/walkercreek -profile docker --add_sra_file sra_file.csv --outdir <OUTDIR>
 ```
 
 ### Updating the pipeline
@@ -183,8 +189,6 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   - A generic configuration profile to be used with [Shifter](https://nersc.gitlab.io/development/shifter/how-to-use/)
 - `charliecloud`
   - A generic configuration profile to be used with [Charliecloud](https://hpc.github.io/charliecloud/)
-- `conda`
-  - A generic configuration profile to be used with [Conda](https://conda.io/docs/). Please only use Conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity, Podman, Shifter or Charliecloud.
 
 ### `-resume`
 
