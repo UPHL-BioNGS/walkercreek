@@ -7,6 +7,7 @@
 include { IRMA                                 } from '../../modules/local/irma.nf'
 include { IRMA_CONSENSUS_QC                    } from '../../modules/local/irma_consensus_qc.nf'
 include { IRMA_CONSENSUS_QC_REPORTSHEET        } from '../../modules/local/irma_consensus_qc_reportsheet.nf'
+include { VADR                                 } from '../../modules/local/vadr.nf'
 include { ABRICATE_FLU                         } from '../../modules/local/abricate_flu.nf'
 include { IRMA_ABRICATE_REPORT                 } from '../../modules/local/irma_abricate_report'
 include { IRMA_ABRICATE_REPORTSHEET            } from '../../modules/local/irma_abricate_reportsheet.nf'
@@ -34,11 +35,10 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     clean_reads // file: /path/to/BBMAP_BBDUK/'*.clean*.fastq.gz'
 
     main:
-    ch_versions            = Channel.empty()
-    ch_assembly            = Channel.empty()
-    ch_HA                  = Channel.empty()
-    ch_NA                  = Channel.empty()
-    ch_dataset             = Channel.empty()
+    ch_versions                        = Channel.empty()
+    ch_assembly                        = Channel.empty()
+    ch_HA                              = Channel.empty()
+    ch_NA                              = Channel.empty()
 
     IRMA(clean_reads, irma_module)
     ch_assembly = IRMA.out.assembly
@@ -65,6 +65,8 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
     IRMA_CONSENSUS_QC_REPORTSHEET(ch_irma_consensus_qc_results)
     irma_consensus_qc_tsv = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
+
+    VADR(IRMA.out.assembly)
 
     ABRICATE_FLU(IRMA.out.assembly)
     ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
@@ -104,12 +106,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
                                     )
 
     emit:
-    HA                         = IRMA.out.HA
-    NA                         = IRMA.out.NA
-    typing_report_tsv          = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
-    irma_consensus_qc_tsv      = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
-    assembly                   = ch_assembly
-    dataset                    = ch_dataset
-    versions                   = ch_versions
+    HA                              = IRMA.out.HA
+    NA                              = IRMA.out.NA
+    typing_report_tsv               = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
+    irma_consensus_qc_tsv           = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
+    assembly                        = ch_assembly
+    dataset                         = ch_dataset
+    versions                        = ch_versions
 
 }
