@@ -35,7 +35,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 > **Currently prepares influenza samples (paired-end FASTQ files) for assembly. These steps also provide different quality reports for sample evaluation.**
 
 * Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
-* Remove human read data with the ([`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber) for uploading reads to to public repositories for DNA sequencing data.
+* Remove human read data with the [`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber) for uploading reads to to public repositories for DNA sequencing data.
 * Filter unpaired reads from FASTQ files (`SeqKit_Pair`).
 * Trim reads and assess quality (`FaQCs`).
 * Remove adapter sequences and phix reference with (`BBMap_BBDuk`).
@@ -51,6 +51,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 * Assembly of influenza gene segments with (`IRMA`) using the built-in FLU module. Also, influenza typing and H/N subtype classifications are made.
 * QC of consensus assembly (`IRMA_Consensus_QC`).
 * Generate IRMA consensus QC report (`IRMA_Consensus_QC_Reportsheet`)
+* Annotation of IRMA consensus sequences with (`VADR`)
 * Influenza A type and H/N subtype classification as well as influenza B type and lineage classification using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
 * Generate a summary report for influenza classification results (`IMRA_Abricate_Reportsheet`).
 * Gather corresponding Nextclade dataset using the Abricate_Flu classifcation results (`Nextclade_Variables`).

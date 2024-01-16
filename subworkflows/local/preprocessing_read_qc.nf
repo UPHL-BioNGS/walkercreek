@@ -32,8 +32,10 @@ workflow PREPROCESSING_READ_QC {
     ch_kraken2reportsheet      = Channel.empty()
     ch_kraken2_reportsheet_tsv = Channel.empty()
 
-    NCBI_SRA_HUMAN_SCRUBBER(reads)
-    ch_versions = ch_versions.mix(NCBI_SRA_HUMAN_SCRUBBER.out.versions)
+    if ( !params.skip_ncbi_sra_human_scrubber ) {
+        NCBI_SRA_HUMAN_SCRUBBER(reads)
+        ch_versions = ch_versions.mix(NCBI_SRA_HUMAN_SCRUBBER.out.versions)
+    }
 
     SEQKIT_PAIR(reads)
     ch_versions = ch_versions.mix(SEQKIT_PAIR.out.versions)

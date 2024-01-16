@@ -19,7 +19,7 @@ include { NEXTCLADE_VARIABLES                  } from '../../modules/local/nextc
 ============================================================================================================
 */
 
-def irma_module = 'FLU'
+def irma_module = ''
 if (params.irma_module) {
     irma_module = params.irma_module
 }
