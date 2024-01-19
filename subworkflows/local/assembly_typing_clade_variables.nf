@@ -66,7 +66,9 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     IRMA_CONSENSUS_QC_REPORTSHEET(ch_irma_consensus_qc_results)
     irma_consensus_qc_tsv = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
 
-    VADR(IRMA.out.assembly)
+    if ( !params.skip_vadr ) {
+        VADR(IRMA.out.assembly)
+    }
 
     ABRICATE_FLU(IRMA.out.assembly)
     ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
