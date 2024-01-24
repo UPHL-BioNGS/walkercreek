@@ -206,7 +206,7 @@ workflow WALKERCREEK {
     /*
         SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'
     */
-    ASSEMBLY_TYPING_CLADE_VARIABLES(ch_all_reads)
+    ASSEMBLY_TYPING_CLADE_VARIABLES(PREPROCESSING_READ_QC.out.clean_reads)
     ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
     ch_NA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
@@ -229,7 +229,7 @@ workflow WALKERCREEK {
     //
     // MODULE: Run FastQC
     //
-    FASTQC (ch_all_reads)
+    FASTQC (PREPROCESSING_READ_QC.out.clean_reads)
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
     //

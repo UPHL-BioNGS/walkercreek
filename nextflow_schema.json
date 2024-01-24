@@ -315,6 +315,16 @@
                     "default": false,
                     "description": "Skip Kraken2 option."
                 },
+                "skip_ncbi_sra_human_scrubber": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip NCBI SRA human scrubber option."
+                },
+                "skip_vadr": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip the VADR module option."
+                },
                 "skip_nextclade": {
                     "type": "boolean",
                     "default": false,

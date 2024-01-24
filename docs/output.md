@@ -31,7 +31,8 @@ results/
 ├── pipeline_info
 ├── qc_report
 ├── reports
-└── SUMMARY_REPORT
+├── SUMMARY_REPORT
+└── vadr
 ```
 
 ## Pipeline overview
@@ -92,6 +93,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 * Assembly of influenza gene segments with (`IRMA`) using the built-in FLU module. Also, influenza typing and H/N subtype classifications are made.
 * QC of consensus assembly (`IRMA_Consensus_QC`).
 * Generate IRMA consensus QC report (`IRMA_Consensus_QC_Reportsheet`)
+* Annotation of IRMA consensus sequences with (`VADR`)
 * Influenza A type and H/N subtype classification as well as influenza B type and lineage classification using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
 * Generate a summary report for influenza classification results (`IMRA_Abricate_Reportsheet`).
 * Gather corresponding Nextclade dataset using the Abricate_Flu classifcation results (`Nextclade_Variables`).
