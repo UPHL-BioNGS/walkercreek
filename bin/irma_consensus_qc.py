@@ -86,13 +86,13 @@ def main(consensus_fasta, meta_id):
         writer.writerow(
             [
                 "Sample",
-                "IRMA consensus ACTG Count",
-                "IRMA consensus Degenerate Count",
-                "IRMA consensus N Count",
-                "IRMA consensus Total Count",
-                "IRMA consensus Segment Count",
-                "IRMA consensus N50",
-                "IRMA consensus GC Content",
+                "IRMA_consensus_ACTG_count",
+                "IRMA_consensus_degenerate_count",
+                "IRMA_consensus_N_count",
+                "IRMA_consensus_total_count",
+                "IRMA_consensus_segment_count",
+                "IRMA_consensus_N50",
+                "IRMA_consensus_GC_content",
             ]
         )
 
