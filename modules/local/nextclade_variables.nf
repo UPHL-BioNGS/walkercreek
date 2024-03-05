@@ -3,8 +3,8 @@ process NEXTCLADE_VARIABLES {
     label 'process_low'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/pandas:1.1.5' :
-        'quay.io/biocontainers/pandas:1.1.5' }"
+        'https://depot.galaxyproject.org/singularity/python:3.8.3' :
+        'quay.io/biocontainers/python:3.8.3' }"
 
     input:
     tuple val(meta), path(abricate_subtype)
