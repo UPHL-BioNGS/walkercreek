@@ -7,10 +7,15 @@
 include { IRMA                                 } from '../../modules/local/irma.nf'
 include { IRMA_CONSENSUS_QC                    } from '../../modules/local/irma_consensus_qc.nf'
 include { IRMA_CONSENSUS_QC_REPORTSHEET        } from '../../modules/local/irma_consensus_qc_reportsheet.nf'
+include { IRMA_SEGMENT_COVERAGE                } from '../../modules/local/irma_segment_coverage.nf'
+include { MERGE_COVERAGE_RESULTS               } from '../../modules/local/merge_coverage_results.nf'
 include { VADR                                 } from '../../modules/local/vadr.nf'
 include { ABRICATE_FLU                         } from '../../modules/local/abricate_flu.nf'
-include { IRMA_ABRICATE_REPORT                 } from '../../modules/local/irma_abricate_report'
+include { IRMA_ABRICATE_REPORT                 } from '../../modules/local/irma_abricate_report.nf'
 include { IRMA_ABRICATE_REPORTSHEET            } from '../../modules/local/irma_abricate_reportsheet.nf'
+include { SAMTOOLS_MAPPED_READS                } from '../../modules/local/samtools_mapped_reads.nf'
+include { MERGE_BAM_RESULTS                    } from '../../modules/local/merge_bam_results.nf'
+include { MERGE_BAM_COVERAGE_RESULTS           } from '../../modules/local/merge_bam_coverage_results.nf'
 include { NEXTCLADE_VARIABLES                  } from '../../modules/local/nextclade_variables.nf'
 
 /*
@@ -69,6 +74,83 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     if ( !params.skip_vadr ) {
         VADR(IRMA.out.assembly)
     }
+
+    IRMA.out.irma_fasta
+        .flatMap { item ->
+            def meta = item[0] // Capture the metadata
+            if (item[1] instanceof List) {
+                // Return each path with its metadata
+                return item[1].collect { fasta_files -> tuple(meta, fasta_files) }
+            } else {
+                // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
+                return [tuple(meta, item[1])]
+            }
+        }
+        .set { fasta_files_individual }
+
+    IRMA_SEGMENT_COVERAGE(fasta_files_individual)
+    irma_seg_cov_results_files = IRMA_SEGMENT_COVERAGE.out.cov_results
+
+    ch_combined_seg_cov_results = irma_seg_cov_results_files
+        .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
+        .flatten()  // Flatten the channel to process each line individually
+        .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
+        .collect()  // Collect all the lines into a list
+        .map { list ->
+            // Include the header only once at the start of the combined file
+            def header = list[0].split("\n")[0]
+            def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+            def sortedContent = contentWithoutHeaders.sort { a, b ->
+                // Sorting based on 'Sample' column
+                def sampleA = a.split('\t')[0]
+                def sampleB = b.split('\t')[0]
+                sampleA <=> sampleB
+            }
+            return ([header] + sortedContent).join("\n")
+        }
+
+    MERGE_COVERAGE_RESULTS(ch_combined_seg_cov_results)
+    merged_coverage_results_tsv = MERGE_COVERAGE_RESULTS.out.merged_cov_results_tsv
+
+    IRMA.out.irma_bam
+        .flatMap { item ->
+            def meta = item[0] // Capture the metadata
+            if (item[1] instanceof List) {
+                // Return each path with its metadata
+                return item[1].collect { bam_files -> tuple(meta, bam_files) }
+            } else {
+                // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
+                return [tuple(meta, item[1])]
+            }
+        }
+        .set { bam_files_individual }
+
+    SAMTOOLS_MAPPED_READS(bam_files_individual)
+    ch_versions = ch_versions.mix(SAMTOOLS_MAPPED_READS.out.versions)
+    bam_results_files = SAMTOOLS_MAPPED_READS.out.bam_results
+
+    ch_combined_bam_results = bam_results_files
+        .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
+        .flatten()  // Flatten the channel to process each line individually
+        .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
+        .collect()  // Collect all the lines into a list
+        .map { list ->
+            // Include the header only once at the start of the combined file
+            def header = list[0].split("\n")[0]
+            def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+            def sortedContent = contentWithoutHeaders.sort { a, b ->
+                // Sorting based on 'Sample' column
+                def sampleA = a.split('\t')[0]
+                def sampleB = b.split('\t')[0]
+                sampleA <=> sampleB
+            }
+            return ([header] + sortedContent).join("\n")
+        }
+
+    MERGE_BAM_RESULTS(ch_combined_bam_results)
+    merged_bam_results_tsv = MERGE_BAM_RESULTS.out.merged_bam_results_tsv
+
+    MERGE_BAM_COVERAGE_RESULTS(merged_bam_results_tsv, merged_coverage_results_tsv)
 
     ABRICATE_FLU(IRMA.out.assembly)
     ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
