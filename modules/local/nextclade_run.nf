@@ -3,8 +3,8 @@ process NEXTCLADE_RUN {
     label 'process_low'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/nextclade:2.14.0--h9ee0642_0' :
-        'quay.io/biocontainers/nextclade:2.14.0--h9ee0642_0' }"
+        'https://depot.galaxyproject.org/singularity/nextclade:3.1.0--h9ee0642_0' :
+        'quay.io/biocontainers/nextclade:3.1.0--h9ee0642_0' }"
 
     input:
     tuple val(meta), path(dataset_2)
