@@ -49,6 +49,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 > **Clean read data undergo assembly and influenza typing and subtyping. Based on the subtype information, Nextclade variables are gathered.**
 
 * Assembly of influenza gene segments with (`IRMA`) using the built-in FLU module. Also, influenza typing and H/N subtype classifications are made.
+* Calculate the reference length, sequence length, and percent_coverage for segments assembled by IRMA with (`IRMA_SEGMENT_COVERAGE`)
+* Calculate the number of mapped reads and mean depth for segments assembled by IRMA with (`SAMTOOLS_MAPPED_READS`)
 * QC of consensus assembly (`IRMA_Consensus_QC`).
 * Generate IRMA consensus QC report (`IRMA_Consensus_QC_Reportsheet`)
 * Annotation of IRMA consensus sequences with (`VADR`)
@@ -69,6 +71,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 > **Compiles report sheets from modules and outputs a pipeline summary report tsv file.**
 
 * The (`Summary_Report`) consolidates and merges multiple report sheets into a single comprehensive summary report.
+* The (`merged_bam_coverage_results`) merges the gene segment report sheets detailing mapped reads, mean depth, reference length, sequence length, and percent_coverage.
 
 ## Quick Start
 
