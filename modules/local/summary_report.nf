@@ -21,7 +21,7 @@ process SUMMARY_REPORT {
     def args = task.ext.args ?: ''
 
     """
-    python $projectDir/bin/merge_reports.py $qc_reportsheet_tsv $typing_report_tsv $irma_consensus_qc_tsv $nextclade_report_tsv
+    python $projectDir/bin/merge_reports.py $qc_reportsheet_tsv $typing_report_tsv $nextclade_report_tsv $irma_consensus_qc_tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
