@@ -7,11 +7,12 @@ import argparse
 
 # Dictionary containing data for various flu subtypes with their associated datasets.
 flu_subtypes = {
-    "H1N1": {"dataset": 'flu_h1n1pdm_ha'},
-    "H3N2": {"dataset": 'flu_h3n2_ha'},
-    "Victoria": {"dataset": 'flu_vic_ha'},
-    "Yamagata": {"dataset": 'flu_yam_ha'},
+    "H1N1": {"dataset": "flu_h1n1pdm_ha"},
+    "H3N2": {"dataset": "flu_h3n2_ha"},
+    "Victoria": {"dataset": "flu_vic_ha"},
+    "Yamagata": {"dataset": "flu_yam_ha"},
 }
+
 
 def main():
     # Set up an argument parser to accept input arguments for the script
@@ -47,6 +48,6 @@ def main():
         f.write(f"{dataset}\n")
         print(f"  {dataset}: {dataset} (output to {file_path})")
 
+
 if __name__ == "__main__":
     main()
-
