@@ -11,6 +11,9 @@ def merge_tsvs(files):
         temp_df = pd.read_csv(file, sep="\t")
         df = pd.merge(df, temp_df, on="Sample", how="outer")
 
+    # Round all numeric columns to 2 decimal places
+    df = df.round(2)
+
     return df
 
 

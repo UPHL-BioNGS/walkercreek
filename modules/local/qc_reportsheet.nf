@@ -17,7 +17,7 @@ process QC_REPORTSHEET {
     script:
     def args = task.ext.args ?: ''
     """
-    printf \"Sample\\tReads Before Trimming\\tGC Before Trimming\\tAverage Q Score Before Trimming\\tReads After Trimming\\tPaired Reads After Trimming\\tUnpaired Reads After Trimming\\tGC After Trimming\\tAverage Q Score After Trimming\\n\" > qc_report.tsv
+    printf \"Sample\\treads_before_trimming\\tGC_before_trimming\\taverage_Q_score_before_trimming\\treads_after_trimming\\tpaired_reads_after_trimming\\tunpaired_reads_after_trimming\\tGC_after_trimming\\taverage_Q_score_after_trimming\\n\" > qc_report.tsv
     sort ${qc_lines} > sorted.tsv
     cat sorted.tsv >> qc_report.tsv
 

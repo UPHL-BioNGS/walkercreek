@@ -4,31 +4,13 @@
 import os
 from os.path import exists
 import argparse
-import pandas as pd
 
-# Dictionary containing data for various flu subtypes.
-# Each subtype has associated Nextclade dataset, reference, and tag variables.
+# Dictionary containing data for various flu subtypes with their associated datasets.
 flu_subtypes = {
-    "H1N1": {
-        "dataset": "flu_h1n1pdm_ha",
-        "reference": "CY121680",
-        "tag": "2023-08-10T12:00:00Z",
-    },
-    "H3N2": {
-        "dataset": "flu_h3n2_ha",
-        "reference": "CY163680",
-        "tag": "2023-08-10T12:00:00Z",
-    },
-    "Victoria": {
-        "dataset": "flu_vic_ha",
-        "reference": "KX058884",
-        "tag": "2023-08-10T12:00:00Z",
-    },
-    "Yamagata": {
-        "dataset": "flu_yam_ha",
-        "reference": "JN993010",
-        "tag": "2022-07-27T12:00:00Z",
-    },
+    "H1N1": {"dataset": "flu_h1n1pdm_ha"},
+    "H3N2": {"dataset": "flu_h3n2_ha"},
+    "Victoria": {"dataset": "flu_vic_ha"},
+    "Yamagata": {"dataset": "flu_yam_ha"},
 }
 
 
@@ -57,12 +39,14 @@ def main():
         print(f"Error: Invalid flu subtype '{flu_subtype}' for sample '{args.sample}'")
         return
 
-    # For each variables (dataset, reference, tag) of the identified subtype, write it to a separate file and print variables.
-    for item in ["dataset", "reference", "tag"]:
-        file_path = flu_subtypes[flu_subtype][item]
-        with open(file_path, "w") as f:
-            f.write(f"{flu_subtypes[flu_subtype][item]}\n")
-            print(f"  {item}: {flu_subtypes[flu_subtype][item]} (output to {file_path})")
+    # Prepare the dataset and file_path
+    dataset = flu_subtypes[flu_subtype]["dataset"]
+    file_path = dataset
+
+    # Write to the file and print information
+    with open(file_path, "w") as f:
+        f.write(f"{dataset}\n")
+        print(f"  {dataset}: {dataset} (output to {file_path})")
 
 
 if __name__ == "__main__":
