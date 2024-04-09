@@ -75,9 +75,13 @@ process ABRICATE_FLU {
 
     # Find INSaFLU subtype if Type B
     if grep -q "Type_B" $abricate_type; then
-        if grep -q "Victoria" ${meta.id}_abricate_hits.tsv; then
+        # Check for Victoria with hemagglutinin or neuraminidase or both
+        if (grep -q "Victoria" ${meta.id}_abricate_hits.tsv && grep -q "hemagglutinin" ${meta.id}_abricate_hits.tsv) || \
+            (grep -q "Victoria" ${meta.id}_abricate_hits.tsv && grep -q "neuraminidase" ${meta.id}_abricate_hits.tsv); then
             echo "Victoria" > $abricate_subtype
-        elif grep -q "Yamagata" ${meta.id}_abricate_hits.tsv; then
+        # Check for Yamagata with hemagglutinin or neuraminidase or both
+        elif (grep -q "Yamagata" ${meta.id}_abricate_hits.tsv && grep -q "hemagglutinin" ${meta.id}_abricate_hits.tsv) || \
+            (grep -q "Yamagata" ${meta.id}_abricate_hits.tsv && grep -q "neuraminidase" ${meta.id}_abricate_hits.tsv); then
             echo "Yamagata" > $abricate_subtype
         else
             echo "No abricate subtype" > $abricate_subtype
@@ -114,10 +118,12 @@ process ABRICATE_FLU {
         elif grep -q "H10" ${meta.id}_abricate_hits.tsv && grep -q "N8" ${meta.id}_abricate_hits.tsv; then
             echo "H10N8" > $abricate_subtype
     # Victoria
-        elif grep -q "Victoria" ${meta.id}_abricate_hits.tsv; then
+        elif (grep -q "Victoria" ${meta.id}_abricate_hits.tsv && grep -q "hemagglutinin" ${meta.id}_abricate_hits.tsv) || \
+            (grep -q "Victoria" ${meta.id}_abricate_hits.tsv && grep -q "neuraminidase" ${meta.id}_abricate_hits.tsv); then
             echo "Victoria" > $abricate_subtype
     # Yamagata
-        elif grep -q "Yamagata" ${meta.id}_abricate_hits.tsv; then
+        elif (grep -q "Yamagata" ${meta.id}_abricate_hits.tsv && grep -q "hemagglutinin" ${meta.id}_abricate_hits.tsv) || \
+            (grep -q "Yamagata" ${meta.id}_abricate_hits.tsv && grep -q "neuraminidase" ${meta.id}_abricate_hits.tsv); then
             echo "Yamagata" > $abricate_subtype
         else
             echo "No abricate subtype" > $abricate_subtype
