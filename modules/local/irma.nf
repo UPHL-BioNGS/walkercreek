@@ -10,8 +10,8 @@ process IRMA {
 
     output:
     tuple val(meta), path("${meta.id}/")               , emit: irma
-    tuple val(meta), path("${meta.id}/*.bam")          , emit: irma_bam
-    tuple val(meta), path("${meta.id}/*.fasta")        , emit: irma_fasta
+    tuple val(meta), path("${meta.id}/*.bam")          , optional:true, emit: irma_bam
+    tuple val(meta), path("${meta.id}/*.fasta")        , optional:true, emit: irma_fasta
     tuple val(meta), path("*.irma.consensus.fasta")    , optional:true, emit: assembly
     tuple val(meta), path("*_LOW_ABUNDANCE.txt")       , optional:true, emit: failed_assembly
     tuple val(meta), path("*_HA.fasta")                , optional:true, emit: HA
