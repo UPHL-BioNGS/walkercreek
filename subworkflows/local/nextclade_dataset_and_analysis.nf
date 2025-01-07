@@ -25,6 +25,7 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
     ch_nextclade_report      = Channel.empty()
     ch_aligned_fasta         = Channel.empty()
     ch_nextclade_run_input   = Channel.empty()
+    nextclade_report_tsv     = Channel.empty()
 
     if (params.skip_nextclade) return // conditional check on param.skip_nextclade. If true, subworkflow will not execute.
 
