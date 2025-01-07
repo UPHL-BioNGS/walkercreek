@@ -16,6 +16,10 @@ import subprocess
 
 ### Segment length dictionary
 ref_len_dict = {
+    "RSV_BD": 15277,
+    "RSV_AD": 15277,
+    "RSV_B": 15225,
+    "RSV_A": 15223,
     "A_MP": 982,
     "A_NP": 1497,
     "A_NS": 863,
