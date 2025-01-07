@@ -7,7 +7,7 @@ process NEXTCLADE_VARIABLES {
         'quay.io/biocontainers/python:3.8.3' }"
 
     input:
-    tuple val(meta), path(abricate_subtype)
+    tuple val(meta), path(irma_subtype), path(abricate_subtype)
 
     output:
     tuple val(meta), path("flu_h1n1pdm_ha") , optional:true, emit: dataset_H1N1_ha
@@ -24,7 +24,9 @@ process NEXTCLADE_VARIABLES {
 
     """
     python $projectDir/bin/flu_nextclade_variables.py \\
-        --sample ${meta.id}
+        --sample ${meta.id} \\
+        --irma_subtype ${irma_subtype} \\
+        --abricate_subtype ${abricate_subtype}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

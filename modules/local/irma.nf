@@ -2,7 +2,7 @@ process IRMA {
     tag "$meta.id"
     label 'process_high'
 
-    container 'quay.io/staphb/irma:1.1.4'
+    container 'cdcgov/irma:v1.2.0'
 
     input:
     tuple val(meta), path(reads)
@@ -12,6 +12,7 @@ process IRMA {
     tuple val(meta), path("${meta.id}/")               , emit: irma
     tuple val(meta), path("${meta.id}/*.bam")          , optional:true, emit: irma_bam
     tuple val(meta), path("${meta.id}/*.fasta")        , optional:true, emit: irma_fasta
+    tuple val(meta), path("${meta.id}/*.vcf")          , optional:true, emit: irma_vcf
     tuple val(meta), path("*.irma.consensus.fasta")    , optional:true, emit: assembly
     tuple val(meta), path("*_LOW_ABUNDANCE.txt")       , optional:true, emit: failed_assembly
     tuple val(meta), path("*_HA.fasta")                , optional:true, emit: HA
