@@ -13,17 +13,35 @@
 
 **UPHL-BioNGS/walkercreek** is named after Walker Creek, which begins near Sunset Peak (elevation 10,088 ft) east of Meadow, Utah, and flows through Sunset Canyon. On the upper western-facing rocky slope of the canyon lies the resting place of Chief Walkara, also known as Chief Walker, a revered leader of the Utah Timpanogos and Sanpete Band of the Shoshone. Known for his penetrating gaze, he earned the nickname “Hawk of the Mountains.” He was a renowned diplomat, horseman, warrior, and military leader, famed for his role in raiding parties and the Wakara War. As a prominent Native American chief in Utah at the time of the Mormon Pioneers' arrival in 1847, he was renowned for his trading acumen, engaging with both European settlers and his own people. Chief Walker died of "lung fever" on January 29, 1855, and was buried with significant rituals, reflecting the deep respect he commanded within his community.
 
+The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies.
+
 ## Introduction
 
-**UPHL-BioNGS/walkercreek** is a bioinformatics best-practice analysis pipeline designed for the assembly, classification, and clade assignment of Illumina paired-end influenza data using the [nf-core template](https://nf-co.re/). Currently, this pipeline accepts the influenza modules provided by [IRMA](https://wonder.cdc.gov/amd/flu/irma/) with "FLU" designated as the default module. Future versions plan to support the analysis of other viral pathogens found in [IRMA's](https://wonder.cdc.gov/amd/flu/irma/) modules, including RSV.
+**UPHL-BioNGS/walkercreek** is a bioinformatics best-practice analysis pipeline designed for the assembly, classification, and clade assignment of both Illumina and Nanopore influenza data using the [nf-core template](https://nf-co.re/). This pipeline accepts the "FLU" and "RSV" modules provided by [IRMA](https://wonder.cdc.gov/amd/flu/irma/).
 
 [IRMA](https://wonder.cdc.gov/amd/flu/irma/) is used for the adaptive NGS assembly of influenza and other viruses. It was developed by Samuel S. Shepard in collaboration with the Bioinformatics Team at the CDC’s Influenza Division. To gain insights into the innovative algorithm powering IRMA, refer to the [IRMA manuscript](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-016-3030-6). Due to the rapid evolution and high variability of viral genomes, IRMA avoids traditional reference-based assembly.  It introduces a flexible, on-the-fly approach to reference editing, correction, and optional elongation, eliminating the necessity for external reference selection. This adaptability helps to ensure highly accurate and reproducible results.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies.
+In the latest version of walkercreek, you can run the pipeline with one of five main platforms to accommodate different sequencing technologies, sample types (clinical or wastewater), and viral targets (Flu or RSV):
 
+1. **flu_illumina**
+   Uses IRMA for assembly of influenza from Illumina paired-end reads.
+
+2. **flu_ww_illumina**
+   Uses [Freyja](https://github.com/andersen-lab/Freyja-barcodes) to recover relative lineage abundances of influenza from Illumina wastewater paired-end reads.
+
+3. **flu_nanopore**
+   Uses IRMA for assembly of influenza from Nanopore single-end reads.
+
+4. **flu_ww_nanopor**
+   Uses [Freyja](https://github.com/andersen-lab/Freyja-barcodes) to recover relative lineage abundances of influenza from Nanopore wastewater single-end reads.
+
+5. **rsv_illumina**
+   Uses IRMA for assembly of RSV from Illumina paired-end reads.
+
+The following schematic and summary are of the flu_illumina platform.
 # ![uphl-biongs/walkercreek](docs/images/walkercreek.schematic.light.png)
 
-## Pipeline summary
+## flu_illumina pipeline summary
 
 ### SRA Sequence File Addition (optional)
 
@@ -96,7 +114,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 4. Start running your own analysis!
 
    ```bash
-   nextflow run main.nf -profile <docker/singularity> --input samplesheet.csv --outdir <OUTDIR>
+   nextflow run main.nf -profile <docker/singularity> --platform <flu_illumina/flu_nanopore/flu_ww_illumina/flu_ww_nanopore/rsv_illumina> --input samplesheet.csv --outdir <OUTDIR>
    ```
 
 7. It is advisable to delete large temporary or log files after the successful completion of the run. It takes a lot of space and may cause issues in future runs.
@@ -111,7 +129,7 @@ The UPHL-BioNGS/walkercreek pipeline comes with documentation about the pipeline
 
 ## Credits
 
-UPHL-BioNGS/walkercreek was originally written by Tom Iverson [@tives82](https://github.com/tives82).
+UPHL-BioNGS/walkercreek was written by Tom Iverson [@tives82](https://github.com/tives82).
 
 ## Contributions and Support
 
