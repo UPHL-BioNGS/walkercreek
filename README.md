@@ -23,25 +23,20 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
 In the latest version of walkercreek, you can run the pipeline with one of five main platforms to accommodate different sequencing technologies, sample types (clinical or wastewater), and viral targets (Flu or RSV):
 
-1. **flu_illumina**
-   Uses IRMA for assembly of influenza from Illumina paired-end reads.
+1. **flu_illumina** - Uses IRMA for assembly of influenza from Illumina paired-end reads.
 
-2. **flu_ww_illumina**
-   Uses [Freyja](https://github.com/andersen-lab/Freyja-barcodes) to recover relative lineage abundances of influenza from Illumina wastewater paired-end reads.
+2. **flu_ww_illumina** - Uses [Freyja](https://github.com/andersen-lab/Freyja-barcodes) to recover relative lineage abundances of influenza from Illumina wastewater paired-end reads.
 
-3. **flu_nanopore**
-   Uses IRMA for assembly of influenza from Nanopore single-end reads.
+3. **flu_nanopore** - Uses IRMA for assembly of influenza from Nanopore single-end reads.
 
-4. **flu_ww_nanopor**
-   Uses [Freyja](https://github.com/andersen-lab/Freyja-barcodes) to recover relative lineage abundances of influenza from Nanopore wastewater single-end reads.
+4. **flu_ww_nanopore** - Uses [Freyja](https://github.com/andersen-lab/Freyja-barcodes) to recover relative lineage abundances of influenza from Nanopore wastewater single-end reads.
 
-5. **rsv_illumina**
-   Uses IRMA for assembly of RSV from Illumina paired-end reads.
+5. **rsv_illumina** - Uses IRMA for assembly of RSV from Illumina paired-end reads.
 
 The following schematic and summary are of the flu_illumina platform.
 # ![uphl-biongs/walkercreek](docs/images/walkercreek.schematic.light.png)
 
-## flu_illumina pipeline summary
+## Pipeline summary
 
 ### SRA Sequence File Addition (optional)
 

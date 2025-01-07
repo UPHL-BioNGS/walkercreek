@@ -98,6 +98,7 @@ There is also a provided Python script available to create a samplesheet csv fro
 walkercreek/bin/fastq_dir_to_samplesheet.py -i <directory of fastq files> -o new_samplesheet.csv
 
 ```
+
 #### Nanopore samplesheet
 
 The samplesheet for Nanopore sequencing data analysis must be either a comma-separated (CSV) or tab-delimited (TSV) file with 2 columns and a header with column names (names don't matter).
