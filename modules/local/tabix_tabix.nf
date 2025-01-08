@@ -4,7 +4,7 @@ process TABIX_TABIX {
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/htslib:1.20--h5efdd21_2' :
-        'biocontainers/htslib:1.20--h5efdd21_2' }"
+        'quay.io/biocontainers/htslib:1.20--h5efdd21_2' }"
 
     input:
     tuple val(meta), path(tab)
