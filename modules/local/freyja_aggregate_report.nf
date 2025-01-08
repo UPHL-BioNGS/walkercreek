@@ -12,6 +12,9 @@ process FREYJA_AGGREGATE_REPORT {
     path("freyja_aggregate.tsv"), optional:true, emit: freyja_aggregate_report
     path("versions.yml")        , emit: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     """
     # Directories for demix files based on content

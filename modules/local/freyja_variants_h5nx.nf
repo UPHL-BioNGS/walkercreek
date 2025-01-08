@@ -15,6 +15,9 @@ process FREYJA_VARIANTS_H5NX {
     tuple val(meta), path("*.h5nx.depth.tsv")         , optional:true, emit: h5nx_depths
     path "versions.yml"                               , emit: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''

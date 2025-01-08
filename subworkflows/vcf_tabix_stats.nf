@@ -4,8 +4,8 @@
 ============================================================================================================
 */
 
-include { TABIX_TABIX    } from '../modules/nf-core/tabix/tabix/main'
-include { BCFTOOLS_STATS } from '../modules/nf-core/bcftools/stats/main'
+include { TABIX_TABIX    } from '../modules/local/tabix_tabix.nf'
+include { BCFTOOLS_STATS } from '../modules/local/bcftools_stats.nf'
 
 workflow VCF_TABIX_STATS {
     take:

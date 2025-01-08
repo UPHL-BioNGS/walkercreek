@@ -6,7 +6,7 @@
 
 include { NCBI_SRA_HUMAN_SCRUBBER              } from '../../modules/local/ncbi_sra_human_scrubber.nf'
 include { SEQKIT_PAIR                          } from '../../modules/nf-core/seqkit/pair/main'
-include { FAQCS                                } from '../../modules/nf-core/faqcs/main'
+include { FAQCS                                } from '../../modules/local/faqcs.nf'
 include { BBMAP_BBDUK                          } from '../../modules/local/bbmap_bbduk.nf'
 include { KRAKEN2_KRAKEN2                      } from '../../modules/local/kraken2_kraken2.nf'
 include { KRAKEN2REPORT_SUMMARY                } from '../../modules/local/kraken2report_summary.nf'

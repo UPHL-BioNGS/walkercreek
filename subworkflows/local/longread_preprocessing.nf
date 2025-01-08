@@ -10,7 +10,7 @@ include { NANO_REPORT_RAW                      } from '../../modules/local/nano_
 include { NANO_REPORT_FILT                     } from '../../modules/local/nano_report_filt.nf'
 include { PORECHOP_PORECHOP                    } from '../../modules/nf-core/porechop/porechop/main'
 include { PORECHOP_ABI                         } from '../../modules/nf-core/porechop/abi/main'
-include { FILTLONG                             } from '../../modules/nf-core/filtlong'
+include { FILTLONG                             } from '../../modules/local/filtlong.nf'
 
 /*
 ========================================================================================================

@@ -13,6 +13,9 @@ process CAT_NANOPORE_FASTQ {
     tuple val(meta), path(merged_fqgz), emit: reads
     path "versions.yml" , emit: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     merged_fqgz = "${meta.id}.merged.fastq.gz"
     def fqList = fq.collect { it.toString() }

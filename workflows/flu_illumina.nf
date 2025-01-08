@@ -25,7 +25,7 @@ if (params.input) {
     ch_input = file(params.input)
 }
 // If an SRA file is added, validate its existence and parse its contents
-if(params.add_sra_file) {
+if (params.add_sra_file) {
     sra_file = file(params.add_sra_file, checkIfExists: true)
     allLines  = sra_file.readLines()
     for( line : allLines ) {

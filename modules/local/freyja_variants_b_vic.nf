@@ -14,6 +14,9 @@ process FREYJA_VARIANTS_B_VIC {
     tuple val(meta), path("*.b_vic.variants.tsv")      , optional:true, emit: b_vic_variants
     tuple val(meta), path("*.b_vic.depth.tsv")         , optional:true, emit: b_vic_depths
     path "versions.yml"                                , emit: versions
+    
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"

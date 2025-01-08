@@ -275,7 +275,6 @@
                 },
                 "irma_module": {
                     "type": "string",
-                    "default": "",
                     "fa_icon": "fas fa-cube",
                     "description": "IRMA module used in analysis.",
                     "enum": [
@@ -475,100 +474,125 @@
                 },
                 "schema_ignore_params": {
                     "type": "string",
-                    "default": "genomes"
+                    "default": "genomes",
+                    "description": "Ignore params option"
                 },
                 "adapter_fasta": {
                     "type": "string",
-                    "default": "${projectDir}/assets/adapter.fasta"
+                    "default": "${projectDir}/assets/adapter.fasta",
+                    "description": "Adapter fasta file"
                 },
                 "save_trimmed_fail": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Save trimmed fail option"
                 },
                 "save_merged": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "save merged option"
                 },
                 "trim_len": {
                     "type": "integer",
-                    "default": 50
+                    "default": 50,
+                    "description": "trim length"
                 },
                 "skip_fastqc": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-fast-forward"
+                    "fa_icon": "fas fa-fast-forward",
+                    "description": "Skip fastqc option"
                 },
                 "irma_flu_index": {
                     "type": "string",
-                    "default": "${projectDir}/ref/irma_flu.fasta.fai"
+                    "default": "${projectDir}/ref/irma_flu.fasta.fai",
+                    "description": "irma flu index file"
                 },
                 "irma_flu_gff": {
                     "type": "string",
-                    "default": "${projectDir}/ref/irma_flu.gff"
+                    "default": "${projectDir}/ref/irma_flu.gff",
+                    "description": "irma flu gff file"
                 },
                 "h1n1_freyja_ref_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/reference.fasta"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/reference.fasta",
+                    "description": "Freyja file"
                 },
                 "h1n1_freyja_barcodes_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/barcode.csv"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/barcode.csv",
+                    "description": "Freyja file"
                 },
                 "h1n1_freyja_barcode_html_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/barcode.html"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/barcode.html",
+                    "description": "Freyja file"
                 },
                 "h1n1_freyja_auspice_tree_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/auspice_tree.json"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H1N1/latest/auspice_tree.json",
+                    "description": "Freyja file"
                 },
                 "h3n2_freyja_ref_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/reference.fasta"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/reference.fasta",
+                    "description": "Freyja file"
                 },
                 "h3n2_freyja_barcodes_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/barcode.csv"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/barcode.csv",
+                    "description": "Freyja file"
                 },
                 "h3n2_freyja_barcode_html_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/barcode.html"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/barcode.html",
+                    "description": "Freyja file"
                 },
                 "h3n2_freyja_auspice_tree_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/auspice_tree.json"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H3N2/latest/auspice_tree.json",
+                    "description": "Freyja file"
                 },
                 "h5nx_freyja_ref_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/reference.fasta"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/reference.fasta",
+                    "description": "Freyja file"
                 },
                 "h5nx_freyja_barcodes_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/barcode.csv"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/barcode.csv",
+                    "description": "Freyja file"
                 },
                 "h5nx_freyja_barcode_html_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/barcode.html"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/barcode.html",
+                    "description": "Freyja file"
                 },
                 "h5nx_freyja_auspice_tree_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/auspice_tree.json"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/H5Nx/latest/auspice_tree.json",
+                    "description": "Freyja file"
                 },
                 "b_vic_freyja_ref_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/reference.fasta"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/reference.fasta",
+                    "description": "Freyja file"
                 },
                 "b_vic_freyja_barcodes_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/barcode.csv"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/barcode.csv",
+                    "description": "Freyja file"
                 },
                 "b_vic_freyja_barcode_html_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/barcode.html"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/barcode.html",
+                    "description": "Freyja file"
                 },
                 "b_vic_freyja_auspice_tree_url": {
                     "type": "string",
-                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/auspice_tree.json"
+                    "default": "https://raw.githubusercontent.com/andersen-lab/Freyja-barcodes/main/FLU-B-VIC/latest/auspice_tree.json",
+                    "description": "Freyja file"
                 },
                 "skip_snpeff": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Skip snpeff option"
                 },
                 "min_sample_reads": {
                     "type": "integer",
