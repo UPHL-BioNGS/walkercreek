@@ -96,7 +96,31 @@ There is also a provided Python script available to create a samplesheet csv fro
 
 ```console
 walkercreek/bin/fastq_dir_to_samplesheet.py -i <directory of fastq files> -o new_samplesheet.csv
+
 ```
+
+## Nanopore samplesheet
+
+The samplesheet for Nanopore sequencing data analysis must be either a comma-separated (CSV) or tab-delimited (TSV) file with 2 columns and a header with column names (names don't matter).
+
+The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once (e.g. to increase sequencing depth). The pipeline will concatenate the raw reads before performing any downstream analysis.
+
+Example Nanopore samplesheet:
+
+```bash
+sample,reads
+SAMPLE_1,/path/to/run1/fastq_pass/barcode01
+SAMPLE_1,/path/to/ANOTHER_RUN/fastq_pass/barcode09
+SAMPLE_1,/path/to/sample1.fastq.gz
+SAMPLE_2,/path/to/run2/fastq_pass/barcode02
+```
+
+- **NOTE:** `SAMPLE_1` has 3 entries
+
+| Column    | Description                                                                                                                                       |
+|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.                                     |
+| `reads`   | Full path to FASTQ file or directory containing basecalled reads in gzipped or unzipped FASTQ file format with extension ".fastq.gz" or ".fastq". |
 
 ## SRA sequence file additions
 
@@ -121,7 +145,7 @@ B13520,SRR7909394
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run UPHL-BioNGS/walkercreek -profile docker --input samplesheet.csv --outdir <OUTDIR>
+nextflow run UPHL-BioNGS/walkercreek -profile docker --platform < flu_illumina/flu_nanopore/flu_ww_illumina/flu_ww_nanopore/rsv_illumina > --input samplesheet.csv --outdir <OUTDIR>
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.

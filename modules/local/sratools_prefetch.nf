@@ -4,8 +4,8 @@ process SRATOOLS_PREFETCH {
     label 'error_retry'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/sra-tools:2.11.0--pl5262h314213e_0' :
-        'quay.io/biocontainers/sra-tools:2.11.0--pl5262h314213e_0' }"
+        'https://depot.galaxyproject.org/singularity/sra-tools:3.0.8--h9f5acd7_0' :
+        'quay.io/biocontainers/sra-tools:3.0.8--h9f5acd7_0' }"
 
     input:
     tuple val(meta), val(id)
@@ -21,6 +21,8 @@ process SRATOOLS_PREFETCH {
     def args = task.ext.args ?: ''
     def config = "/LIBS/GUID = \"${UUID.randomUUID().toString()}\"\\n/libs/cloud/report_instance_identity = \"true\"\\n"
     """
+    export NCBI_SETTINGS="\$PWD/ncbi_settings.mkfg"
+
     eval "\$(vdb-config -o n NCBI_SETTINGS | sed 's/[" ]//g')"
     if [[ ! -f "\${NCBI_SETTINGS}" ]]; then
         mkdir -p "\$(dirname "\${NCBI_SETTINGS}")"

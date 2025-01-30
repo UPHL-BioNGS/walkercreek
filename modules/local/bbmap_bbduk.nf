@@ -25,7 +25,7 @@ process BBMAP_BBDUK {
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def raw      = meta.single_end ? "in=${reads[0]}" : "in1=${reads[0]} in2=${reads[1]}"
+    def raw = meta.single_end ? "in=${reads[0]}" : "in1=${reads[0]} in2=${reads[1]}"
     def trimmed_output  = meta.single_end ? "out=${prefix}.rmadpt.fastq.gz" : "out1=${prefix}.rmadpt_1.fastq.gz out2=${prefix}.rmadpt_2.fastq.gz"
     def trimmed_input  = meta.single_end ? "in=${prefix}.rmadpt.fastq.gz" : "in1=${prefix}.rmadpt_1.fastq.gz in2=${prefix}.rmadpt_2.fastq.gz"
     def filtered = meta.single_end ? "out=${prefix}.clean.fastq.gz" : "out1=${prefix}.clean_1.fastq.gz out2=${prefix}.clean_2.fastq.gz"

@@ -27,6 +27,8 @@ process SRATOOLS_FASTERQDUMP {
     fastq_output = meta.single_end ? '*.fastq.gz'     : '*_{1,2}.fastq.gz'
     md5_output   = meta.single_end ? '*.fastq.gz.md5' : '*_{1,2}.fastq.gz.md5'
     """
+    export NCBI_SETTINGS="\$PWD/ncbi_settings.mkfg"
+
     eval "\$(vdb-config -o n NCBI_SETTINGS | sed 's/[" ]//g')"
     if [[ ! -f "\${NCBI_SETTINGS}" ]]; then
         mkdir -p "\$(dirname "\${NCBI_SETTINGS}")"

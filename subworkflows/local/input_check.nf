@@ -21,9 +21,9 @@ workflow INPUT_CHECK {
     ch_versions = Channel.empty()
 
     Channel.fromPath(samplesheet)
-           .splitCsv( header:false, sep:',', skip:1 )
-           .map { row -> stage_fastq(row) }
-           .set{ precheck_reads }
+        .splitCsv( header:false, sep:',', skip:1 )
+        .map { row -> stage_fastq(row) }
+        .set{ precheck_reads }
 
     LANE_MERGE(precheck_reads)
 
