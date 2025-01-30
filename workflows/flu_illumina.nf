@@ -180,6 +180,7 @@ workflow FLU_ILLUMINA {
     // Determine the file for adapters and phix if provided or set to an empty list
     adapters = params.adapters_fasta ? file(params.adapters_fasta) : []
     phix = params.phix_fasta ? file(params.phix_fasta) : []
+    primers = params.illumina_primers_fasta ? file(params.illumina_primers_fasta) : []
 
     def irma_module = 'FLU-lowQC'
     if (params.irma_module) {
@@ -190,8 +191,8 @@ workflow FLU_ILLUMINA {
         SUBWORKFLOW: PREPROCESSING_READ_QC - preprocessing and quality control on read data
     */
 
-    PREPROCESSING_READ_QC(ch_all_reads, adapters, phix, ch_krakendb)
-    ch_all_reads = ch_all_reads.mix(PREPROCESSING_READ_QC.out.clean_reads)
+    PREPROCESSING_READ_QC(ch_all_reads, adapters, phix, primers, ch_krakendb)
+    ch_all_reads = ch_all_reads.mix(PREPROCESSING_READ_QC.out.filtered_reads)
     ch_versions = ch_versions.mix(PREPROCESSING_READ_QC.out.versions)
     ch_qcreportsheet = PREPROCESSING_READ_QC.out.qc_lines.collect()
 
@@ -212,7 +213,7 @@ workflow FLU_ILLUMINA {
     /*
         SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'
     */
-    ASSEMBLY_TYPING_CLADE_VARIABLES(PREPROCESSING_READ_QC.out.clean_reads, irma_module)
+    ASSEMBLY_TYPING_CLADE_VARIABLES(PREPROCESSING_READ_QC.out.filtered_reads, irma_module)
     ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
     ch_NA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA

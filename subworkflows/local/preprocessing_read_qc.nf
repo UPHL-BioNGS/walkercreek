@@ -8,6 +8,7 @@ include { NCBI_SRA_HUMAN_SCRUBBER              } from '../../modules/local/ncbi_
 include { SEQKIT_PAIR                          } from '../../modules/nf-core/seqkit/pair/main'
 include { FAQCS                                } from '../../modules/local/faqcs.nf'
 include { BBMAP_BBDUK                          } from '../../modules/local/bbmap_bbduk.nf'
+include { BBDUK_ILLUMINA_PRIMERS               } from '../../modules/local/bbduk_illumina_primers.nf'
 include { KRAKEN2_KRAKEN2                      } from '../../modules/local/kraken2_kraken2.nf'
 include { KRAKEN2REPORT_SUMMARY                } from '../../modules/local/kraken2report_summary.nf'
 include { KRAKEN2REPORT_RSV_SUMMARY            } from '../../modules/local/kraken2report_rsv_summary.nf'
@@ -28,6 +29,7 @@ workflow PREPROCESSING_READ_QC {
     reads
     adapters // params.adapters_fasta
     phix // params.phix_fasta
+    primers // params.illumina_primers_fasta
     db // params.krakendb
 
     main:
@@ -50,13 +52,17 @@ workflow PREPROCESSING_READ_QC {
     clean_reads = BBMAP_BBDUK.out.clean_reads
     ch_versions = ch_versions.mix(BBMAP_BBDUK.out.versions)
 
+    BBDUK_ILLUMINA_PRIMERS(BBMAP_BBDUK.out.clean_reads, primers)
+    filtered_reads = BBDUK_ILLUMINA_PRIMERS.out.filtered_reads
+    ch_versions = ch_versions.mix(BBDUK_ILLUMINA_PRIMERS.out.versions)
+
     ch_qcreport_input = FAQCS.out.txt
     QC_REPORT(ch_qcreport_input)
     ch_qcreport = QC_REPORT.out.qc_line
     ch_versions = ch_versions.mix(QC_REPORT.out.versions)
 
     if ( !params.skip_kraken2 ) {
-        KRAKEN2_KRAKEN2(BBMAP_BBDUK.out.clean_reads, db, false, true)
+        KRAKEN2_KRAKEN2(BBDUK_ILLUMINA_PRIMERS.out.filtered_reads, db, false, true)
         ch_versions = ch_versions.mix(KRAKEN2_KRAKEN2.out.versions)
 
         ch_kraken2report_summary_input = KRAKEN2_KRAKEN2.out.txt
@@ -98,6 +104,7 @@ workflow PREPROCESSING_READ_QC {
 
     emit:
     clean_reads                = BBMAP_BBDUK.out.clean_reads
+    filtered_reads             = BBDUK_ILLUMINA_PRIMERS.out.filtered_reads
     stats                      = FAQCS.out.stats
     adapters_stats             = BBMAP_BBDUK.out.adapters_stats
     qc_report                  = FAQCS.out.statspdf

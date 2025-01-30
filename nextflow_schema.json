@@ -314,6 +314,16 @@
                     "description": "Path to the adapters fasta file.",
                     "fa_icon": "fa-file"
                 },
+                "iims_primers_fasta": {
+                    "type": "string",
+                    "description": "Path to the iims_primers_fasta file.",
+                    "fa_icon": "fa-file"
+                },
+                "illumina_primers_fasta": {
+                    "type": "string",
+                    "description": "Path to the illumina_primers_fasta file.",
+                    "fa_icon": "fa-file"
+                },
                 "phix_fasta": {
                     "type": "string",
                     "default": "https://github.com/BioInfoTools/BBMap/blob/master/resources/phix174_ill.ref.fa.gz?raw=true",

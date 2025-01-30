@@ -8,6 +8,7 @@ include { NANOPLOT as NANOPLOT_RAW             } from '../../modules/nf-core/nan
 include { NANOPLOT as NANOPLOT_FILTERED        } from '../../modules/nf-core/nanoplot/main'
 include { NANO_REPORT_RAW                      } from '../../modules/local/nano_report_raw.nf'
 include { NANO_REPORT_FILT                     } from '../../modules/local/nano_report_filt.nf'
+include { BBDUK_NANOPORE_PRIMERS               } from '../../modules/local/bbduk_nanopore_primers.nf'
 include { PORECHOP_PORECHOP                    } from '../../modules/nf-core/porechop/porechop/main'
 include { PORECHOP_ABI                         } from '../../modules/nf-core/porechop/abi/main'
 include { FILTLONG                             } from '../../modules/local/filtlong.nf'
@@ -21,6 +22,7 @@ include { FILTLONG                             } from '../../modules/local/filtl
 workflow LONGREAD_PREPROCESSING {
     take:
     ch_all_reads
+    primers // params.iims_primers_fasta
 
     main:
     ch_versions                = Channel.empty()
@@ -37,24 +39,28 @@ workflow LONGREAD_PREPROCESSING {
                         [ meta_new, reads ]
                     }
 
+    BBDUK_NANOPORE_PRIMERS (ch_all_reads, primers)
+    ch_bbduk_reads = BBDUK_NANOPORE_PRIMERS.out.clean_reads
+    ch_versions = ch_versions.mix(BBMAP_BBDUK_NANOPORE.out.versions)
+
     if (params.longread_adaptertrimming_tool && params.longread_adaptertrimming_tool == 'porechop_abi') {
-        PORECHOP_ABI ( ch_all_reads )
+        PORECHOP_ABI ( ch_bbduk_reads )
         ch_long_reads = PORECHOP_ABI.out.reads
         ch_versions = ch_versions.mix(PORECHOP_ABI.out.versions.first())
         ch_multiqc_files = ch_multiqc_files.mix( PORECHOP_ABI.out.log )
     } else if (params.longread_adaptertrimming_tool == 'porechop') {
-        PORECHOP_PORECHOP ( ch_all_reads )
+        PORECHOP_PORECHOP ( ch_bbduk_reads )
         ch_long_reads = PORECHOP_PORECHOP.out.reads
         ch_versions = ch_versions.mix(PORECHOP_PORECHOP.out.versions.first())
         ch_multiqc_files = ch_multiqc_files.mix( PORECHOP_PORECHOP.out.log )
     }
 
     FILTLONG ( ch_long_reads )
-    ch_long_filtered_reads = FILTLONG.out.reads
+    filtered_reads = FILTLONG.out.reads
     ch_versions = ch_versions.mix(FILTLONG.out.versions.first())
     ch_multiqc_files = ch_multiqc_files.mix( FILTLONG.out.log )
 
-    NANOPLOT_FILTERED ( ch_long_filtered_reads )
+    NANOPLOT_FILTERED ( FILTLONG.out.reads )
     ch_nanoplot_filt = NANOPLOT_FILTERED.out.txt
     ch_versions = ch_versions.mix(NANOPLOT_FILTERED.out.versions.first())
 
@@ -65,7 +71,7 @@ workflow LONGREAD_PREPROCESSING {
     ch_nanoplot_filt_line = NANO_REPORT_FILT.out.filt_nano_line
 
     emit:
-    clean_reads                = FILTLONG.out.reads
+    filtered_reads             = FILTLONG.out.reads
     raw_nano_lines             = ch_nanoplot_raw_line
     filt_nano_lines            = ch_nanoplot_filt_line
     versions                   = ch_versions

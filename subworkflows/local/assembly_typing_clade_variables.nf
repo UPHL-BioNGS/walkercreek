@@ -32,7 +32,7 @@ include { NEXTCLADE_VARIABLES_RSV              } from '../../modules/local/nextc
 
 workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     take:
-    clean_reads // file: /path/to/BBMAP_BBDUK/'*.clean*.fastq.gz'
+    filtered_reads
     irma_module
 
     main:
@@ -47,7 +47,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     dataset                               = Channel.empty()
 
     if ( params.platform == "flu_illumina" ) {
-        IRMA(clean_reads, irma_module)
+        IRMA(filtered_reads, irma_module)
         ch_assembly = IRMA.out.assembly
         ch_versions = ch_versions.mix(IRMA.out.versions)
 
@@ -201,7 +201,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     }
 
     else if ( params.platform == "flu_nanopore" ) {
-        IRMA(clean_reads, irma_module)
+        IRMA(filtered_reads, irma_module)
         ch_assembly = IRMA.out.assembly
         ch_versions = ch_versions.mix(IRMA.out.versions)
 

@@ -162,7 +162,9 @@ workflow FLU_NANOPORE {
         SUBWORKFLOW: LONGREAD_PREPROCESSING - preprocessing and quality control on read data
     */
 
-    LONGREAD_PREPROCESSING(ch_all_reads)
+    primers = params.iims_primers_fasta ? file(params.iims_primers_fasta) : []
+
+    LONGREAD_PREPROCESSING(ch_all_reads, primers)
     ch_all_reads = ch_all_reads.mix(LONGREAD_PREPROCESSING.out.clean_reads) // Mix the cleaned reads with the main read channel
     ch_versions = ch_versions.mix(LONGREAD_PREPROCESSING.out.versions)
 
@@ -181,7 +183,7 @@ workflow FLU_NANOPORE {
     /*
         SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'
     */
-    ASSEMBLY_TYPING_CLADE_VARIABLES(LONGREAD_PREPROCESSING.out.clean_reads, irma_module)
+    ASSEMBLY_TYPING_CLADE_VARIABLES(LONGREAD_PREPROCESSING.out.filtered_reads, irma_module)
     ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
     ch_NA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
