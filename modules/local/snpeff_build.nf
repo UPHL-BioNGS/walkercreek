@@ -1,5 +1,4 @@
 process SNPEFF_BUILD {
-    tag "$fasta"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::snpeff=5.0" : null)
