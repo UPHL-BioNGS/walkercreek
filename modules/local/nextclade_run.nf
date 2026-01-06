@@ -39,9 +39,15 @@ process NEXTCLADE_RUN {
         --output-basename ${prefix} \\
         $fasta
 
+    if [ ! -s "${prefix}.aligned.fasta" ]; then
+        echo "ERROR: Nextclade produced empty aligned fasta for ${prefix}. Likely wrong dataset for sample." >&2
+        exit 1
+    fi
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         nextclade: \$(echo \$(nextclade --version 2>&1) | sed 's/^.*nextclade //; s/ .*\$//')
     END_VERSIONS
     """
 }
+
