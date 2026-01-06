@@ -1,91 +1,111 @@
-#!/usr/bin/env python
-from genericpath import sameopenfile
-from importlib.resources import path
-from os.path import exists
+#!/usr/bin/env python3
+
 import argparse
 import pandas as pd
-import re
 
-# Argument parser: get arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("--id", required=True, help="The ID of the sample")
-args = parser.parse_args()
+def first_present(row_df: pd.DataFrame, candidates, default=""):
+    """
+    Return the first column found in row_df from `candidates` as a scalar.
+    If none exist, return default.
+    """
+    for c in candidates:
+        if c in row_df.columns:
+            v = row_df[c].iloc[0]
+            # Normalize NaN -> ""
+            if pd.isna(v):
+                return default
+            return v
+    return default
 
-# Sample id name variable
-id_name = args.id
-
-# Read the TSV file from nextclade_run.nf using pandas
-tsv_data = pd.read_csv(f"{args.id}", sep="\t")
-
-# Set the index column of the TSV to 'index'
-tsv_data = tsv_data.set_index("index")
-
-# Convert coverage to percentage
-tsv_data["coverage"] = (tsv_data["coverage"] * 100).round(2)
-
-# Write the output TSV files using pandas
-tsv_data.loc[:, ["clade"]].to_csv(f"NEXTCLADE_CLADE.tsv", sep="\t", header=False)
-
-# Check if 'short_clade' and 'subclade' columns exist in the input TSV file
-if "short_clade" in tsv_data.columns:
-    df_short_clade = tsv_data.loc[:, ["short_clade"]]
-else:
-    df_short_clade = pd.DataFrame(columns=["short_clade"])
-
-if "subclade" in tsv_data.columns:
-    df_subclade = tsv_data.loc[:, ["subclade"]]
-else:
-    df_subclade = pd.DataFrame(columns=["subclade"])
-
-# If the 'lineage' column exists in the input TSV file, read in the 'NEXTCLADE_LINEAGE.tsv' output file
-if "lineage" in tsv_data.columns:
+def as_float_or_blank(v):
     try:
-        df_lineage = pd.read_csv("NEXTCLADE_LINEAGE.tsv", sep="\t", header=None, names=["lineage"])
-    except FileNotFoundError:
-        print("NEXTCLADE_LINEAGE.tsv not found")
-        df_lineage = pd.DataFrame(columns=["lineage"])
-else:
-    df_lineage = pd.DataFrame(columns=["lineage"])
+        if v == "" or v is None or (isinstance(v, float) and pd.isna(v)):
+            return ""
+        return float(v)
+    except Exception:
+        return ""
 
-# Read in the clade output file, handling the case where a file is missing
-try:
-    df_clade = pd.read_csv(f"NEXTCLADE_CLADE.tsv", sep="\t", header=None, names=["clade"])
-except FileNotFoundError:
-    print(f"NEXTCLADE_CLADE.tsv not found")
-    df_clade = pd.DataFrame(columns=["clade"])
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--id", required=True, help="Path to Nextclade TSV output (e.g. sample.tsv)")
+    args = parser.parse_args()
 
-# Extract the desired columns from the original TSV data
-df_qc_score = tsv_data.loc[:, ["qc.overallScore"]]
-df_qc_status = tsv_data.loc[:, ["qc.overallStatus"]]
-df_substitutions = tsv_data.loc[:, ["totalSubstitutions"]]
-df_coverage = tsv_data.loc[:, ["coverage"]]
+    tsv_path = args.id
+    sample_name = tsv_path.rsplit(".", 1)[0]  # remove .tsv
 
-# Remove file extension from the sample name
-sample_name = id_name.rsplit(".", 1)[0]
+    # Read TSV safely
+    try:
+        df = pd.read_csv(tsv_path, sep="\t")
+    except Exception as e:
+        raise SystemExit(f"ERROR: Could not read Nextclade TSV '{tsv_path}': {e}")
 
-# Create a DataFrame with the sample name
-df_sample = pd.DataFrame({"Sample": [sample_name]})
+    if df.empty:
+        raise SystemExit(f"ERROR: Nextclade TSV '{tsv_path}' is empty")
 
-# Concatenate all the dataframes horizontally
-df_combined = pd.concat(
-    [df_sample, df_clade, df_short_clade, df_subclade, df_qc_score, df_qc_status, df_substitutions, df_coverage], axis=1
-)
+    clade_val = ""
+    if "clade" in df.columns and not df["clade"].empty and pd.notna(df["clade"].iloc[0]):
+        clade_val = str(df["clade"].iloc[0])
 
-if "lineage" in tsv_data.columns:
-    df_combined = pd.concat([df_combined, df_lineage], axis=1)
+    # Always create the file (even if blank)
+    with open("NEXTCLADE_CLADE.tsv", "w") as fh:
+        fh.write(f"0\t{clade_val}\n")
 
-# Create a dictionary to rename columns with the desired prefix
-column_prefix = "Nextclade_"
-column_mapping = {col: f"{column_prefix}{col}" for col in df_combined.columns}
+    # Nextclade is typically 1 row per sequence; take row 0
+    row = df.iloc[[0]].copy()
 
-# Remove the prefix for the df_sample, df_clade, and df_subclade columns
-column_mapping["Sample"] = "Sample"
-column_mapping["clade"] = "clade"
-column_mapping["subclade"] = "subclade"
-column_mapping["short_clade"] = "short_clade"
+    # Convert coverage fraction -> percent if present
+    if "coverage" in row.columns:
+        try:
+            row["coverage"] = (row["coverage"].astype(float) * 100).round(2)
+        except Exception:
+            pass  # leave as-is if unexpected type
 
-# Rename the columns using the dictionary
-df_combined = df_combined.rename(columns=column_mapping)
+    # Build a compact, summary-friendly record + key debug fields
+    out = {
+        "Sample": sample_name,
 
-# Write the combined dataframe to a TSV file as final report
-df_combined.to_csv(f"{sample_name}.nextclade_report.tsv", sep="\t", index=False)
+        # Core clade fields
+        "clade": first_present(row, ["clade"], default=""),
+        "legacy_clade": first_present(row, ["legacy-clade", "legacy_clade"], default=""),
+        "short_clade": first_present(row, ["short-clade", "short_clade"], default=""),
+        "subclade": first_present(row, ["subclade"], default=""),
+
+        # Core QC
+        "Nextclade_qc.overallScore": first_present(row, ["qc.overallScore"], default=""),
+        "Nextclade_qc.overallStatus": first_present(row, ["qc.overallStatus"], default=""),
+
+        # Minimal counts
+        "Nextclade_totalSubstitutions": first_present(row, ["totalSubstitutions"], default=""),
+        "Nextclade_coverage": first_present(row, ["coverage"], default=""),
+
+        # High-value debug
+        "Nextclade_alignmentScore": first_present(row, ["alignmentScore"], default=""),
+        "Nextclade_alignmentStart": first_present(row, ["alignmentStart"], default=""),
+        "Nextclade_alignmentEnd": first_present(row, ["alignmentEnd"], default=""),
+        "Nextclade_warnings": first_present(row, ["warnings"], default=""),
+        "Nextclade_errors": first_present(row, ["errors"], default=""),
+        "Nextclade_seqName": first_present(row, ["seqName"], default=""),
+    }
+
+    # Coerce numeric fields that often come out as floats/ints to keep TSV clean
+    # (leave blanks if missing)
+    for k in ["Nextclade_qc.overallScore", "Nextclade_totalSubstitutions",
+              "Nextclade_coverage", "Nextclade_alignmentScore",
+              "Nextclade_alignmentStart", "Nextclade_alignmentEnd"]:
+        out[k] = out[k] if out[k] == "" else out[k]
+
+    out_df = pd.DataFrame([out])
+
+    # Optionally round numeric columns if they parse as numbers
+    for col in ["Nextclade_qc.overallScore", "Nextclade_alignmentScore", "Nextclade_coverage"]:
+        try:
+            out_df[col] = pd.to_numeric(out_df[col], errors="ignore")
+            if pd.api.types.is_numeric_dtype(out_df[col]):
+                out_df[col] = out_df[col].round(2)
+        except Exception:
+            pass
+
+    out_df.to_csv(f"{sample_name}.nextclade_report.tsv", sep="\t", index=False)
+
+if __name__ == "__main__":
+    main()
