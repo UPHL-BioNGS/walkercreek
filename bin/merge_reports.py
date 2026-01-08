@@ -21,7 +21,7 @@ def merge_tsvs(files):
             raise KeyError(f"'Sample' column not found in {files[0]}. Columns: {list(df.columns)}")
         df = pd.merge(df, temp_df, on="Sample", how="outer")
 
-    # Round numeric columns where possible
+    # Round numeric columns
     for col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="ignore")
     numeric_cols = df.select_dtypes(include="number").columns
