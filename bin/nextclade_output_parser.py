@@ -6,7 +6,7 @@ import pandas as pd
 def first_present(row_df: pd.DataFrame, candidates, default=""):
     """
     Return the first column found in row_df from `candidates` as a scalar.
-    If none exist, return default.
+    If none exist, return the default.
     """
     for c in candidates:
         if c in row_df.columns:
