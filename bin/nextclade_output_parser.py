@@ -33,7 +33,7 @@ def main():
     tsv_path = args.id
     sample_name = tsv_path.rsplit(".", 1)[0]  # remove .tsv
 
-    # Read TSV safely
+    # Read TSV
     try:
         df = pd.read_csv(tsv_path, sep="\t")
     except Exception as e:
@@ -60,7 +60,7 @@ def main():
         except Exception:
             pass  # leave as-is if unexpected type
 
-    # Build a compact, summary-friendly record + key debug fields
+    # Build summary
     out = {
         "Sample": sample_name,
 
@@ -71,7 +71,6 @@ def main():
         "subclade": first_present(row, ["subclade"], default=""),
 
         # Core QC
-        "Nextclade_qc.overallScore": first_present(row, ["qc.overallScore"], default=""),
         "Nextclade_qc.overallStatus": first_present(row, ["qc.overallStatus"], default=""),
 
         # Minimal counts
@@ -79,25 +78,17 @@ def main():
         "Nextclade_coverage": first_present(row, ["coverage"], default=""),
 
         # High-value debug
-        "Nextclade_alignmentScore": first_present(row, ["alignmentScore"], default=""),
-        "Nextclade_alignmentStart": first_present(row, ["alignmentStart"], default=""),
-        "Nextclade_alignmentEnd": first_present(row, ["alignmentEnd"], default=""),
-        "Nextclade_warnings": first_present(row, ["warnings"], default=""),
-        "Nextclade_errors": first_present(row, ["errors"], default=""),
         "Nextclade_seqName": first_present(row, ["seqName"], default=""),
     }
 
-    # Coerce numeric fields that often come out as floats/ints to keep TSV clean
-    # (leave blanks if missing)
-    for k in ["Nextclade_qc.overallScore", "Nextclade_totalSubstitutions",
-              "Nextclade_coverage", "Nextclade_alignmentScore",
-              "Nextclade_alignmentStart", "Nextclade_alignmentEnd"]:
+    # Coerce numeric fields that often come out as floats/ints to keep TSV clean (leave blanks if missing)
+    for k in ["Nextclade_totalSubstitutions", "Nextclade_coverage"]:
         out[k] = out[k] if out[k] == "" else out[k]
 
     out_df = pd.DataFrame([out])
 
     # Optionally round numeric columns if they parse as numbers
-    for col in ["Nextclade_qc.overallScore", "Nextclade_alignmentScore", "Nextclade_coverage"]:
+    for col in ["Nextclade_coverage"]:
         try:
             out_df[col] = pd.to_numeric(out_df[col], errors="ignore")
             if pd.api.types.is_numeric_dtype(out_df[col]):
