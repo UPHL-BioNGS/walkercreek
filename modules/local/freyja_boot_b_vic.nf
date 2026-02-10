@@ -1,47 +1,65 @@
 process FREYJA_BOOT_B_VIC {
-    tag "$meta.id"
     label 'process_high'
 
-    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/freyja:1.5.0--pyhdfd78af_0':
-        'biocontainers/freyja:1.5.0--pyhdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/freyja:2.0.2--pyhdfd78af_0' :
+        'quay.io/biocontainers/freyja:2.0.2--pyhdfd78af_0' }"
 
     input:
-    tuple val(meta), path(b_vic_variants)
-    tuple val(meta), path(b_vic_depths)
-    path b_vic_freyja_barcodes
-    
+    tuple val(meta),  path(variants)
+    tuple val(meta2), path(depths)
+    path barcodes
+
     output:
-    tuple val(meta), path("*_lineages.csv")  , optional:true, emit: b_vic_boot_lineages
-    tuple val(meta), path("*_summarized.csv"), optional:true, emit: b_vic_boot_summarized
-    path "versions.yml"                      , emit: versions
+    tuple val(meta), path("${meta.id}.b_vic.boot.lineages.tsv"),   optional: true, emit: b_vic_boot_lineages
+    tuple val(meta), path("${meta.id}.b_vic.boot.summarized.tsv"), optional: true, emit: b_vic_boot_summarized
+    path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
-    # Check if the b_vic_variants file is empty or has only the header row
-    if [ ! -s "${b_vic_variants}" ] || [ \$(wc -l < ${b_vic_variants}) -le 1 ]; then
-        echo "Skipping bootstrapping for ${prefix} as b_vic_variants file is empty or contains only the header row."
-        touch ${prefix}_lineages.csv
-        touch ${prefix}_summarized.csv
-    else
-        # Run freyja boot if the b_vic_variants file has more than just the header
-        freyja boot $args ${b_vic_variants} ${b_vic_depths} --nt ${task.cpus} --nb 500 --output_base ${prefix} --barcodes ${b_vic_freyja_barcodes} || {
-            echo "freyja boot failed for ${prefix}, creating empty outputs."
-            touch ${prefix}_lineages.csv
-            touch ${prefix}_summarized.csv
-        }
+    set -euo pipefail
+
+    write_versions() {
+        cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        freyja_boot_b_vic: \$(freyja --version 2>&1 | sed 's/^.*version //')
+    END_VERSIONS
+    }
+
+    if [[ "${meta.id}" != "${meta2.id}" ]]; then
+        echo "ERROR: meta.id != meta2.id (${meta.id} vs ${meta2.id})" >&2
+        write_versions
+        exit 1
     fi
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        freyja_b_vic: \$(echo \$(freyja --version 2>&1) | sed 's/^.*version //' )
-    END_VERSIONS
+    if ! awk '{ if (\$4 > 0) { found=1; exit } } END { exit (found?0:1) }' "${depths}"; then
+        echo "Skipping freyja boot (B_VIC) for ${meta.id}: depths are all zero (no coverage)."
+        write_versions
+        exit 0
+    fi
+
+    prefix="${meta.id}.b_vic.boot"
+
+    if freyja boot --barcodes "${barcodes}" --output "\${prefix}" "${variants}" "${depths}" ; then
+        :
+    elif freyja boot --barcodes "${barcodes}" -o "\${prefix}" "${variants}" "${depths}" ; then
+        :
+    else
+        echo "Freyja boot (B_VIC) failed for ${meta.id}; no outputs will be emitted." >&2
+        write_versions
+        exit 0
+    fi
+
+    if [[ -f "\${prefix}_lineages.tsv" ]]; then
+        mv "\${prefix}_lineages.tsv" "${meta.id}.b_vic.boot.lineages.tsv"
+    fi
+    if [[ -f "\${prefix}_summarized.tsv" ]]; then
+        mv "\${prefix}_summarized.tsv" "${meta.id}.b_vic.boot.summarized.tsv"
+    fi
+
+    write_versions
     """
 }
