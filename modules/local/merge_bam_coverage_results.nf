@@ -14,6 +14,9 @@ process MERGE_BAM_COVERAGE_RESULTS {
 
     script:
     """
-    python $projectDir/bin/merge_bam_coverage.py $merged_bam_results_tsv $merged_coverage_results_tsv merged_bam_coverage_results.tsv
+    python $projectDir/bin/merge_bam_coverage.py \
+        --bam $merged_bam_results_tsv \
+        --cov $merged_coverage_results_tsv \
+        --out merged_bam_coverage_results.tsv
     """
 }
