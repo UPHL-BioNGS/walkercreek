@@ -1,6 +1,6 @@
 process NEXTCLADE_DATASETGET {
     tag "$meta.id"
-    label 'process_low'
+    label 'process_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/nextclade:3.1.0--h9ee0642_0' :

@@ -1,6 +1,6 @@
 process NEXTCLADE_RUN {
     tag "$meta.id"
-    label 'process_low'
+    label 'process_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/nextclade:3.1.0--h9ee0642_0' :
@@ -40,8 +40,7 @@ process NEXTCLADE_RUN {
         $fasta
 
     if [ ! -s "${prefix}.aligned.fasta" ]; then
-        echo "ERROR: Nextclade produced empty aligned fasta for ${prefix}. Likely wrong dataset for sample." >&2
-        exit 1
+        echo "WARNING: Nextclade produced empty aligned fasta for ${prefix} (will skip parsing/report)." >&2
     fi
 
     cat <<-END_VERSIONS > versions.yml
@@ -50,4 +49,3 @@ process NEXTCLADE_RUN {
     END_VERSIONS
     """
 }
-
