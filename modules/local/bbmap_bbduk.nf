@@ -15,7 +15,8 @@ process BBMAP_BBDUK {
     tuple val(meta), path('*.clean*.fastq.gz')    , emit: clean_reads
     tuple val(meta), path('*.adapters.stats.tsv') , emit: adapters_stats
     tuple val(meta), path('*.phix.stats.tsv')     , emit: phix_stats
-    tuple val(meta), path('*.log')                , emit: log
+    tuple val(meta), path('*.bbduk.trim.log')     , emit: trim_log
+    tuple val(meta), path('*.bbduk.filter.log')   , emit: filter_log
     path "versions.yml"                           , emit: versions
 
     when:
@@ -42,8 +43,8 @@ process BBMAP_BBDUK {
         threads=$task.cpus \\
         $args \\
         $adapters_fasta \\
-        stats=${meta.id}.adapters.stats.txt
-        &> ${prefix}.bbduk.log
+        stats=${meta.id}.adapters.stats.txt \\
+        &> ${prefix}.bbduk.trim.log
     sed 's/:\t/\t/g' ${meta.id}.adapters.stats.txt > ${meta.id}.adapters.stats.tsv
 
     # Kmer Filtering to remove all reads that have a 31-mer match to PhiX (a common Illumina spikein)
@@ -55,8 +56,8 @@ process BBMAP_BBDUK {
         threads=$task.cpus \\
         $args2 \\
         $phix_fasta \\
-        stats=${meta.id}.phix.stats.txt
-        &> ${prefix}.bbduk.log
+        stats=${meta.id}.phix.stats.txt \\
+        &> ${prefix}.bbduk.filter.log
     sed 's/:\t/\t/g' ${meta.id}.phix.stats.txt > ${meta.id}.phix.stats.tsv
 
     cat <<-END_VERSIONS > versions.yml
