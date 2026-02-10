@@ -45,6 +45,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     typing_report_tsv                     = Channel.empty()
     irma_consensus_qc_tsv                 = Channel.empty()
     dataset                               = Channel.empty()
+    merged_bam_coverage_results_tsv       = Channel.empty()
 
     if ( params.platform == "flu_illumina" ) {
         IRMA(filtered_reads, irma_module)
@@ -198,6 +199,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         typing_report_tsv               = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
         irma_consensus_qc_tsv           = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
         dataset                         = ch_dataset
+        merged_bam_coverage_results_tsv = MERGE_BAM_COVERAGE_RESULTS.out.merged_bam_coverage_results_tsv
     }
 
     else if ( params.platform == "flu_nanopore" ) {
@@ -355,7 +357,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     }
 
     else if ( params.platform == "rsv_illumina" ) {
-        IRMA_RSV(clean_reads, irma_module)
+        IRMA_RSV(filtered_reads, irma_module)
         ch_assembly = IRMA_RSV.out.assembly
         ch_versions = ch_versions.mix(IRMA_RSV.out.versions)
 
@@ -505,5 +507,6 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     typing_report_tsv               = typing_report_tsv
     irma_consensus_qc_tsv           = irma_consensus_qc_tsv
     dataset                         = dataset
+    merged_bam_coverage_results_tsv = merged_bam_coverage_results_tsv
     versions                        = ch_versions
 }
