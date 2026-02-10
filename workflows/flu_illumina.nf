@@ -80,10 +80,11 @@ include { NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/nextcl
 */
 
 //
-// MODULE: Installed directly from nf-core/modules
+// MODULES
 //
 include { FASTQC                                      } from '../modules/local/fastqc.nf'
 include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
+include { FILTER_BAM_COVERAGE_RESULTS                 } from '../modules/local/filter_bam_coverage_results.nf'
 include { COMBINED_SUMMARY_REPORT                     } from '../modules/local/combined_summary_report.nf'
 include { SUMMARY_REPORT                              } from '../modules/local/summary_report.nf'
 include { MULTIQC                                     } from '../modules/nf-core/multiqc/main'
@@ -222,7 +223,11 @@ workflow FLU_ILLUMINA {
     ch_dataset = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_typing_report_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
     ch_irma_consensus_qc_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_consensus_qc_tsv
+    ch_merged_bam_coverage_results_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.merged_bam_coverage_results_tsv
     ch_versions = ch_versions.mix(ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
+
+    FILTER_BAM_COVERAGE_RESULTS(ch_merged_bam_coverage_results_tsv)
+    ch_merged_bam_coverage_results_filtered_tsv = FILTER_BAM_COVERAGE_RESULTS.out.filtered_tsv
 
     /*
         SUBWORKFLOW: VARIANT_ANNOTATION - annotation of vcf files output by IRMA
@@ -264,7 +269,8 @@ workflow FLU_ILLUMINA {
             ch_typing_report_tsv,
             ch_irma_consensus_qc_tsv,
             ch_nextclade_report_tsv,
-            ch_kraken2_reportsheet_tsv
+            ch_kraken2_reportsheet_tsv,
+            ch_merged_bam_coverage_results_filtered_tsv
         )
     } else {
         // If Kraken2 is skipped, run the SUMMARY_REPORT without the kraken2_reportsheet_tsv input
@@ -272,7 +278,8 @@ workflow FLU_ILLUMINA {
             ch_qc_reportsheet_tsv,
             ch_typing_report_tsv,
             ch_irma_consensus_qc_tsv,
-            ch_nextclade_report_tsv
+            ch_nextclade_report_tsv,
+            ch_merged_bam_coverage_results_filtered_tsv
         )
     }
 
