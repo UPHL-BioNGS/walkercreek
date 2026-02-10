@@ -1,6 +1,6 @@
 process SNPSIFT_EXTRACTFIELDS {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_high'
 
     conda "bioconda::snpsift=4.3.1t"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
