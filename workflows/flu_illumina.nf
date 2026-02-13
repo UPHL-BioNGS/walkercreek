@@ -6,25 +6,19 @@
 
 def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 
-// Validate input parameters
 WorkflowWalkercreek.initialise(params, log)
 
-// Check input path parameters to see if they exist
 def checkPathParamList = [ params.input, params.multiqc_config, params.fasta, params.krakendb ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
-//
-// Check mandatory parameters
-//
-sra_list = [] // Initialize an empty list to store SRA IDs
-sra_ids = [:] // Initialize an empty map to store SRA ID mappings
+sra_list = []
+sra_ids = [:]
 
-// If an input parameter is specified, assign its file handle to ch_input
 ch_input = null;
 if (params.input) {
     ch_input = file(params.input)
 }
-// If an SRA file is added, validate its existence and parse its contents
+
 if (params.add_sra_file) {
     sra_file = file(params.add_sra_file, checkIfExists: true)
     allLines  = sra_file.readLines()
@@ -63,9 +57,6 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 ============================================================================================================================
 */
 
-//
-// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
-//
 include { SRA_FASTQ_SRATOOLS                } from '../subworkflows/local/sra_fastq_sratools'
 include { INPUT_CHECK                       } from '../subworkflows/local/input_check'
 include { PREPROCESSING_READ_QC             } from '../subworkflows/local/preprocessing_read_qc'
@@ -79,9 +70,6 @@ include { NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/nextcl
 ============================================================================================================================
 */
 
-//
-// MODULES
-//
 include { FASTQC                                      } from '../modules/local/fastqc.nf'
 include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
 include { FILTER_BAM_COVERAGE_RESULTS                 } from '../modules/local/filter_bam_coverage_results.nf'
@@ -96,11 +84,10 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                 } from '../modules/nf-core
 ============================================================================================================================
 */
 
-def multiqc_report = [] // Define an empty list to store multiqc reports
+def multiqc_report = []
 
 workflow FLU_ILLUMINA {
 
-    // Create empty channels for versions, reads, and SRA data
     ch_versions         = Channel.empty()
     ch_all_reads        = Channel.empty()
     ch_sra_reads        = Channel.empty()
@@ -108,51 +95,36 @@ workflow FLU_ILLUMINA {
     ch_for_summary      = Channel.empty()
 
 
-    // Read samples from provided SRA file, validate, and stage necessary files
     if (params.add_sra_file) {
-        // Convert the list of SRA IDs to a channel and map it with its corresponding meta-data
         ch_sra_list = Channel.fromList(sra_list).map{valid -> [ ['id':sra_ids[valid],single_end:false], valid ]}
 
-        /*
-        SUBWORKFLOW: SRA_FASTQ_SRATOOLS - Extract FASTQ files from the SRA files
-        */
         SRA_FASTQ_SRATOOLS(ch_sra_list)
 
-        // Mix the outputs of the SRA extraction with the main reads channel
         ch_all_reads = ch_all_reads.mix(SRA_FASTQ_SRATOOLS.out.reads)
     }
 
-    /*
-        SUBWORKFLOW: INPUT_CHECK - If an input parameter is specified, validate and process the input
-    */
     if (params.input) {
         INPUT_CHECK (ch_input)
         ch_all_reads = ch_all_reads.mix(INPUT_CHECK.out.reads)
         ch_versions  = ch_versions.mix(INPUT_CHECK.out.versions)
     }
 
-    // Set up for kraken2 database parsing
-    // Ensure the kraken2 database directories exist, if not, create them
     if (!new File(params.project_db_dir).exists()) {
         new File(params.project_db_dir).mkdirs()
     }
-    // Create kraken_db directory for untarring kraken 2 db
+
     if (!new File(params.kraken_db_dir).exists()) {
         new File(params.kraken_db_dir).mkdirs()
     }
 
-    // Define paths for the Kraken2 database and its extraction directory
     db_file_path = "${params.project_db_dir}/${params.krakendb.split('/').last()}"
     untar_dir = "${params.kraken_db_dir}/${params.krakendb.split('/').last().replace('.tar.gz', '')}"
 
     ch_krakendb = Channel.empty()
 
-    // Handle kraken2 database: check its existence, download if necessary, and unpack it
     if (!params.skip_kraken2) {
-        // If the database is provided as a compressed file
         if (params.krakendb.endsWith('.tar.gz')) {
             def untarDirFile = new File(params.kraken_db_dir)
-            // Ensure that a version of the database doesn't already exist, if it does, clean it up
             if (untarDirFile.exists() && untarDirFile.list().length > 0) {
                 println "Kraken 2 database is untarred. Checking for compressed version..."
                 if (file(db_file_path).exists()) {
@@ -164,21 +136,18 @@ workflow FLU_ILLUMINA {
                 "curl -o ${db_file_path} ${params.krakendb}".execute().text
                 println "Untarring the Kraken 2 database locally..."
                 "tar -xzf ${db_file_path} -C ${params.kraken_db_dir}".execute().waitFor()
-                file(db_file_path).delete() // Cleanup the compressed version after untarring
+                file(db_file_path).delete()
             } else {
                 println "Untarring the Kraken 2 database locally..."
                 "tar -xzf ${db_file_path} -C ${params.kraken_db_dir}".execute().waitFor()
-                file(db_file_path).delete() // Cleanup the compressed version after untarring
+                file(db_file_path).delete()
             }
             ch_krakendb = params.krakendb ? file(params.kraken_db_dir, checkIfExists: true) : file("$projectDir/data/kraken_db", checkIfExists: true)
         } else {
             ch_krakendb = Channel.value(file(params.krakendb))
         }
     }
-    // Set the db variable to the kraken2 database channel
     db = ch_krakendb
-
-    // Determine the file for adapters and phix if provided or set to an empty list
     adapters = params.adapters_fasta ? file(params.adapters_fasta) : []
     phix = params.phix_fasta ? file(params.phix_fasta) : []
     primers = params.illumina_primers_fasta ? file(params.illumina_primers_fasta) : []
@@ -197,11 +166,9 @@ workflow FLU_ILLUMINA {
     ch_versions = ch_versions.mix(PREPROCESSING_READ_QC.out.versions)
     ch_qcreportsheet = PREPROCESSING_READ_QC.out.qc_lines.collect()
 
-    // Conditionally assign ch_kraken2_reportsheet_tsv if kraken2 is not skipped
     if (params.skip_kraken2 == false) {
         ch_kraken2_reportsheet_tsv = PREPROCESSING_READ_QC.out.kraken2_reportsheet_tsv
     } else {
-    // Placeholder channel for kraken2_reportsheet_tsv if params.skip_kraken2 = true
     ch_kraken2_reportsheet_tsv = Channel.empty()
     }
 
@@ -233,7 +200,6 @@ workflow FLU_ILLUMINA {
         SUBWORKFLOW: VARIANT_ANNOTATION - annotation of vcf files output by IRMA
     */
 
-    // Determine the file for adapters and phix if provided or set to an empty list
     irma_flu_reference = params.irma_flu_reference ? file(params.irma_flu_reference) : []
     irma_flu_gff = params.irma_flu_gff ? file(params.irma_flu_gff) : []
 
@@ -283,7 +249,6 @@ workflow FLU_ILLUMINA {
         )
     }
 
-    // Collate all software versions used in the workflow
     CUSTOM_DUMPSOFTWAREVERSIONS (ch_versions.unique().collectFile(name: 'collated_versions.yml'))
 
     //
@@ -292,19 +257,17 @@ workflow FLU_ILLUMINA {
     workflow_summary    = WorkflowWalkercreek.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
 
-    // Generate the methods description text for the workflow
     methods_description    = WorkflowWalkercreek.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description)
     ch_methods_description = Channel.value(methods_description)
 
     ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml')) // Add the workflow summary file to the MultiQC files channel
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml')) // Add the methods description file to the MultiQC files channel
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect()) // Add software versions dump to the MultiQC files channel
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([])) // Add FastQC output to the MultiQC files channel, if available
-    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.stats.map{meta, stats -> [stats]}.ifEmpty([])) // Add QC stats and adapter stats to the MultiQC files channel
+    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.stats.map{meta, stats -> [stats]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.adapters_stats.map{meta, stats -> [stats]}.ifEmpty([]))
 
-    // Run the MultiQC process, collating all QC reports into a single interactive report
     MULTIQC (
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
@@ -316,27 +279,13 @@ workflow FLU_ILLUMINA {
 
 }
 
-/*
-============================================================================================================================
-    COMPLETION EMAIL AND SUMMARY
-============================================================================================================================
-*/
-
-// Actions to be taken upon the completion of the workflow
 workflow.onComplete {
-    // Send an email notification, if specified in parameters
     if (params.email || params.email_on_fail) {
         NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
     }
-    // Generate and display a workflow completion summary
     NfcoreTemplate.summary(workflow, params, log)
     if (params.hook_url) {
         NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
     }
 }
 
-/*
-============================================================================================================================
-    THE END
-============================================================================================================================
-*/
