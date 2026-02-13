@@ -257,7 +257,7 @@ workflow FLU_WW_ILLUMINA {
     ch_versions = ch_versions.mix(ALIGN_TO_REFS_AND_FREYJA.out.versions)
 
     FASTQC(ch_processed_reads)
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC.out.versions)
 
     CUSTOM_DUMPSOFTWAREVERSIONS(ch_versions.unique().collectFile(name: 'collated_versions.yml'))
 

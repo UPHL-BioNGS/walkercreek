@@ -242,7 +242,7 @@ workflow FLU_WW_NANOPORE {
     // MODULE: Run FastQC
     //
     FASTQC (LONGREAD_PREPROCESSING.out.clean_reads)
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC.out.versions)
 
     // Collate all software versions used in the workflow
     CUSTOM_DUMPSOFTWAREVERSIONS (ch_versions.unique().collectFile(name: 'collated_versions.yml'))

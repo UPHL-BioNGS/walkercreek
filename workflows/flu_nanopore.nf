@@ -222,7 +222,7 @@ workflow FLU_NANOPORE {
     // MODULE: Run FastQC
     //
     FASTQC (LONGREAD_PREPROCESSING.out.clean_reads)
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC.out.versions)
 
     //
     // MODULE: SUMMARY_REPORT

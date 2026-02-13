@@ -64,13 +64,12 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 */
 
 //
-// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
+// SUBWORKFLOW:
 //
 include { SRA_FASTQ_SRATOOLS                 } from '../subworkflows/local/sra_fastq_sratools'
 include { INPUT_CHECK                        } from '../subworkflows/local/input_check'
 include { PREPROCESSING_READ_QC              } from '../subworkflows/local/preprocessing_read_qc'
 include { ASSEMBLY_TYPING_CLADE_VARIABLES    } from '../subworkflows/local/assembly_typing_clade_variables'
-include { VARIANT_ANNOTATION                 } from '../subworkflows/local/variant_annotation'
 include { NEXTCLADE_DATASET_AND_ANALYSIS_RSV } from '../subworkflows/local/nextclade_dataset_and_analysis_rsv'
 
 /*
@@ -80,10 +79,11 @@ include { NEXTCLADE_DATASET_AND_ANALYSIS_RSV } from '../subworkflows/local/nextc
 */
 
 //
-// MODULE: Installed directly from nf-core/modules
+// MODULE:
 //
 include { FASTQC                                      } from '../modules/local/fastqc.nf'
 include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
+include { FILTER_BAM_COVERAGE_RESULTS                 } from '../modules/local/filter_bam_coverage_results.nf'
 include { COMBINED_SUMMARY_REPORT                     } from '../modules/local/combined_summary_report.nf'
 include { SUMMARY_REPORT                              } from '../modules/local/summary_report.nf'
 include { MULTIQC                                     } from '../modules/nf-core/multiqc/main'
@@ -102,10 +102,6 @@ workflow RSV_ILLUMINA {
     // Create empty channels for versions, reads, and SRA data
     ch_versions                   = Channel.empty()
     ch_all_reads                  = Channel.empty()
-    ch_sra_reads                  = Channel.empty()
-    ch_sra_list                   = Channel.empty()
-    ch_for_summary                = Channel.empty()
-
 
     // Read samples from provided SRA file, validate, and stage necessary files
     if (params.add_sra_file) {
@@ -142,7 +138,6 @@ workflow RSV_ILLUMINA {
 
     // Define paths for the Kraken2 database and its extraction directory
     db_file_path = "${params.project_db_dir}/${params.krakendb.split('/').last()}"
-    untar_dir = "${params.kraken_db_dir}/${params.krakendb.split('/').last().replace('.tar.gz', '')}"
 
     ch_krakendb = Channel.empty()
 
@@ -174,8 +169,6 @@ workflow RSV_ILLUMINA {
             ch_krakendb = Channel.value(file(params.krakendb))
         }
     }
-    // Set the db variable to the kraken2 database channel
-    db = ch_krakendb
 
     // Determine the file for adapters and phix if provided or set to an empty list
     adapters = params.adapters_fasta ? file(params.adapters_fasta) : []
@@ -192,17 +185,11 @@ workflow RSV_ILLUMINA {
     */
 
     PREPROCESSING_READ_QC(ch_all_reads, adapters, phix, primers, ch_krakendb)
-    ch_all_reads = ch_all_reads.mix(PREPROCESSING_READ_QC.out.clean_reads) // Mix the cleaned reads with the main read channel
     ch_versions = ch_versions.mix(PREPROCESSING_READ_QC.out.versions)
     ch_qcreportsheet = PREPROCESSING_READ_QC.out.qc_lines.collect() // Collect quality control lines for the report sheet module
 
     // Conditionally assign ch_kraken2_reportsheet_tsv if kraken2 is not skipped
-    if (params.skip_kraken2 == false) {
-        ch_kraken2_reportsheet_tsv = PREPROCESSING_READ_QC.out.kraken2_reportsheet_tsv
-    } else {
-    // Placeholder channel for kraken2_reportsheet_tsv if params.skip_kraken2 = true
-    ch_kraken2_reportsheet_tsv = Channel.empty()
-    }
+    ch_kraken2_reportsheet_tsv = params.skip_kraken2 ? Channel.empty() : PREPROCESSING_READ_QC.out.kraken2_reportsheet_tsv
 
     //
     // MODULE: QC_REPORTSHEET
@@ -211,7 +198,7 @@ workflow RSV_ILLUMINA {
     ch_qc_reportsheet_tsv = QC_REPORTSHEET.out.qc_reportsheet_tsv
 
     /*
-        SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'
+        SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, rsv typing/subtyping, and Nextclade variable determination.
     */
     ASSEMBLY_TYPING_CLADE_VARIABLES(PREPROCESSING_READ_QC.out.clean_reads, irma_module)
     ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
@@ -220,36 +207,25 @@ workflow RSV_ILLUMINA {
     ch_dataset = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_typing_report_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
     ch_irma_consensus_qc_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_consensus_qc_tsv
+    ch_merged_bam_coverage_results_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.merged_bam_coverage_results_tsv
     ch_versions = ch_versions.mix(ASSEMBLY_TYPING_CLADE_VARIABLES.out.versions)
 
-    /*
-        SUBWORKFLOW: VARIANT_ANNOTATION - annotation of vcf fils output by IRMA
-    */
-
-    ch_irma_flu_reference = params.irma_flu_reference
-    ch_irma_flu_gff = params.irma_flu_gff
-
-    //if (!params.skip_snpeff) {
-    //    VARIANT_ANNOTATION(params.irma_flu_reference, params.irma_flu_gff, ch_irma_vcf)
-    //    ch_versions = ch_versions.mix(VARIANT_ANNOTATION.out.versions)
-    //}
+    FILTER_BAM_COVERAGE_RESULTS(ch_merged_bam_coverage_results_tsv)
+    ch_merged_bam_coverage_results_filtered_tsv = FILTER_BAM_COVERAGE_RESULTS.out.filtered_tsv
 
     /*
-        SUBWORKFLOW: NEXTCLADE_DATASET_AND_ANALYSIS - Nextclade dataset creation and analysis based on flu 'abricate_subtype'
+        SUBWORKFLOW: NEXTCLADE_DATASET_AND_ANALYSIS
     */
 
     NEXTCLADE_DATASET_AND_ANALYSIS_RSV(ch_dataset, ch_assembly)
     ch_nextclade_report_tsv = NEXTCLADE_DATASET_AND_ANALYSIS_RSV.out.nextclade_report_tsv
     ch_versions = ch_versions.mix(NEXTCLADE_DATASET_AND_ANALYSIS_RSV.out.versions)
 
-    // Initialize channel for multiqc report from Nextclade
-    ch_nextclade_multiqc = Channel.empty()
-
     //
     // MODULE: Run FastQC
     //
     FASTQC (PREPROCESSING_READ_QC.out.clean_reads)
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC.out.versions)
 
     //
     // MODULE: SUMMARY_REPORT
@@ -261,7 +237,8 @@ workflow RSV_ILLUMINA {
             ch_typing_report_tsv,
             ch_irma_consensus_qc_tsv,
             ch_nextclade_report_tsv,
-            ch_kraken2_reportsheet_tsv
+            ch_kraken2_reportsheet_tsv,
+            ch_merged_bam_coverage_results_filtered_tsv
         )
 
     } else {
@@ -270,7 +247,8 @@ workflow RSV_ILLUMINA {
             ch_qc_reportsheet_tsv,
             ch_typing_report_tsv,
             ch_irma_consensus_qc_tsv,
-            ch_nextclade_report_tsv
+            ch_nextclade_report_tsv,
+            ch_merged_bam_coverage_results_filtered_tsv
         )
     }
 
@@ -303,7 +281,6 @@ workflow RSV_ILLUMINA {
         ch_multiqc_logo.toList()
     )
     multiqc_report = MULTIQC.out.report.toList()
-    ch_multiqc_report = MULTIQC.out.report.toList()
 
 }
 

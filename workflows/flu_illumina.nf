@@ -257,7 +257,7 @@ workflow FLU_ILLUMINA {
     // MODULE: Run FastQC
     //
     FASTQC (PREPROCESSING_READ_QC.out.clean_reads)
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC.out.versions)
 
     //
     // MODULE: SUMMARY_REPORT
