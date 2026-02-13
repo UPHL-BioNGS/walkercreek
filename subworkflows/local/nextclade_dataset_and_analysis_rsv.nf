@@ -27,7 +27,7 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS_RSV {
     ch_nextclade_run_input   = Channel.empty()
     nextclade_report_tsv     = Channel.empty()
 
-    if (params.skip_nextclade) return // conditional check on param.skip_nextclade. If true, subworkflow will not execute.
+    if (params.skip_nextclade) return
 
     NEXTCLADE_DATASETGET(dataset)
     ch_versions = ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)

@@ -10,9 +10,9 @@ include { BCFTOOLS_STATS } from '../modules/local/bcftools_stats.nf'
 workflow VCF_TABIX_STATS {
     take:
     snpeff_vcf
-    regions //    file: regions.txt
-    targets //    file: targets.txt
-    samples //    file: samples.txt
+    regions
+    targets
+    samples
 
     main:
 

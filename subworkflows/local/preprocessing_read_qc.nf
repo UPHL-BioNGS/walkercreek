@@ -27,10 +27,10 @@ include { QC_REPORT                            } from '../../modules/local/qc_re
 workflow PREPROCESSING_READ_QC {
     take:
     reads
-    adapters // params.adapters_fasta
-    phix // params.phix_fasta
-    primers // params.illumina_primers_fasta
-    db // params.krakendb
+    adapters
+    phix
+    primers
+    db
 
     main:
     ch_versions                = Channel.empty()
