@@ -1,19 +1,60 @@
 #!/usr/bin/env python
 
-
 """Provide functions to merge multiple versions.yml files."""
 
-
-import yaml
 import platform
 from textwrap import dedent
+
+import yaml
+
+
+def _normalize_versions(value):
+    """
+    Ensure each process' versions value is a dict of {tool: version}.
+    Accepts dict, string, list, None, etc and returns a dict.
+    """
+    if value is None:
+        return {}
+
+    if isinstance(value, dict):
+        return value
+
+    if isinstance(value, list):
+        merged = {}
+        for item in value:
+            if isinstance(item, dict):
+                merged.update(item)
+            else:
+                merged[str(item)] = "unknown"
+        return merged
+
+    if isinstance(value, str):
+        try:
+            parsed = yaml.safe_load(value)
+        except Exception:
+            parsed = None
+
+        if isinstance(parsed, dict):
+            return parsed
+        if isinstance(parsed, list):
+            merged = {}
+            for item in parsed:
+                if isinstance(item, dict):
+                    merged.update(item)
+                else:
+                    merged[str(item)] = "unknown"
+            return merged
+
+        return {"_raw": value}
+
+    return {"_raw": str(value)}
 
 
 def _make_versions_html(versions):
     """Generate a tabular HTML output of all versions for MultiQC."""
     html = [
         dedent(
-            """\\
+            """\
             <style>
             #nf-core-versions tbody:nth-child(even) {
                 background-color: #f2f2f2;
@@ -30,12 +71,15 @@ def _make_versions_html(versions):
             """
         )
     ]
+
     for process, tmp_versions in sorted(versions.items()):
+        tmp_versions = _normalize_versions(tmp_versions)
+
         html.append("<tbody>")
         for i, (tool, version) in enumerate(sorted(tmp_versions.items())):
             html.append(
                 dedent(
-                    f"""\\
+                    f"""\
                     <tr>
                         <td><samp>{process if (i == 0) else ''}</samp></td>
                         <td><samp>{tool}</samp></td>
@@ -45,8 +89,9 @@ def _make_versions_html(versions):
                 )
             )
         html.append("</tbody>")
+
     html.append("</table>")
-    return "\\n".join(html)
+    return chr(10).join(html)
 
 
 def main():
@@ -58,21 +103,26 @@ def main():
     }
 
     with open("$versions") as f:
-        versions_by_process = yaml.load(f, Loader=yaml.BaseLoader) | versions_this_module
+        loaded = yaml.load(f, Loader=yaml.BaseLoader) or {}
 
-    # aggregate versions by the module name (derived from fully-qualified process name)
+    versions_by_process = {k: _normalize_versions(v) for k, v in loaded.items()}
+    versions_by_process.update(versions_this_module)
+
     versions_by_module = {}
     for process, process_versions in versions_by_process.items():
         module = process.split(":")[-1]
-        try:
-            if versions_by_module[module] != process_versions:
-                raise AssertionError(
-                    "We assume that software versions are the same between all modules. "
-                    "If you see this error-message it means you discovered an edge-case "
-                    "and should open an issue in nf-core/tools. "
-                )
-        except KeyError:
-            versions_by_module[module] = process_versions
+        process_versions = _normalize_versions(process_versions)
+
+        if module not in versions_by_module:
+            versions_by_module[module] = dict(process_versions)
+        else:
+            merged = dict(versions_by_module[module])
+            for tool, ver in process_versions.items():
+                if tool not in merged:
+                    merged[tool] = ver
+                elif merged[tool] != ver:
+                    merged[f"{tool} (alt)"] = ver
+            versions_by_module[module] = merged
 
     versions_by_module["Workflow"] = {
         "Nextflow": "$workflow.nextflow.version",
@@ -90,6 +140,7 @@ def main():
 
     with open("software_versions.yml", "w") as f:
         yaml.dump(versions_by_module, f, default_flow_style=False)
+
     with open("software_versions_mqc.yml", "w") as f:
         yaml.dump(versions_mqc, f, default_flow_style=False)
 
@@ -99,3 +150,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

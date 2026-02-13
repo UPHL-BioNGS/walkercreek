@@ -22,14 +22,12 @@ ${seg_cov_long_tsv}
 EOF
 
     python $projectDir/bin/merge_segment_metrics_wide.py \
-      --in seg_cov_long.tsv \
-      --mode coverage \
-      --out merged_coverage_results.tsv
+        --in seg_cov_long.tsv \
+        --mode coverage \
+        --out merged_coverage_results.tsv
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
+    pyver=\$(python --version 2>&1 | awk '{print \$2}')
+    printf '%s\n' "\"${task.process}\":" "  python: \"\${pyver}\"" > versions.yml
     """
 }
 

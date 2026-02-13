@@ -16,15 +16,22 @@ process FILTER_BAM_COVERAGE_RESULTS {
     task.ext.when == null || task.ext.when
 
     script:
-    def segments = task.ext.segments ?: "A_HA,A_NA,B_HA,B_NA"
-    def keep     = task.ext.keep     ?: "mapped_reads,mean_depth,percent_coverage,reference_length,seq_length"
+    // optional: set task.ext.platform from workflow if desired (rsv_illumina/flu_illumina/etc)
+    def platform = task.ext.platform ?: "auto"
+
+    def segments = task.ext.segments ?: (platform == "rsv" || platform == "rsv_illumina"
+        ? "RSV_A,RSV_AD,RSV_B,RSV_BD"
+        : "A_HA,A_NA,B_HA,B_NA")
+
+    def keep = task.ext.keep ?: "mapped_reads,mean_depth,percent_coverage,reference_length,seq_length"
 
     """
     python $projectDir/bin/filter_segment_metrics_columns.py \
       --in  $merged_bam_coverage_results_tsv \
       --out merged_bam_coverage_results.filtered.tsv \
       --segments "${segments}" \
-      --keep "${keep}"
+      --keep "${keep}" \
+      --platform "${platform}"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

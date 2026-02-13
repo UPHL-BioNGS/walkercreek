@@ -22,13 +22,11 @@ ${bam_long_tsv}
 EOF
 
     python $projectDir/bin/merge_segment_metrics_wide.py \
-      --in bam_long.tsv \
-      --mode bam \
-      --out merged_bam_results.tsv
+        --in bam_long.tsv \
+        --mode bam \
+        --out merged_bam_results.tsv
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
+    pyver=\$(python --version 2>&1 | awk '{print \$2}')
+    printf '%s\n' "\"${task.process}\":" "  python: \"\${pyver}\"" > versions.yml
     """
 }
