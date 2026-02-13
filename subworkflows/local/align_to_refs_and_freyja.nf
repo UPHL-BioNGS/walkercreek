@@ -23,29 +23,25 @@ include { FREYJA_AGGREGATE_REPORT              } from '../../modules/local/freyj
 workflow ALIGN_TO_REFS_AND_FREYJA {
 
     take:
-    reads                    // channel of tuples: [meta, reads]
-    h1n1_freyja_ref          // file
-    h3n2_freyja_ref          // file
-    h5nx_freyja_ref          // file
-    b_vic_freyja_ref         // file
-    h1n1_freyja_barcodes     // file
-    h3n2_freyja_barcodes     // file
-    h5nx_freyja_barcodes     // file
-    b_vic_freyja_barcodes    // file
+    reads
+    h1n1_freyja_ref
+    h3n2_freyja_ref
+    h5nx_freyja_ref
+    b_vic_freyja_ref
+    h1n1_freyja_barcodes
+    h3n2_freyja_barcodes
+    h5nx_freyja_barcodes
+    b_vic_freyja_barcodes
 
     main:
-    ch_versions              = Channel.empty()
-
+    ch_versions               = Channel.empty()
     ch_freyja_demix_tsvs      = Channel.empty()
     ch_freyja_lineages        = Channel.empty()
     ch_freyja_summarized      = Channel.empty()
     ch_freyja_aggregate       = Channel.empty()
-
-    // for MULTIQC
     ch_align_flagstats        = Channel.empty()
     ch_align_mapstats         = Channel.empty()
 
-    // Robustly extract TSV path from either tuple(meta, path) OR path-only
     def extractPath = { x ->
         (x instanceof List || x instanceof Tuple) ? x[1] : x
     }
@@ -55,7 +51,6 @@ workflow ALIGN_TO_REFS_AND_FREYJA {
         ALIGN_TO_REFS(reads, h1n1_freyja_ref, h3n2_freyja_ref, h5nx_freyja_ref, b_vic_freyja_ref)
         ch_versions = ch_versions.mix(ALIGN_TO_REFS.out.versions)
 
-        // NEW: bring these out for MultiQC
         ch_align_flagstats = ch_align_flagstats
             .mix(ALIGN_TO_REFS.out.h1n1_flagstat)
             .mix(ALIGN_TO_REFS.out.h3n2_flagstat)
@@ -116,7 +111,6 @@ workflow ALIGN_TO_REFS_AND_FREYJA {
         ch_freyja_summarized = ch_freyja_summarized.mix(FREYJA_BOOT_B_VIC.out.b_vic_boot_summarized)
         ch_versions = ch_versions.mix(FREYJA_BOOT_B_VIC.out.versions)
 
-        // Aggregate only if there are inputs
         ch_freyja_demix_paths = ch_freyja_demix_tsvs
             .map { x -> extractPath(x) }
             .filter { p -> p != null }
