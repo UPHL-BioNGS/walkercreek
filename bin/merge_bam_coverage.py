@@ -5,8 +5,22 @@ import pandas as pd
 
 # segment order for FLU
 FLU_SEGMENTS = [
-    "A_PB2", "A_PB1", "A_PA", "A_HA", "A_NP", "A_NA", "A_MP", "A_NS",
-    "B_PB2", "B_PB1", "B_PA", "B_HA", "B_NP", "B_NA", "B_MP", "B_NS",
+    "A_PB2",
+    "A_PB1",
+    "A_PA",
+    "A_HA",
+    "A_NP",
+    "A_NA",
+    "A_MP",
+    "A_NS",
+    "B_PB2",
+    "B_PB1",
+    "B_PA",
+    "B_HA",
+    "B_NP",
+    "B_NA",
+    "B_MP",
+    "B_NS",
 ]
 
 # segment order for RSV
@@ -82,15 +96,15 @@ def long_bam_to_wide(df: pd.DataFrame, segment_order: list[str], platform: str) 
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
     mapped = df.pivot_table(index="Sample", columns="segment_norm", values="number_mapped_reads", aggfunc="first")
-    depth  = df.pivot_table(index="Sample", columns="segment_norm", values="mean_depth", aggfunc="first")
+    depth = df.pivot_table(index="Sample", columns="segment_norm", values="mean_depth", aggfunc="first")
 
     mapped = mapped.reindex(columns=segment_order)
-    depth  = depth.reindex(columns=segment_order)
+    depth = depth.reindex(columns=segment_order)
 
     out = pd.DataFrame(index=mapped.index)
     for seg in segment_order:
         out[f"{seg}_mapped_reads"] = mapped[seg]
-        out[f"{seg}_mean_depth"]   = depth[seg]
+        out[f"{seg}_mean_depth"] = depth[seg]
     out = out.reset_index()
     return out
 
@@ -102,19 +116,19 @@ def long_cov_to_wide(df: pd.DataFrame, segment_order: list[str], platform: str) 
     for c in ["reference_length", "seq_length", "percent_coverage"]:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
-    ref    = df.pivot_table(index="Sample", columns="segment_norm", values="reference_length", aggfunc="first")
+    ref = df.pivot_table(index="Sample", columns="segment_norm", values="reference_length", aggfunc="first")
     seqlen = df.pivot_table(index="Sample", columns="segment_norm", values="seq_length", aggfunc="first")
-    pcov   = df.pivot_table(index="Sample", columns="segment_norm", values="percent_coverage", aggfunc="first")
+    pcov = df.pivot_table(index="Sample", columns="segment_norm", values="percent_coverage", aggfunc="first")
 
-    ref    = ref.reindex(columns=segment_order)
+    ref = ref.reindex(columns=segment_order)
     seqlen = seqlen.reindex(columns=segment_order)
-    pcov   = pcov.reindex(columns=segment_order)
+    pcov = pcov.reindex(columns=segment_order)
 
     out = pd.DataFrame(index=ref.index)
     for seg in segment_order:
         out[f"{seg}_percent_coverage"] = pcov[seg]
         out[f"{seg}_reference_length"] = ref[seg]
-        out[f"{seg}_seq_length"]       = seqlen[seg]
+        out[f"{seg}_seq_length"] = seqlen[seg]
     out = out.reset_index()
     return out
 
@@ -182,7 +196,7 @@ def main():
         if segs:
             platform = detect_platform_from_segments(segs)
         else:
-        # Wide-table fallback: detect by column prefixes
+            # Wide-table fallback: detect by column prefixes
             cols = list(bam.columns) + list(cov.columns)
             if any(str(c).startswith("RSV_") for c in cols):
                 platform = "rsv"

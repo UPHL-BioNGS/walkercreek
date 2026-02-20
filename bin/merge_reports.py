@@ -1,6 +1,7 @@
 import pandas as pd
 import sys
 
+
 def read_tsv(path):
     df = pd.read_csv(path, sep="\t", dtype=str)
     # normalize header names
@@ -9,6 +10,7 @@ def read_tsv(path):
     if "Sample" in df.columns:
         df["Sample"] = df["Sample"].astype(str).str.strip()
     return df
+
 
 def merge_tsvs(files):
     df = read_tsv(files[0])
@@ -28,10 +30,12 @@ def merge_tsvs(files):
     df[numeric_cols] = df[numeric_cols].round(2)
     return df
 
+
 def main():
     files = sys.argv[1:]
     merged_df = merge_tsvs(files)
     merged_df.to_csv("summary_report.tsv", sep="\t", index=False)
+
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,7 @@
 import argparse
 import pandas as pd
 
+
 def first_present(row_df: pd.DataFrame, candidates, default=""):
     """
     Return the first column found in row_df from `candidates` as a scalar.
@@ -17,6 +18,7 @@ def first_present(row_df: pd.DataFrame, candidates, default=""):
             return v
     return default
 
+
 def as_float_or_blank(v):
     try:
         if v == "" or v is None or (isinstance(v, float) and pd.isna(v)):
@@ -24,6 +26,7 @@ def as_float_or_blank(v):
         return float(v)
     except Exception:
         return ""
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -63,20 +66,16 @@ def main():
     # Build summary
     out = {
         "Sample": sample_name,
-
         # Core clade fields
         "clade": first_present(row, ["clade"], default=""),
         "legacy_clade": first_present(row, ["legacy-clade", "legacy_clade"], default=""),
         "short_clade": first_present(row, ["short-clade", "short_clade"], default=""),
         "subclade": first_present(row, ["subclade"], default=""),
-
         # Core QC
         "Nextclade_qc.overallStatus": first_present(row, ["qc.overallStatus"], default=""),
-
         # Minimal counts
         "Nextclade_totalSubstitutions": first_present(row, ["totalSubstitutions"], default=""),
         "Nextclade_coverage": first_present(row, ["coverage"], default=""),
-
         # High-value debug
         "Nextclade_seqName": first_present(row, ["seqName"], default=""),
     }
@@ -97,6 +96,7 @@ def main():
             pass
 
     out_df.to_csv(f"{sample_name}.nextclade_report.tsv", sep="\t", index=False)
+
 
 if __name__ == "__main__":
     main()

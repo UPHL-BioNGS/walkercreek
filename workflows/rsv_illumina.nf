@@ -63,9 +63,6 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 ============================================================================================================================
 */
 
-//
-// SUBWORKFLOW:
-//
 include { SRA_FASTQ_SRATOOLS                 } from '../subworkflows/local/sra_fastq_sratools'
 include { INPUT_CHECK                        } from '../subworkflows/local/input_check'
 include { PREPROCESSING_READ_QC              } from '../subworkflows/local/preprocessing_read_qc'
@@ -78,9 +75,6 @@ include { NEXTCLADE_DATASET_AND_ANALYSIS_RSV } from '../subworkflows/local/nextc
 ============================================================================================================================
 */
 
-//
-// MODULE:
-//
 include { FASTQC                                      } from '../modules/local/fastqc.nf'
 include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
 include { FILTER_BAM_COVERAGE_RESULTS                 } from '../modules/local/filter_bam_coverage_results.nf'
@@ -191,9 +185,6 @@ workflow RSV_ILLUMINA {
     // Conditionally assign ch_kraken2_reportsheet_tsv if kraken2 is not skipped
     ch_kraken2_reportsheet_tsv = params.skip_kraken2 ? Channel.empty() : PREPROCESSING_READ_QC.out.kraken2_reportsheet_tsv
 
-    //
-    // MODULE: QC_REPORTSHEET
-    //
     QC_REPORTSHEET(ch_qcreportsheet)
     ch_qc_reportsheet_tsv = QC_REPORTSHEET.out.qc_reportsheet_tsv
 
@@ -221,15 +212,18 @@ workflow RSV_ILLUMINA {
     ch_nextclade_report_tsv = NEXTCLADE_DATASET_AND_ANALYSIS_RSV.out.nextclade_report_tsv
     ch_versions = ch_versions.mix(NEXTCLADE_DATASET_AND_ANALYSIS_RSV.out.versions)
 
-    //
-    // MODULE: Run FastQC
-    //
-    FASTQC (PREPROCESSING_READ_QC.out.clean_reads)
-    ch_versions = ch_versions.mix(FASTQC.out.versions)
+    // Run FastQC unless explicitly skipped
 
+    ch_fastqc_zip = Channel.empty()
+    if (!params.skip_fastqc) {
+        FASTQC(PREPROCESSING_READ_QC.out.clean_reads)
+        ch_versions = ch_versions.mix(FASTQC.out.versions)
+        ch_fastqc_zip = FASTQC.out.zip
+}
     //
     // MODULE: SUMMARY_REPORT
     //
+
     if (!params.skip_kraken2) {
         // If Kraken2 is not skipped, run the FULL_SUMMARY_REPORT with all tsv inputs
         COMBINED_SUMMARY_REPORT(
@@ -269,7 +263,7 @@ workflow RSV_ILLUMINA {
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml')) // Add the workflow summary file to the MultiQC files channel
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml')) // Add the methods description file to the MultiQC files channel
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect()) // Add software versions dump to the MultiQC files channel
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([])) // Add FastQC output to the MultiQC files channel, if available
+    ch_multiqc_files = ch_multiqc_files.mix(ch_fastqc_zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.stats.map{meta, stats -> [stats]}.ifEmpty([])) // Add QC stats and adapter stats to the MultiQC files channel
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.adapters_stats.map{meta, stats -> [stats]}.ifEmpty([]))
 
