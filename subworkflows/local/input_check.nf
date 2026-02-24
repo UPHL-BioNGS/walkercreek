@@ -15,7 +15,7 @@ include { LANE_MERGE        } from '../../modules/local/lane_merge'
 
 workflow INPUT_CHECK {
     take:
-    samplesheet // file: /path/to/samplesheet.csv
+    samplesheet
 
     main:
     ch_versions = Channel.empty()
@@ -28,13 +28,11 @@ workflow INPUT_CHECK {
     LANE_MERGE(precheck_reads)
 
     emit:
-    reads    =   LANE_MERGE.out.reads       // channel: [ val(meta), [ reads ] ]
-    versions =   ch_versions                // channel: [ versions.yml ]
+    reads    =   LANE_MERGE.out.reads
+    versions =   ch_versions
 }
 
-// Function to get list of [ meta, [ fastq_1, fastq_2, fastq_?... ] ]
 def stage_fastq(ArrayList row) {
-    //print row
     def meta        = [:]
     meta.id         = row[0]
     meta.single_end = false
@@ -45,7 +43,6 @@ def stage_fastq(ArrayList row) {
     {
         if(row[i] == "")
         {
-            // skip this row
         } else if (!file(row[i]).exists()) {
             exit 1, "ERROR: Please check input samplesheet -> Read $i FastQ file does not exist!\n${row[i]}"
         } else
@@ -65,4 +62,3 @@ def stage_fastq(ArrayList row) {
     array = [ meta, filesarray]
     return array
 }
-// Taken from https://github.com/CDCgov/mycosnp-nf/blob/master/subworkflows/local/input_check.nf

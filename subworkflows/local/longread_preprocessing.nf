@@ -22,7 +22,7 @@ include { FILTLONG                             } from '../../modules/local/filtl
 workflow LONGREAD_PREPROCESSING {
     take:
     ch_all_reads
-    primers // params.iims_primers_fasta
+    primers
 
     main:
     ch_versions                = Channel.empty()

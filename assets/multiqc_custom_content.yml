@@ -1,0 +1,31 @@
+# Custom MultiQC table for Walkercreek minimap2 alignment mapping stats.
+#
+# Expected input file pattern:
+#   *_mapstats.tsv
+#
+# Expected columns (tab-delimited with a header row):
+#   sample  subtype  total_reads  mapped_reads  mapped_pct
+
+custom_data:
+  walkercreek_align_mapstats:
+    section_name: "Alignment mapping summary (Minimap2)"
+    description: "Per-sample mapping summary for each influenza reference used in the Freyja alignment stage."
+    plot_type: "table"
+    file_format: "tsv"
+    sep: "\t"
+    headers: true
+    path_filters:
+      - "*_mapstats.tsv"
+
+    headers_rename:
+      sample: "Sample"
+      reference: "Reference"
+      total_reads: "Total reads"
+      mapped_reads: "Mapped reads"
+      mapped_pct: "Mapped %"
+
+    pconfig:
+      id: walkercreek_align_mapstats
+      title: "Alignment mapping summary"
+      scale: false
+

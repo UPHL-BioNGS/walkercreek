@@ -6,14 +6,25 @@ process MERGE_BAM_COVERAGE_RESULTS {
         'quay.io/biocontainers/pandas:1.1.5' }"
 
     input:
-    path (merged_bam_results_tsv)                    
-    path (merged_coverage_results_tsv) 
+    path merged_bam_results_tsv
+    path merged_coverage_results_tsv
 
     output:
-    path ("merged_bam_coverage_results.tsv") , emit: merged_bam_coverage_results_tsv
+    path "merged_bam_coverage_results.tsv", emit: merged_bam_coverage_results_tsv
+    path("versions.yml")                  , optional: true, emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
+    def platform = task.ext.platform ?: "auto"
+
     """
-    python $projectDir/bin/merge_bam_coverage.py $merged_bam_results_tsv $merged_coverage_results_tsv merged_bam_coverage_results.tsv
+    python $projectDir/bin/merge_bam_coverage.py \
+        --bam $merged_bam_results_tsv \
+        --cov $merged_coverage_results_tsv \
+        --out merged_bam_coverage_results.tsv \
+        --platform ${platform}
     """
 }
+

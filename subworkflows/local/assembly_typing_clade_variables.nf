@@ -10,7 +10,6 @@ include { IRMA_CONSENSUS_QC                    } from '../../modules/local/irma_
 include { IRMA_CONSENSUS_QC_REPORTSHEET        } from '../../modules/local/irma_consensus_qc_reportsheet.nf'
 include { IRMA_SEGMENT_COVERAGE                } from '../../modules/local/irma_segment_coverage.nf'
 include { MERGE_COVERAGE_RESULTS               } from '../../modules/local/merge_coverage_results.nf'
-include { MERGE_COVERAGE_RESULTS_RSV           } from '../../modules/local/merge_coverage_results_rsv.nf'
 include { VADR                                 } from '../../modules/local/vadr.nf'
 include { ABRICATE_FLU                         } from '../../modules/local/abricate_flu.nf'
 include { IRMA_ABRICATE_REPORT                 } from '../../modules/local/irma_abricate_report.nf'
@@ -19,7 +18,6 @@ include { IRMA_RSV_REPORT                      } from '../../modules/local/irma_
 include { IRMA_RSV_REPORTSHEET                 } from '../../modules/local/irma_rsv_reportsheet.nf'
 include { SAMTOOLS_MAPPED_READS                } from '../../modules/local/samtools_mapped_reads.nf'
 include { MERGE_BAM_RESULTS                    } from '../../modules/local/merge_bam_results.nf'
-include { MERGE_BAM_RESULTS_RSV                } from '../../modules/local/merge_bam_results_rsv.nf'
 include { MERGE_BAM_COVERAGE_RESULTS           } from '../../modules/local/merge_bam_coverage_results.nf'
 include { NEXTCLADE_VARIABLES                  } from '../../modules/local/nextclade_variables.nf'
 include { NEXTCLADE_VARIABLES_RSV              } from '../../modules/local/nextclade_variables_rsv.nf'
@@ -45,6 +43,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     typing_report_tsv                     = Channel.empty()
     irma_consensus_qc_tsv                 = Channel.empty()
     dataset                               = Channel.empty()
+    merged_bam_coverage_results_tsv       = Channel.empty()
 
     if ( params.platform == "flu_illumina" ) {
         IRMA(filtered_reads, irma_module)
@@ -58,13 +57,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
 
         ch_irma_consensus_qc_results = irma_consensus_qc_files
-            .unique { meta, file_path -> meta.id }  // Use unique to remove duplicates, 'id' is the unique key in meta
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .unique { meta, file_path -> meta.id }
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def qc_header = list[0].split("\n")[0]
                 def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != qc_header }
                 return ([qc_header] + qc_contentWithoutHeaders).join("\n")
@@ -79,12 +77,10 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
         IRMA.out.irma_fasta
             .flatMap { item ->
-                def meta = item[0] // Capture the metadata
+                def meta = item[0]
                 if (item[1] instanceof List) {
-                    // Return each path with its metadata
                     return item[1].collect { fasta_files -> tuple(meta, fasta_files) }
                 } else {
-                    // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
                     return [tuple(meta, item[1])]
                 }
             }
@@ -94,16 +90,14 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_seg_cov_results_files = IRMA_SEGMENT_COVERAGE.out.cov_results
 
         ch_combined_seg_cov_results = irma_seg_cov_results_files
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
-                    // Sorting based on 'Sample' column
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
                     sampleA <=> sampleB
@@ -116,12 +110,10 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
         IRMA.out.irma_bam
             .flatMap { item ->
-                def meta = item[0] // Capture the metadata
+                def meta = item[0]
                 if (item[1] instanceof List) {
-                    // Return each path with its metadata
                     return item[1].collect { bam_files -> tuple(meta, bam_files) }
                 } else {
-                    // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
                     return [tuple(meta, item[1])]
                 }
             }
@@ -132,16 +124,14 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         bam_results_files = SAMTOOLS_MAPPED_READS.out.bam_results
 
         ch_combined_bam_results = bam_results_files
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
-                    // Sorting based on 'Sample' column
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
                     sampleA <=> sampleB
@@ -153,6 +143,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         merged_bam_results_tsv = MERGE_BAM_RESULTS.out.merged_bam_results_tsv
 
         MERGE_BAM_COVERAGE_RESULTS(merged_bam_results_tsv, merged_coverage_results_tsv)
+        merged_bam_coverage_results_tsv = MERGE_BAM_COVERAGE_RESULTS.out.merged_bam_coverage_results_tsv
 
         ABRICATE_FLU(IRMA.out.assembly)
         ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
@@ -163,13 +154,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         tsv_files = IRMA_ABRICATE_REPORT.out.tsv_combined
 
         ch_combined_results = tsv_files
-            .unique { meta, file_path -> meta.id }  // Use unique to remove duplicates, 'id' is the unique key in meta
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .unique { meta, file_path -> meta.id }
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 return ([header] + contentWithoutHeaders).join("\n")
@@ -190,13 +180,9 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
                                         ch_dataset_Victoria_ha,
                                         ch_dataset_Yamagata_ha
                                         )
-        emit:
-        HA                              = IRMA.out.HA
-        NA                              = IRMA.out.NA
+
         irma_fasta                      = IRMA.out.irma_fasta
         irma_vcf                        = IRMA.out.irma_vcf
-        typing_report_tsv               = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
-        irma_consensus_qc_tsv           = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
         dataset                         = ch_dataset
     }
 
@@ -212,13 +198,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
 
         ch_irma_consensus_qc_results = irma_consensus_qc_files
-            .unique { meta, file_path -> meta.id }  // Use unique to remove duplicates, 'id' is the unique key in meta
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .unique { meta, file_path -> meta.id }
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def qc_header = list[0].split("\n")[0]
                 def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != qc_header }
                 return ([qc_header] + qc_contentWithoutHeaders).join("\n")
@@ -233,12 +218,10 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
         IRMA.out.irma_fasta
             .flatMap { item ->
-                def meta = item[0] // Capture the metadata
+                def meta = item[0]
                 if (item[1] instanceof List) {
-                    // Return each path with its metadata
                     return item[1].collect { fasta_files -> tuple(meta, fasta_files) }
                 } else {
-                    // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
                     return [tuple(meta, item[1])]
                 }
             }
@@ -248,16 +231,14 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_seg_cov_results_files = IRMA_SEGMENT_COVERAGE.out.cov_results
 
         ch_combined_seg_cov_results = irma_seg_cov_results_files
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
-                    // Sorting based on 'Sample' column
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
                     sampleA <=> sampleB
@@ -270,12 +251,10 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
         IRMA.out.irma_bam
             .flatMap { item ->
-                def meta = item[0] // Capture the metadata
+                def meta = item[0]
                 if (item[1] instanceof List) {
-                    // Return each path with its metadata
                     return item[1].collect { bam_files -> tuple(meta, bam_files) }
                 } else {
-                    // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
                     return [tuple(meta, item[1])]
                 }
             }
@@ -286,16 +265,14 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         bam_results_files = SAMTOOLS_MAPPED_READS.out.bam_results
 
         ch_combined_bam_results = bam_results_files
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
-                    // Sorting based on 'Sample' column
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
                     sampleA <=> sampleB
@@ -307,6 +284,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         merged_bam_results_tsv = MERGE_BAM_RESULTS.out.merged_bam_results_tsv
 
         MERGE_BAM_COVERAGE_RESULTS(merged_bam_results_tsv, merged_coverage_results_tsv)
+        merged_bam_coverage_results_tsv = MERGE_BAM_COVERAGE_RESULTS.out.merged_bam_coverage_results_tsv
 
         ABRICATE_FLU(IRMA.out.assembly)
         ch_versions = ch_versions.mix(ABRICATE_FLU.out.versions)
@@ -317,13 +295,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         tsv_files = IRMA_ABRICATE_REPORT.out.tsv_combined
 
         ch_combined_results = tsv_files
-            .unique { meta, file_path -> meta.id }  // Use unique to remove duplicates, 'id' is the unique key in meta
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .unique { meta, file_path -> meta.id }
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 return ([header] + contentWithoutHeaders).join("\n")
@@ -344,18 +321,14 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
                                         ch_dataset_Victoria_ha,
                                         ch_dataset_Yamagata_ha
                                         )
-        emit:
-        HA                              = IRMA.out.HA
-        NA                              = IRMA.out.NA
+
         irma_fasta                      = IRMA.out.irma_fasta
         irma_vcf                        = IRMA.out.irma_vcf
-        typing_report_tsv               = IRMA_ABRICATE_REPORTSHEET.out.typing_report_tsv
-        irma_consensus_qc_tsv           = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
         dataset                         = ch_dataset
     }
 
     else if ( params.platform == "rsv_illumina" ) {
-        IRMA_RSV(clean_reads, irma_module)
+        IRMA_RSV(filtered_reads, irma_module)
         ch_assembly = IRMA_RSV.out.assembly
         ch_versions = ch_versions.mix(IRMA_RSV.out.versions)
 
@@ -363,13 +336,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
 
         ch_irma_consensus_qc_results = irma_consensus_qc_files
-            .unique { meta, file_path -> meta.id }  // Use unique to remove duplicates, 'id' is the unique key in meta
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .unique { meta, file_path -> meta.id }
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def qc_header = list[0].split("\n")[0]
                 def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != qc_header }
                 return ([qc_header] + qc_contentWithoutHeaders).join("\n")
@@ -378,18 +350,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         IRMA_CONSENSUS_QC_REPORTSHEET(ch_irma_consensus_qc_results)
         irma_consensus_qc_tsv = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
 
-        //if ( !params.skip_vadr ) {
-        //    VADR(IRMA_RSV.out.assembly)
-        //}
-
         IRMA_RSV.out.irma_fasta
             .flatMap { item ->
-                def meta = item[0] // Capture the metadata
+                def meta = item[0]
                 if (item[1] instanceof List) {
-                    // Return each path with its metadata
                     return item[1].collect { fasta_files -> tuple(meta, fasta_files) }
                 } else {
-                    // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
                     return [tuple(meta, item[1])]
                 }
             }
@@ -399,16 +365,14 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_seg_cov_results_files = IRMA_SEGMENT_COVERAGE.out.cov_results
 
         ch_combined_seg_cov_results = irma_seg_cov_results_files
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
-                    // Sorting based on 'Sample' column
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
                     sampleA <=> sampleB
@@ -416,17 +380,16 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
                 return ([header] + sortedContent).join("\n")
             }
 
-        MERGE_COVERAGE_RESULTS_RSV(ch_combined_seg_cov_results)
-        merged_coverage_results_tsv = MERGE_COVERAGE_RESULTS_RSV.out.merged_cov_results_tsv
+        MERGE_COVERAGE_RESULTS(ch_combined_seg_cov_results)
+        merged_coverage_results_tsv = MERGE_COVERAGE_RESULTS.out.merged_cov_results_tsv
+        ch_versions = ch_versions.mix(MERGE_COVERAGE_RESULTS.out.versions)
 
         IRMA_RSV.out.irma_bam
             .flatMap { item ->
-                def meta = item[0] // Capture the metadata
+                def meta = item[0]
                 if (item[1] instanceof List) {
-                    // Return each path with its metadata
                     return item[1].collect { bam_files -> tuple(meta, bam_files) }
                 } else {
-                    // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
                     return [tuple(meta, item[1])]
                 }
             }
@@ -437,16 +400,14 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         bam_results_files = SAMTOOLS_MAPPED_READS.out.bam_results
 
         ch_combined_bam_results = bam_results_files
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
-                    // Sorting based on 'Sample' column
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
                     sampleA <=> sampleB
@@ -454,10 +415,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
                 return ([header] + sortedContent).join("\n")
             }
 
-        MERGE_BAM_RESULTS_RSV(ch_combined_bam_results)
-        merged_bam_results_tsv = MERGE_BAM_RESULTS_RSV.out.merged_bam_results_tsv
+        MERGE_BAM_RESULTS(ch_combined_bam_results)
+        merged_bam_results_tsv = MERGE_BAM_RESULTS.out.merged_bam_results_tsv
+        ch_versions = ch_versions.mix(MERGE_BAM_RESULTS.out.versions)
 
         MERGE_BAM_COVERAGE_RESULTS(merged_bam_results_tsv, merged_coverage_results_tsv)
+        merged_bam_coverage_results_tsv = MERGE_BAM_COVERAGE_RESULTS.out.merged_bam_coverage_results_tsv
 
         ch_irma_report_input = IRMA_RSV.out.tsv
 
@@ -465,13 +428,12 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         tsv_files = IRMA_RSV_REPORT.out.tsv_combined
 
         ch_combined_results = tsv_files
-            .unique { meta, file_path -> meta.id }  // Use unique to remove duplicates, 'id' is the unique key in meta
-            .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-            .flatten()  // Flatten the channel to process each line individually
-            .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-            .collect()  // Collect all the lines into a list
+            .unique { meta, file_path -> meta.id }
+            .map { meta, file_path -> file_path.text }
+            .flatten()
+            .filter { line -> line && line.trim() != '' }
+            .collect()
             .map { list ->
-                // Include the header only once at the start of the combined file
                 def header = list[0].split("\n")[0]
                 def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
                 return ([header] + contentWithoutHeaders).join("\n")
@@ -488,12 +450,13 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         ch_dataset_rsv_b = NEXTCLADE_VARIABLES_RSV.out.dataset_rsv_b
         ch_dataset = ch_dataset_rsv_a.mix(ch_dataset_rsv_b)
 
-        emit:
         irma_fasta                      = IRMA_RSV.out.irma_fasta
         irma_vcf                        = IRMA_RSV.out.irma_vcf
-        typing_report_tsv               = IRMA_RSV_REPORTSHEET.out.typing_report_tsv
-        irma_consensus_qc_tsv           = IRMA_CONSENSUS_QC_REPORTSHEET.out.irma_consensus_qc_tsv
         dataset                         = ch_dataset
+    }
+
+    else {
+        exit 1, "Unknown params.platform '${params.platform}'. Expected one of: flu_illumina, flu_nanopore, rsv_illumina"
     }
 
     emit:
@@ -505,5 +468,6 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     typing_report_tsv               = typing_report_tsv
     irma_consensus_qc_tsv           = irma_consensus_qc_tsv
     dataset                         = dataset
+    merged_bam_coverage_results_tsv = merged_bam_coverage_results_tsv
     versions                        = ch_versions
 }

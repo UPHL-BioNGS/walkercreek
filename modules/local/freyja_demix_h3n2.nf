@@ -1,41 +1,51 @@
 process FREYJA_DEMIX_H3N2 {
-    tag "$meta.id"
     label 'process_high'
 
-    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/freyja:1.5.0--pyhdfd78af_0':
-        'biocontainers/freyja:1.5.0--pyhdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/freyja:2.0.2--pyhdfd78af_0' :
+        'quay.io/biocontainers/freyja:2.0.2--pyhdfd78af_0' }"
 
     input:
-    tuple val(meta), path(h3n2_variants)
-    tuple val(meta), path(h3n2_depths)
-    path h3n2_freyja_barcodes
+    tuple val(meta),  path(variants)
+    tuple val(meta2), path(depths)
+    path barcodes
 
     output:
-    tuple val(meta), path("*.h3n2.tsv"), optional:true, emit: demix_h3n2
-    path "versions.yml"                , emit: versions
+    tuple val(meta), path("${meta.id}.h3n2.tsv"), optional: true, emit: demix_h3n2
+    path "versions.yml", emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
-    # Check if the h3n2_variants file is empty or contains only the header row
-    if [ \$(wc -l < ${h3n2_variants}) -le 1 ]; then
-        echo "Skipping demixing for ${prefix} as h3n2_variants file is empty or contains only the header row."
-        touch ${prefix}.h3n2.tsv
-    else
-        # Run freyja demix if the h3n2_variants file has more than just the header
-        freyja demix $args --output ${prefix}.h3n2.tsv --barcodes $h3n2_freyja_barcodes $h3n2_variants $h3n2_depths
+    set -euo pipefail
+
+    if [[ "${meta.id}" != "${meta2.id}" ]]; then
+        echo "ERROR: meta.id != meta2.id (${meta.id} vs ${meta2.id})" >&2
+        exit 1
     fi
 
-    cat <<-END_VERSIONS > versions.yml
+    write_versions() {
+        cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        freyja_h3n2: \$(echo \$(freyja --version 2>&1) | sed 's/^.*version //' )
+        freyja_demix_h3n2: \$(freyja --version 2>&1 | sed 's/^.*version //')
     END_VERSIONS
+    }
+
+    # Skip if depths are all zero (no coverage)
+    if ! awk '{ if (\$4 > 0) { found=1; exit } } END { exit (found?0:1) }' "${depths}"; then
+        echo "Skipping freyja demix (H3N2) for ${meta.id}: depths are all zero (no coverage)."
+        write_versions
+        exit 0
+    fi
+
+    if ! freyja demix --output "${meta.id}.h3n2.tsv" --barcodes "${barcodes}" "${variants}" "${depths}"; then
+        echo "Freyja demix (H3N2) failed for ${meta.id}; skipping output." >&2
+        write_versions
+        exit 0
+    fi
+
+    write_versions
     """
 }

@@ -3,8 +3,8 @@ process FREYJA_VARIANTS_H5NX {
     label 'process_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/freyja:1.5.0--pyhdfd78af_0' :
-        'biocontainers/freyja:1.5.0--pyhdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/freyja:2.0.2--pyhdfd78af_0' :
+        'quay.io/biocontainers/freyja:2.0.2--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(h5nx_sort_bam)

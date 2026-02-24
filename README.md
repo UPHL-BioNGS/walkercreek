@@ -1,36 +1,35 @@
-[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A522.10.1-23aa62.svg)](https://www.nextflow.io/)
-
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
-[![Launch on Nextflow Tower](https://img.shields.io/badge/Launch%20%F0%9F%9A%80-Nextflow%20Tower-%234256e7)](https://tower.nf/launch?pipeline=https://github.com/uphl-biongs/walkercreek)
-[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
-# ![uphl-biongs/walkercreek](docs/images/walker_creek_1.png)
+<div align="center">
+  <img src="docs/images/walkercreek_logo.png" alt="uphl-biongs/walkercreek" width="200">
+</div>
 
-# Walker Creek
+## uphl-biongs/walkercreek
 
 ### About Walker Creek
 
-**UPHL-BioNGS/walkercreek** is named after Walker Creek, which begins near Sunset Peak (elevation 10,088 ft) east of Meadow, Utah, and flows through Sunset Canyon. On the upper western-facing rocky slope of the canyon lies the resting place of Chief Walkara, also known as Chief Walker, a revered leader of the Utah Timpanogos and Sanpete Band of the Shoshone. Known for his penetrating gaze, he earned the nickname “Hawk of the Mountains.” He was a renowned diplomat, horseman, warrior, and military leader, famed for his role in raiding parties and the Wakara War. As a prominent Native American chief in Utah at the time of the Mormon Pioneers' arrival in 1847, he was renowned for his trading acumen, engaging with both European settlers and his own people. Chief Walker died of "lung fever" on January 29, 1855, and was buried with significant rituals, reflecting the deep respect he commanded within his community.
+**UPHL-BioNGS/walkercreek** is named after Walker Creek in central Utah near Sunset Peak and Sunset Canyon, an area associated with Chief Walkara (Chief Walker), a revered leader of the Utah Timpanogos and Sanpete Band of the Shoshone.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies.
+The pipeline is built using [Nextflow](https://www.nextflow.io), and follows the **nf-core** template. It runs in portable, reproducible environments using **Docker/Singularity**, with one container per process to simplify installation and dependency management.
 
 ## Introduction
 
-**UPHL-BioNGS/walkercreek** is a bioinformatics best-practice analysis pipeline designed for the assembly, classification, and clade assignment of both Illumina and Nanopore influenza data using the [nf-core template](https://nf-co.re/). This pipeline accepts the "FLU" and "RSV" modules provided by [IRMA](https://wonder.cdc.gov/amd/flu/irma/).
+Walkercreek is a best-practice bioinformatics pipeline for viral assembly, classification, and clade assignment, supporting Illumina and Nanopore influenza data. It also supports RSV using the IRMA “FLU” and “RSV” modules.
 
-[IRMA](https://wonder.cdc.gov/amd/flu/irma/) is used for the adaptive NGS assembly of influenza and other viruses. It was developed by Samuel S. Shepard in collaboration with the Bioinformatics Team at the CDC’s Influenza Division. To gain insights into the innovative algorithm powering IRMA, refer to the [IRMA manuscript](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-016-3030-6). Due to the rapid evolution and high variability of viral genomes, IRMA avoids traditional reference-based assembly.  It introduces a flexible, on-the-fly approach to reference editing, correction, and optional elongation, eliminating the necessity for external reference selection. This adaptability helps to ensure highly accurate and reproducible results.
+[IRMA](https://wonder.cdc.gov/amd/flu/irma/) performs adaptive viral assembly using an on-the-fly reference refinement approach, designed for rapidly evolving viruses where fixed reference-based methods can be limiting. It was developed by Samuel S. Shepard in collaboration with the CDC's Influenza Division Bioinformatics Team. To gain insights into the innovative algorithm powering IRMA, refer to the [IRMA manuscript](https://link.springer.com/article/10.1186/s12864-016-3030-6).
 
 ## Platforms
 
-In the latest version of walkercreek, you can run the pipeline with one of five main platforms to accommodate different sequencing technologies (Illumina or Nanopore), sample types (clinical or wastewater), and viral targets (Flu or RSV):
+Walkercreek supports five analysis platforms tailored to sequencing technology, sample type, and viral target.
 
 ### 1. flu_illumina
-**Purpose**: Analyzes *Illumina*-sequenced influenza samples, starting from local FASTQ files and/or a list of SRA IDs.
+**Purpose**: Illumina-based influenza analysis for clinical samples.
 
 * See [usage](https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md) for instructions on how to create the samplesheet.csv input.
 
-**Command**: 
+**Command**:
 ```bash
 nextflow run main.nf -profile <docker/singularity> --platform flu_illumina --input '[path to samplesheet file: samplesheet.csv]' --outdir <OUTDIR>
 ```
@@ -41,271 +40,192 @@ nextflow run main.nf -profile <docker/singularity> --platform flu_illumina --inp
 --add_sra_file '[path to samplesheet file: assets/sra_small.csv]'
 ```
 
-* Prefetch sequencing reads in SRA format (`SRATools_PreFetch`).
-* Convert the SRA format into one or more compressed FASTQ files (`SRATools_FasterQDump`).
+### flu_illumina Overview
 
--**PREPROCESSING_READ_QC**:
+1. **Optional SRA retrieval**
 
-* Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
-* Remove human read data with the [`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber)(optional).
-* Filter unpaired reads from FASTQ files with (`SeqKit_Pair`).
-* Trim reads and assess quality with (`FaQCs`).
-* Remove adapter sequences and PhiX reference with (`BBMap_BBDuk`).
-* Primer cleanup with (`BBDUK_Illumina_Primers`) using the customizable FASTA file "${projectDir}/assets/illumina_primers.fasta".
-* Generate a QC report by extracting data from the FaQCs report data (`QC_Report`).
-* Assess read data with (`Kraken2_Kraken2`) to identify the species represented (optional).
-* [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) - Filtered reads QC.
-* [`MultiQC`](http://multiqc.info/) - Aggregate report describing results and QC from the pipeline.
+   * Prefetch and FASTQ conversion (SRATools)
 
--**ASSEMBLY_TYPING_CLADE_VARIABLES**:
+2. **Read preprocessing & QC**
 
-* Assembly of influenza gene segments with (`IRMA`) using the built-in 'FLU' module in addition to typing and subtype classifications.
-* QC of consensus assembly with (`IRMA_Consensus_QC`).
-* Generate IRMA consensus QC report with (`IRMA_Consensus_QC_Reportsheet`).
-* Annotation of IRMA consensus sequences with (`VADR`) (optional).
-* Calculate the reference length, sequence length, and percent_coverage for segments assembled by IRMA with (`IRMA_Segment_Coverage`).
-* Calculate the number of mapped reads and mean depth for segments assembled by IRMA with (`Samtools_Mapped_Reads`).
-* Merge segment coverage and mapped read reports into a single report (`Merge_BAM_Coverage_Results`).
-* Influenza A type and subtype classification as well as influenza B type and lineage classification using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
-* Generate a summary report for influenza classification results with (`IMRA_Abricate_Reportsheet`).
-* Gather corresponding Nextclade dataset using the Abricate_Flu classification results with (`Nextclade_Variables`).
+   * Lane merge
+   * Optional human read removal
+   * Read pairing, trimming, adapter/primer removal
+   * FastQC + MultiQC
+   * Optional Kraken2 classification
 
--**VARIANT_ANNOTATION**:
+3. **Assembly & typing**
 
-* Builds a local SnpEff database (`SNPEFF_Build`) and annotates VCFs (`SNPEFF_ANN`), then summarizes variants (`SNPSIFT_ExtractFields`).
+   * IRMA (FLU module)
+   * Consensus QC
+   * Segment-level metrics (coverage, mapped reads, depth)
+   * Influenza A subtype / Influenza B lineage (Abricate, InsaFlu DB)
+   * Deterministic Nextclade dataset selection
 
--**NEXTCLADE_DATASET_AND_ANALYSIS**:
+4. **Variant annotation**
 
-* Acquire the dataset necessary for influenza clade assignment with (`Nextclade_DatasetGet`).
-* Determine influenza clade assignment, perform mutation calling, and run sequence quality checks with (`Nextclade_Run`). Additionally, for each sample processed through (`Nextclade_Run`), a phylogenomic dataset is generated named nextclade.auspice.json. This can be visualized using the [auspice.us](https://auspice.us/) platform.
-* Parse the Nextclade output with (`Nextclade_Parser`) and generate a report with (`Nextclade_Report`).
+   * SnpEff build and annotation
+   * Variant summary extraction
 
--**Reports**: 
+5. **Clade assignment**
 
-* The summary_report.tsv (comprehensive summary) 
-* combined_snpsift_report.tsv
-* irma_consensus_qc_report.tsv
-* kraken2_report.tsv
-* merged_bam_coverage_results.tsv
-* nextclade_report.tsv
-* qc_report.tsv
-* typing_report.tsv
+   * Nextclade dataset retrieval
+   * Clade assignment, mutation calling, QC
+   * Auspice JSON generation
+
+### Key Outputs
+
+* `summary_report.tsv`
+* `merged_bam_coverage_results.tsv`
+* `nextclade_report.tsv`
+* `combined_snpsift_report.tsv`
+* `typing_report.tsv`
+* `qc_report.tsv`
 
 ### 2. flu_nanopore
-**Purpose**: Analyzes *Nanopore*-sequenced influenza samples, enforcing a configurable read-count threshold and incorporating Nanopore-specific QC steps.
+**Purpose**: Nanopore-based influenza analysis for clinical samples.
 
 * See [usage](https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md) for instructions on how to create the samplesheet.csv input.
 
-**Command**:  
+**Command**:
 ```bash
 nextflow run main.nf -profile <docker/singularity> --platform flu_nanopore --input '[path to samplesheet file: samplesheet_nanopore.csv]' --outdir <OUTDIR>
 ```
 
--**NANOPORE_SAMPLESHEET_CHECK**:
+### flu_nanopore Overview
 
-* Automatically parses and validates the Nanopore CSV samplesheet.
-* Filters samples below --min_sample_reads, saving them to a fail list.
+1. **Samplesheet validation**
 
--**LONGREAD_PREPROCESSING**:
+   * Read-count threshold filtering
 
-* [`Nanoplot`] (Raw/Filtered) Generates per-sample QC stats on raw and filtered reads.
-* Primer cleanup with [`BBDUK_Nanopore_Primers`] using the customizable FASTA file "${projectDir}/assets/iiMS_primers.fasta".
-* [`Porechop or Porechop_ABI`] (Optional) Adapter trimming if chosen via --longread_adaptertrimming_tool.
-* [`Filtlong`] Filters reads based on quality/length thresholds.
+2. **Long-read preprocessing**
 
--**ASSEMBLY_TYPING_CLADE_VARIABLES**:
+   * NanoPlot QC
+   * Primer trimming
+   * Optional adapter trimming
+   * Quality filtering
 
-* Assembly of influenza gene segments with (`IRMA`) using the built-in 'FLU-minion' module in addition to typing and subtype classifications.
-* QC of consensus assembly with (`IRMA_Consensus_QC`).
-* Generate IRMA consensus QC report with (`IRMA_Consensus_QC_Reportsheet`).
-* Annotation of IRMA consensus sequences with (`VADR`) (optional).
-* Calculate the reference length, sequence length, and percent_coverage for segments assembled by IRMA with (`IRMA_Segment_Coverage`).
-* Calculate the number of mapped reads and mean depth for segments assembled by IRMA with (`Samtools_Mapped_Reads`).
-* Merge segment coverage and mapped reads report into a single report with (`Merge_BAM_Coverage_Results`).
-* Influenza A type and subtype classification as well as influenza B type and lineage classification using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
-* Generate a summary report for influenza classification results with (`IMRA_Abricate_Reportsheet`).
-* Gather corresponding Nextclade dataset using the Abricate_Flu classification results with (`Nextclade_Variables`).
+3. **Assembly & typing**
 
--**VARIANT_ANNOTATION**:
+   * IRMA (FLU-minion module)
+   * Consensus QC
+   * Segment-level metrics
+   * Influenza typing (Abricate)
+   * Deterministic Nextclade dataset selection
 
-* Builds a local SnpEff database (`SNPEFF_Build`) and annotates VCFs (`SNPEFF_ANN`), then summarizes variants (`SNPSIFT_ExtractFields`).
+4. **Variant annotation**
 
--**NEXTCLADE_DATASET_AND_ANALYSIS**:
+   * SnpEff annotation
+   * Variant summarization
 
-* Acquire the dataset necessary for influenza clade assignment with (`Nextclade_DatasetGet`).
-* Determine influenza clade assignment, perform mutation calling, and run sequence quality checks with (`Nextclade_Run`). Additionally, for each sample processed through (`Nextclade_Run`), a phylogenomic dataset is generated named nextclade.auspice.json. This can be visualized using the [auspice.us](https://auspice.us/) platform.
-* Parse the Nextclade output with (`Nextclade_Parser`) and generate a report with (`Nextclade_Report`).
+5. **Clade assignment**
 
--**Reports**: 
+   * Nextclade analysis and reporting
 
-* The summary_report.tsv (comprehensive summary) 
-* combined_snpsift_report.tsv
-* irma_consensus_qc_report.tsv
-* merged_bam_coverage_results.tsv
-* nextclade_report.tsv
-* qc_report.tsv
-* typing_report.tsv
+### Key Outputs
+
+* `summary_report.tsv`
+* `merged_bam_coverage_results.tsv`
+* `nextclade_report.tsv`
+* `combined_snpsift_report.tsv`
+* `typing_report.tsv`
+* `qc_report.tsv`
 
 ### 3. flu_ww_illumina
-**Purpose**: Analyzes *Illumina*-based influenza reads derived from wastewater samples, relying on Freyja to estimate relative lineage abundances.
+**Purpose**: Illumina-based influenza wastewater analysis.
 
 * See [usage](https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md) for instructions on how to create the samplesheet.csv input.
 
 **Command**:
-```bash  
+```bash
 nextflow run main.nf -profile <docker/singularity> --platform flu_ww_illumina --input '[path to samplesheet file: samplesheet_ww_illumina.csv]' --outdir <OUTDIR>
 ```
 
-Note: At each run, the pipeline downloads the latest Freyja reference/barcode files (H1N1, H3N2, H5Nx, B/Vic).
+*Freyja reference datasets are automatically updated at runtime.*
 
--**SRA_FASTQ_SRATOOLS (optional)**: Downloads SRA data into FASTQ format IF a list of SRA ids is provided as input sequences.
+### flu_ww_illumina Overview
 
-```console
---add_sra_file '[path to samplesheet file: assets/sra_small.csv]'
-```
+1. **Optional SRA retrieval**
+2. **Read preprocessing & QC**
+3. **Multi-reference alignment**
 
-* Prefetch sequencing reads in SRA format with (`SRATools_PreFetch`).
-* Convert the SRA format into one or more compressed FASTQ files with (`SRATools_FasterQDump`).
+   * Minimap2 + Samtools
+4. **Variant calling**
 
--**PREPROCESSING_READ_QC**:
+   * samtools + iVar
+5. **Lineage deconvolution**
 
-* Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
-* Remove human read data with the [`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber)(optional).
-* Filter unpaired reads from FASTQ files with (`SeqKit_Pair`).
-* Trim reads and assess quality with (`FaQCs`).
-* Remove adapter sequences and PhiX reference with (`BBMap_BBDuk`).
-* Primer cleanup with (`BBDUK_Illumina_Primers`) using the customizable FASTA file "${projectDir}/assets/illumina_primers.fasta".
-* Generate a QC report by extracting data from the FaQCs report data with (`QC_Report`).
-* Assess read data with (`Kraken2_Kraken2`) to identify the species represented (optional).
-* [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) - Filtered reads QC.
-* [`MultiQC`](http://multiqc.info/) - Aggregate report describing results and QC from the pipeline.
+   * Freyja demix and bootstrap
+6. **Aggregated lineage reporting**
 
--**ALIGN_TO_REFS_AND_FREYJA**:
+### Key Outputs
 
-* Aligns reads to multiple references (H1N1, H3N2, H5Nx, B/Victoria) with (`Minimap2`) and output sorted Bam file using (`Samtools`).
-* Freyja_Variants: Perform variant calling using samtools and iVar on BAM file.
-* Freyja_Demix: Generate relative lineage abundances from variants and depths.
-* Freyja_Boot: Perform bootstrapping method for freyja using variants and depths.
-* Freyja_Aggregate_Report: Aggregates all demix data into a final summary.
-
--**Reports**:
-
-* Freyja lineage summary (freyja_aggregate_report.tsv)
-* qc_report.tsv
+* `freyja_aggregate_report.tsv`
+* `qc_report.tsv`
 
 ### 4. flu_ww_nanopore
-**Purpose**: Analyzes *Nanopore*-based influenza reads derived from wastewater samples, relying on Freyja to estimate relative lineage abundances.
+**Purpose**: Nanopore-based influenza wastewater analysis.
 
 * See [usage](https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md) for instructions on how to create the samplesheet.csv input.
 
 **Command**:
-```bash  
+```bash
 nextflow run main.nf -profile <docker/singularity> --platform flu_ww_nanopore --input '[path to samplesheet file: samplesheet_ww_illumina.csv]' --outdir <OUTDIR>
 ```
 
-Note: At each run, the pipeline downloads the latest Freyja reference/barcode files (H1N1, H3N2, H5Nx, B/Vic).
+*Freyja reference datasets are automatically updated at runtime.*
 
--**SRA_FASTQ_SRATOOLS (optional)**: Downloads SRA data into FASTQ format IF a list of SRA ids is provided as input sequences.
+### flu_ww_nanopore Overview
 
-```console
---add_sra_file '[path to samplesheet file: assets/sra_small.csv]'
-```
+1. **Read preprocessing**
+2. **Multi-reference alignment**
+3. **Variant calling**
+4. **Freyja lineage deconvolution**
+5. **Aggregated reporting**
 
-* Prefetch sequencing reads in SRA format with (`SRATools_PreFetch`).
-* Convert the SRA format into one or more compressed FASTQ files with (`SRATools_FasterQDump`).
+### Key Outputs
 
--**PREPROCESSING_READ_QC**:
-
-* Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
-* Remove human read data with the [`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber)(optional).
-* Filter unpaired reads from FASTQ files with (`SeqKit_Pair`).
-* Trim reads and assess quality with (`FaQCs`).
-* Remove adapter sequences and PhiX reference with (`BBMap_BBDuk`).
-* Primer cleanup with (`BBDUK_Illumina_Primers`) using the customizable FASTA file "${projectDir}/assets/illumina_primers.fasta".
-* Generate a QC report by extracting data from the FaQCs report data with (`QC_Report`).
-* Assess read data with (`Kraken2_Kraken2`) to identify the species represented (optional).
-* [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) - Filtered reads QC.
-* [`MultiQC`](http://multiqc.info/) - Aggregate report describing results and QC from the pipeline.
-
--**ALIGN_TO_REFS_AND_FREYJA**:
-
-* Aligns reads to multiple references (H1N1, H3N2, H5Nx, B/Victoria) with (`Minimap2`) and output sorted Bam file using (`Samtools`).
-* Freyja_Variants: Perform variant calling using samtools and iVar on BAM file.
-* Freyja_Demix: Generate relative lineage abundances from variants and depths.
-* Freyja_Boot: Perform bootstrapping method for freyja using variants and depths.
-* Freyja_Aggregate_Report: Aggregates all demix data into a final summary.
-
--**Reports**:
-
-* Freyja lineage summary (freyja_aggregate_report.tsv)
-* qc_report.tsv
+* `freyja_aggregate_report.tsv`
+* `qc_report.tsv`
 
 ## 5. rsv_illumina
-**Purpose**: Analyzes *Illumina*-sequenced RSV samples, starting from local FASTQ files and/or a list of SRA IDs.
+**Purpose**: Illumina-based RSV analysis.
 
 * See [usage](https://github.com/UPHL-BioNGS/walkercreek/blob/master/docs/usage.md) for instructions on how to create the samplesheet.csv input.
 
-**Command**: 
+**Command**:
 ```bash
 nextflow run main.nf -profile <docker/singularity> --platform rsv_illumina --input '[path to samplesheet file: samplesheet.csv]' --outdir <OUTDIR>
 ```
 
--**SRA_FASTQ_SRATOOLS (optional)**: Downloads SRA data into FASTQ format IF a list of SRA ids is provided as input sequences.
+### rsv_illumina Overview
 
-```console
---add_sra_file '[path to samplesheet file: assets/sra_small.csv]'
-```
+1. **Optional SRA retrieval**
+2. **Read preprocessing & QC**
+3. **Assembly**
 
-* Prefetch sequencing reads in SRA format with (`SRATools_PreFetch`).
-* Convert the SRA format into one or more compressed FASTQ files with (`SRATools_FasterQDump`).
+   * IRMA (RSV module)
+4. **Segment-level metrics**
 
--**PREPROCESSING_READ_QC**:
+   * Coverage, mapped reads, depth
+5. **Variant annotation**
 
-* Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
-* Remove human read data with the [`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber)(optional).
-* Filter unpaired reads from FASTQ files with (`SeqKit_Pair`).
-* Trim reads and assess quality with (`FaQCs`).
-* Remove adapter sequences and PhiX reference with (`BBMap_BBDuk`).
-* Primer cleanup with (`BBDUK_Illumina_Primers`) using the customizable FASTA file "${projectDir}/assets/illumina_primers.fasta".
-* Generate a QC report by extracting data from the FaQCs report data with (`QC_Report`).
-* Assess read data with (`Kraken2_Kraken2`) to identify the species represented (optional).
-* [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) - Filtered reads QC.
-* [`MultiQC`](http://multiqc.info/) - Aggregate report describing results and QC from the pipeline.
+   * SnpEff + SnpSift
+6. **Clade assignment**
 
--**ASSEMBLY_TYPING_CLADE_VARIABLES**:
+   * Nextclade analysis
 
-* Assembly of RSV with (`IRMA`) using the built-in 'RSV' module.
-* QC of consensus assembly with (`IRMA_Consensus_QC`).
-* Generate IRMA consensus QC report with (`IRMA_Consensus_QC_Reportsheet`).
-* Calculate the reference length, sequence length, and percent_coverage for segments assembled by IRMA with (`IRMA_Segment_Coverage`).
-* Calculate the number of mapped reads and mean depth for segments assembled by IRMA with (`Samtools_Mapped_Reads`).
-* Merge segment coverage and mapped read reports into a single report with (`Merge_BAM_Coverage_Results`).
-* Gather corresponding Nextclade dataset using the IRMA classification results with (`Nextclade_Variables`).
+### Key Outputs
 
--**VARIANT_ANNOTATION**:
-
-* Builds a local SnpEff database (`SNPEFF_Build`) and annotates VCFs (`SNPEFF_ANN`), then summarizes variants (`SNPSIFT_ExtractFields`).
-
--**NEXTCLADE_DATASET_AND_ANALYSIS**:
-
-* Acquire the dataset necessary for influenza clade assignment with (`Nextclade_DatasetGet`).
-* Determine influenza clade assignment, perform mutation calling, and run sequence quality checks with (`Nextclade_Run`). Additionally, for each sample processed through (`Nextclade_Run`), a phylogenomic dataset is generated named nextclade.auspice.json. This can be visualized using the [auspice.us](https://auspice.us/) platform.
-* Parse the Nextclade output with (`Nextclade_Parser`) and generate a report with (`Nextclade_Report`).
-
--**Reports**: 
-
-* The summary_report.tsv (comprehensive summary) 
-* combined_snpsift_report.tsv
-* irma_consensus_qc_report.tsv
-* kraken2_report.tsv
-* merged_bam_coverage_results.tsv
-* nextclade_report.tsv
-* qc_report.tsv
-* typing_report.tsv
+* `summary_report.tsv`
+* `merged_bam_coverage_results.tsv`
+* `nextclade_report.tsv`
+* `combined_snpsift_report.tsv`
+* `qc_report.tsv`
 
 ## Quick Start
 
-1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=22.10.1`)
+1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=24.04.2`)
 
 2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) (you can follow [this tutorial](https://singularity-tutorial.github.io/01-installation/)), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility.
 

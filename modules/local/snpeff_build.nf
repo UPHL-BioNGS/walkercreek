@@ -1,6 +1,5 @@
 process SNPEFF_BUILD {
-    tag "$fasta"
-    label 'process_low'
+    label 'process_high'
 
     conda (params.enable_conda ? "bioconda::snpeff=5.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

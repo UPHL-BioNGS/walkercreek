@@ -1,6 +1,6 @@
 process TABIX_TABIX {
     tag "$meta.id"
-    label 'process_single'
+    label 'process_high'
 
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/htslib:1.20--h5efdd21_2' :

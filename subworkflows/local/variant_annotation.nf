@@ -17,8 +17,8 @@ include { COMBINE_SNPSIFT_REPORTS } from '../../modules/local/combine_snpsift_re
 
 workflow VARIANT_ANNOTATION {
     take:
-    irma_flu_reference // params.irma_flu_reference
-    irma_flu_gff // params.irma_flu_gff
+    irma_flu_reference
+    irma_flu_gff
     irma_vcf
 
     main:
@@ -28,12 +28,10 @@ workflow VARIANT_ANNOTATION {
 
     irma_vcf
         .flatMap { item ->
-            def meta = item[0] // Capture the metadata
+            def meta = item[0]
             if (item[1] instanceof List) {
-                // Return each path with its metadata
                 return item[1].collect { vcf_files -> tuple(meta, vcf_files) }
             } else {
-                // Return the single path with its metadata, ensuring it's wrapped in a list for consistency
                 return [tuple(meta, item[1])]
             }
         }
@@ -57,24 +55,22 @@ workflow VARIANT_ANNOTATION {
 
         ch_combined_snpsift_tsv_results = snpsift_tsv_files
             .map { meta, file_path ->
-                def sample_name = meta.id  // Extract sample name from metadata
-                def file_content = file_path.text.split("\n")  // Read the file content
-                // Ensure the file has a header and data rows
+                def sample_name = meta.id
+                def file_content = file_path.text.split("\n")
                 if (file_content.size() < 2) {
-                    return null  // Skip files with only a header or empty
+                    return null
                 }
                 def header = file_content[0]
-                def body = file_content[1..-1].collect { line -> "$sample_name\t$line" }  // Add Sample column to data rows
-                return ["Sample\t$header", *body].join("\n")  // Add "Sample" to the header
+                def body = file_content[1..-1].collect { line -> "$sample_name\t$line" }
+                return ["Sample\t$header", *body].join("\n")
             }
-            .filter { it != null }  // Remove null results
-            .collect()  // Collect all files into a list
+            .filter { it != null }
+            .collect()
             .map { list ->
-                // Process the combined list to include the header only once
-                def allLines = list*.split("\n").flatten()  // Split all collected content into lines
-                def header = allLines.find { it.startsWith("Sample\t") }  // Extract the header with "Sample"
-                def contentWithoutHeaders = allLines.findAll { it != header }  // Remove duplicate headers
-                return ([header] + contentWithoutHeaders).join("\n")  // Combine header with unique body lines
+                def allLines = list*.split("\n").flatten()
+                def header = allLines.find { it.startsWith("Sample\t") }
+                def contentWithoutHeaders = allLines.findAll { it != header }
+                return ([header] + contentWithoutHeaders).join("\n")
             }
 
         COMBINE_SNPSIFT_REPORTS (ch_combined_snpsift_tsv_results)

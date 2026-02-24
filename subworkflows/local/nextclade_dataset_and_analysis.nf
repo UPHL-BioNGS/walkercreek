@@ -21,46 +21,80 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
     HA
 
     main:
-    ch_versions              = Channel.empty()
-    ch_nextclade_report      = Channel.empty()
-    ch_aligned_fasta         = Channel.empty()
-    ch_nextclade_run_input   = Channel.empty()
-    nextclade_report_tsv     = Channel.empty()
+    ch_versions         = Channel.empty()
+    ch_nextclade_report = Channel.empty()
+    ch_aligned_fasta    = Channel.empty()
 
-    if (params.skip_nextclade) return // conditional check on param.skip_nextclade. If true, subworkflow will not execute.
+    if (params.skip_nextclade) return
 
-    NEXTCLADE_DATASETGET(dataset)
+    dataset_keyed = dataset.map { meta, ds_file ->
+        tuple(meta.id, meta, ds_file)
+    }
+
+    ha_keyed = HA.map { meta, ha_fasta ->
+        tuple(meta.id, meta, ha_fasta)
+    }
+
+    joined = dataset_keyed
+        .join(ha_keyed)
+        .map { id, meta1, ds_file, meta2, ha_fasta ->
+            tuple(meta1, ds_file, ha_fasta)
+        }
+
+    NEXTCLADE_DATASETGET(joined.map { meta, ds_file, ha_fasta -> tuple(meta, ds_file) })
     ch_versions = ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
 
     dataset_2 = NEXTCLADE_DATASETGET.out.dataset_2
 
-    NEXTCLADE_RUN(dataset_2, HA)
-    ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
+    dataset2_keyed = dataset_2.map { meta, ds2 -> tuple(meta.id, meta, ds2) }
+    ha2_keyed      = joined.map { meta, ds_file, ha_fa -> tuple(meta.id, meta, ha_fa) }
+
+    run_joined = dataset2_keyed
+        .join(ha2_keyed)
+        .map { id, meta1, ds2, meta2, ha_fa ->
+            tuple(meta1, ds2, ha_fa)
+        }
+
+    NEXTCLADE_RUN(
+        run_joined.map { meta, ds2, ha_fa -> tuple(meta, ds2) },
+        run_joined.map { meta, ds2, ha_fa -> tuple(meta, ha_fa) }
+    )
+
+    ch_aligned_fasta  = ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
     ch_nextclade_report = NEXTCLADE_RUN.out.csv
 
-    NEXTCLADE_PARSER(NEXTCLADE_RUN.out.parser_input)
+    NEXTCLADE_PARSER( NEXTCLADE_RUN.out.parser_input.filter { meta, f -> f } )
     parser_tsv_files = NEXTCLADE_PARSER.out.nextclade_parser_tsv
 
-    ch_combined_parser_tsv_results = parser_tsv_files
-        .unique { meta, file_path -> meta.id }  // Use unique to remove duplicates, 'id' is the unique key in meta
-        .map { meta, file_path -> file_path.text }  // Convert each file to its textual content
-        .flatten()  // Flatten the channel to process each line individually
-        .filter { line -> line && line.trim() != '' }  // Filter out null or empty lines
-        .collect()  // Collect all the lines into a list
-        .map { list ->
-            // Include the header only once at the start of the combined file
-            def parser_header = list[0].split("\n")[0]
-            def parser_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != parser_header }
-            return ([parser_header] + parser_contentWithoutHeaders).join("\n")
+    parser_tsv_best = parser_tsv_files
+        .groupTuple(by: 0)
+        .map { meta, files ->
+            def chosen = files.sort { a, b -> a.size() <=> b.size() ?: a.name <=> b.name }.last()
+            tuple(meta, chosen)
+        }
+
+    ch_combined_parser_tsv_results = parser_tsv_best
+        .map { meta, tsv -> tsv.text }
+        .collect()
+        .map { texts ->
+            def header = null
+            def rows = []
+            texts.each { txt ->
+                def lines = txt?.readLines()?.findAll { it?.trim() }
+                if (!lines) return
+                header = header ?: lines[0]
+                rows.addAll(lines.drop(1))
+            }
+            if (header == null) return ""
+            ([header] + rows.unique()).join("\n") + "\n"
         }
 
     NEXTCLADE_REPORT(ch_combined_parser_tsv_results)
-    nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
 
     emit:
-    fasta_aligned          = NEXTCLADE_RUN.out.fasta_aligned
-    parser_input           = NEXTCLADE_RUN.out.parser_input
-    nextclade_report       = ch_nextclade_report
-    nextclade_report_tsv   = NEXTCLADE_REPORT.out.nextclade_report_tsv
-    versions               = ch_versions
+    fasta_aligned        = NEXTCLADE_RUN.out.fasta_aligned
+    parser_input         = NEXTCLADE_RUN.out.parser_input
+    nextclade_report     = ch_nextclade_report
+    nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
+    versions             = ch_versions
 }

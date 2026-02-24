@@ -2,7 +2,9 @@ process IRMA_SEGMENT_COVERAGE {
     tag "$meta.id"
     label 'process_medium'
 
-    container 'mchether/py3-bio:v2'
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/mulled-v2-cfa20dfeb068db79c8620a11753add64c23d013a:019cd79f70be602ca625a1a0a4eabab462611a3a-0' :
+        'quay.io/biocontainers/mulled-v2-cfa20dfeb068db79c8620a11753add64c23d013a:019cd79f70be602ca625a1a0a4eabab462611a3a-0' }"
 
     input:
     tuple val(meta), path(fasta_files)

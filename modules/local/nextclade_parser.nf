@@ -23,7 +23,7 @@ process NEXTCLADE_PARSER {
 
     """
     python $projectDir/bin/nextclade_output_parser.py \\
-        --id "${meta.id}.tsv"
+        --id "$parser_input"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

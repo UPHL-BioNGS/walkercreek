@@ -1,200 +1,303 @@
 # UPHL-BioNGS/walkercreek: Output
 
-## Introduction
+## Overview
 
-**UPHL-BioNGS/walkercreek** is a bioinformatics best-practice analysis pipeline designed for the assembly, classification, and clade assignment of Illumina paired-end influenza data. As of now, this pipeline accepts the influenza modules provided by [IRMA](https://wonder.cdc.gov/amd/flu/irma/) with "FLU" set as the default module. Future versions plan to support the analysis of other viral pathogens found in [IRMA's](https://wonder.cdc.gov/amd/flu/irma/) modules, including RSV upon its release.
+`UPHL-BioNGS/walkercreek` generates standardized outputs for influenza and RSV workflows across Illumina and Nanopore platforms. This document describes the primary outputs for the `flu_illumina` platform. Other platforms follow similar directory structures with platform-specific differences.
 
-This document describes the output produced by the flu_illumina platform of the pipeline.
+All paths below are relative to the specified `--outdir`.
 
-The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
+---
 
-```bash
+## Output Structure
+
+After a successful run, the results directory will contain:
+
+```
 results/
-├── abricate_flu
-├── bbduk
-├── consensus
-├── faqcs
-├── fastq
-├── hemagglutinin
-├── irma
-├── irma_abricate_report
-├── irma_consensus_qc
-├── kraken2
-├── lane
-├── multiqc
-├── ncbi_human_read_scrubber
-├── neuraminidase
-├── nextclade_dataset_get
-├── nextclade_parser
-├── nextclade_run
-├── nextclade_variables
-├── pipeline_info
-├── qc_report
-├── reports
-├── SUMMARY_REPORT
-└── vadr
+├── abricate_flu/
+├── bbduk/
+├── consensus/
+├── faqcs/
+├── fastqc/
+├── hemagglutinin/
+├── irma/
+├── irma_abricate_report/
+├── irma_consensus_qc/
+├── kraken2/
+├── multiqc/
+├── ncbi_human_read_scrubber/
+├── neuraminidase/
+├── nextclade_datasetget/
+├── nextclade_parser/
+├── nextclade_run/
+├── nextclade_variables/
+├── pipeline_info/
+├── qc_report/
+├── reports/
+├── SUMMARY_REPORT/
+└── vadr/
 ```
 
-## Pipeline overview
+Not all directories are produced for every platform.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
+---
 
-- [nf-core/walkercreek: Output](#UPHL-BioNGS-walkercreek-output)
-	- [Introduction](#introduction)
-	- [Pipeline Overview](#pipeline-overview)
-- [SRA Sequence File Addition](#sra-sequence-file-addition)
-- [Sample QC and Preprocessing](#sample-qc-preprocessing)
-- [Assembly, Viral Classification, and Nextclade Variable Gathering](#assembly-viral-classification-and-nextclade-variable-gathering)
-- [Influenza Clade Determination and Analysis](#influenza-clade-determination-and-analysis)
-- [Summary Files](#summary-files)
-	- [FastQC](#fastqc)
-	- [QC report](#qc-report)
-	- [MultiQC](#multiqc)
-  - [SUMMARY REPORT](#summary-report)
-- [Pipeline Information](#pipeline-information)
+# Pipeline Stages & Key Outputs
 
-## SRA Sequence File Addition
+---
 
-### Extract FASTQ files from optional input file of SRA accessions
+## 1. Optional SRA Download
 
-</details>
+If `--add_sra_file` is used:
 
-> **Downloading of FASTQ files from input file of SRA accessions using modules .**
-* Prefetch sequencing reads in SRA format (`SRATools_PreFetch`)
-* Convert the SRA format into one or more compressed FASTQ files (`SRATools_FasterQDump`)
+| Output                 | Path     |
+| ---------------------- | -------- |
+| Downloaded FASTQ files | `fastq/` |
 
-## Sample QC and Preprocessing
+Modules:
 
-### Prepares influenza samples (paired-end FASTQ files) for assembly. These steps also provide different quality reports for sample evaluation.
+* `SRATools_PreFetch`
+* `SRATools_FasterQDump`
 
-* Combine FASTQ file lanes, if they were provided with multiple lanes, into unified FASTQ files to ensure they are organized and named consistently (`Lane_Merge`).
-* Remove human read data with the ([`NCBI_SRA_Human_Scrubber`](https://github.com/ncbi/sra-human-scrubber) for uploading reads to to public repositories for DNA sequencing data.
-* Filter unpaired reads from FASTQ files (`SeqKit_Pair`).
-* Trim reads and assess quality (`FaQCs`).
-* Remove adapter sequences and phix reference with (`BBMap_BBDuk`).
-* Generate a QC report by extracting data from the FaQCs report data (`QC_Report`).
-* Assess read data with (`Kraken2_Kraken2`) to identify the species represented.
-* [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) - Filtered reads QC
-* [`MultiQC`](http://multiqc.info/) - Aggregate report describing results and QC from the whole pipeline
+---
 
-**Important output files from this section:**
+## 2. Read QC & Preprocessing
 
-| File          | Path                                                              |
-| ---           | ---                                                               |
-| Trimmed Reads |  `(faqcs/<sampleID>*.fastq.gz)`                                   |
-| Masked Reads  |  `(ncbi_sra_human_read_scrubber/<sampleID>/*_dehosted.fastq.gz)`  |
-| QC Report     |  `(qc_report/qc_report.tsv)`                                      |
-| MultiQC       |  `(multiqc/*)`                                                    |
+This stage performs trimming, de-hosting, QC, and contamination screening.
 
-## Assembly, Viral Classification, and Nextclade Variable Gathering
+### Key Outputs
 
-### Clean read data undergo assembly and influenza typing and subtyping. Based on the subtype information, Nextclade variables are gathered.
+| Output                     | Path                                                      |
+| -------------------------- | --------------------------------------------------------- |
+| Trimmed FASTQ files        | `faqcs/<sampleID>*.fastq.gz`                              |
+| De-hosted FASTQ (optional) | `ncbi_human_read_scrubber/<sampleID>/*_dehosted.fastq.gz` |
+| QC summary (TSV)           | `qc_report/qc_report.tsv`                                 |
+| FastQC reports             | `fastqc/`                                                 |
+| MultiQC report             | `multiqc/multiqc_report.html`                             |
 
-* Assembly of influenza gene segments with (`IRMA`) using the built-in FLU module. Also, influenza typing and H/N subtype classifications are made.
-* QC of consensus assembly (`IRMA_Consensus_QC`).
-* Generate IRMA consensus QC report (`IRMA_Consensus_QC_Reportsheet`)
-* Annotation of IRMA consensus sequences with (`VADR`)
-* Influenza A type and H/N subtype classification as well as influenza B type and lineage classification using (`Abricate_Flu`). The database used in this task is [InsaFlu](https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-018-0555-0).
-* Generate a summary report for influenza classification results (`IMRA_Abricate_Reportsheet`).
-* Gather corresponding Nextclade dataset using the Abricate_Flu classifcation results (`Nextclade_Variables`).
+Tools:
 
-**Important output files from this section:**
+* FaQCs
+* BBDuk
+* SeqKit
+* Kraken2 (optional)
+* FastQC
+* MultiQC
 
-| File                                      | Path                                                        |
-| ---                                       | ---                                                         |
-|  IRMA Consensus fasta                     |  `(irma/<sampleID>/*.irma.consensus.fasta)`                 |
-|  IRMA flu type                            |  `(irma/<sampleID>/*.irma_type.txt)`                        |
-|  IRMA flu subtype                         |  `(irma/<sampleID>/*.irma_subtype.txt)`                     |
-|  IRMA Consensus QC                        |  `(irma_consensus_qc/irma_consensus_qc_report.tsv)`         |
-|  Abricate flu type                        |  `(abricate_flu/<sampleID>/*.abricate_flu_type.txt)`        |
-|  Abricate flu subtype                     |  `(abricate_flu/<sampleID>/*.abricate_flu_subtype.txt)`     |
-|  Typing Report                            |  `(reports/typing_report.tsv)`                              |
-|  Nextclade Variables dataset              |  `(nextclade_variables/<sampleID>/*)`                       |
+---
 
-## Influenza Clade Determination and Analysis
+## 3. Assembly, Typing & Segment Metrics
 
-### Obtains datasets for Nextclade influenza genome analysis from the dataset determined by flu classification. Performs clade assignment, mutation calling, and sequence quality checks, followed by parsing the output report from Nextclade.
+IRMA assembles viral segments and performs typing/subtyping.
 
-* Acquire the dataset necessary for influenza genome clade assignment with (`Nextclade_DatasetGet`).
-* Determine influenza genome clade assignment, perform mutation calling, and run sequence quality checks with (`Nextclade_Run`). Additionally, for each sample processed through (`Nextclade_Run`), a phylogenomic dataset is generated named nextclade.auspice.json. This can be visualized using the [auspice.us](https://auspice.us/) platform.
-* Parse the Nextclade output (`Nextclade_Parser`) and generate a report (`Nextclade_Report`).
+### IRMA Outputs
 
-**Important output files from this section:**
+| Output              | Path                                             |
+| ------------------- | ------------------------------------------------ |
+| Consensus FASTA     | `irma/<sampleID>/*.irma.consensus.fasta`         |
+| Type assignment     | `irma/<sampleID>/*.irma_type.txt`                |
+| Subtype assignment  | `irma/<sampleID>/*.irma_subtype.txt`             |
+| Consensus QC report | `irma_consensus_qc/irma_consensus_qc_report.tsv` |
 
-| File                                      | Path                                         |
-| ---                                       | ---                                          |
-|  Auspice json                             |  `(nextclade_run/<sampleID>/*.auspice.json)` |
-|  Nextclade Report                         |  `(reports/nextclade_report.tsv)`            |
+---
 
-### QC Report
-The QC report values are generated from FAQCS text file outputs.
+### Abricate Typing (Influenza)
 
-| QC Metric                                  | Source   |
-|--------------------------------------------|----------|
-| Reads Before Trimming                      | FAQCS    |
-| GC Before Trimming                         | FAQCS    |
-| Average Q Score Before Trimming            | FAQCS    |
-| Reference Length Coverage Before Trimming  | FAQCS    |
-| Reads After Trimming                       | FAQCS    |
-| Paired Reads After Trimming                | FAQCS    |
-| Unpaired Reads After Trimming              | FAQCS    |
-| GC After Trimming                          | FAQCS    |
-| Average Q Score After Trimming             | FAQCS    |
+| Output                   | Path                                                 |
+| ------------------------ | ---------------------------------------------------- |
+| Abricate type            | `abricate_flu/<sampleID>/*.abricate_flu_type.txt`    |
+| Abricate subtype/lineage | `abricate_flu/<sampleID>/*.abricate_flu_subtype.txt` |
+| Typing summary           | `reports/typing_report.tsv`                          |
 
-### FastQC
+Database: InsaFlu
 
-<details markdown="1">
-<summary>Output files</summary>
+---
 
-- `fastqc/`
-  - `*_fastqc.html`: FastQC report containing quality metrics.
-  - `*_fastqc.zip`: Zip archive containing the FastQC report, tab-delimited data file and plot images.
+## 4. Segment Coverage & Depth Metrics
 
-</details>
+Walkercreek calculates standardized per-segment metrics:
 
-[FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) gives general quality metrics about your sequenced reads. It provides information about the quality score distribution across your reads, per base sequence content (%A/T/G/C), adapter contamination and overrepresented sequences. For further reading and documentation see the [FastQC help pages](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/).
+* Number of mapped reads
+* Mean depth
+* Reference length
+* Sequence length
+* Percent coverage
 
-![MultiQC - FastQC sequence counts plot](images/mqc_fastqc_counts.png)
+Metrics are normalized and reported in a consistent wide format across runs.
 
-![MultiQC - FastQC mean quality scores plot](images/mqc_fastqc_quality.png)
+### Key Output
 
-![MultiQC - FastQC adapter content plot](images/mqc_fastqc_adapter.png)
+| Output                 | Path                                      |
+| ---------------------- | ----------------------------------------- |
+| Merged segment metrics | `reports/merged_bam_coverage_results.tsv` |
 
-> **NB:** The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They may contain adapter sequence and potentially regions with low quality.
+This file includes structured columns such as:
 
-### MultiQC
+```
+A_HA_mapped_reads
+A_HA_mean_depth
+A_HA_percent_coverage
+A_HA_reference_length
+A_HA_seq_length
+...
+```
 
-<details markdown="1">
-<summary>Output files</summary>
+Column order is fixed to ensure reproducibility across runs.
 
-- `multiqc/`
-  - `multiqc_report.html`: a standalone HTML file that can be viewed in your web browser.
-  - `multiqc_data/`: directory containing parsed statistics from the different tools used in the pipeline.
-  - `multiqc_plots/`: directory containing static images from the report in various formats.
+---
 
-[MultiQC](http://multiqc.info) is a visualization tool that generates a single HTML report summarising all samples in your project. Most of the pipeline QC results are visualised in the report and further statistics are available in the report data directory.
+## 5. Nextclade Analysis
 
-Results generated by MultiQC collate pipeline QC from supported tools e.g. FastQC. The pipeline has special steps which also allow the software versions to be reported in the MultiQC output for future traceability. For more information about how to use MultiQC reports, see <http://multiqc.info>.
+Nextclade assigns clades, calls mutations, and performs QC.
 
-### SUMMARY REPORT
-#### A comprehensive report for the workflow detailed merged tsv outputs from various modules.
+### Key Outputs
 
-**Important output files from this section:**
+| Output            | Path                                      |
+| ----------------- | ----------------------------------------- |
+| Auspice JSON      | `nextclade_run/<sampleID>/*.auspice.json` |
+| Nextclade summary | `reports/nextclade_report.tsv`            |
 
-| File                                      | Path                                         |
-| ---                                       | ---                                          |
-| Summary Report                            |  `(SUMMARY_REPORT/summary_report.tsv)`       |
+The `*.auspice.json` files can be visualized at:
 
-### Pipeline information
+[https://auspice.us/](https://auspice.us/)
 
-<details markdown="1">
-<summary>Output files</summary>
+---
 
-- `pipeline_info/`
-  - Reports generated by Nextflow: `execution_report.html`, `execution_timeline.html`, `execution_trace.txt` and `pipeline_dag.dot`/`pipeline_dag.svg`.
-  - Reports generated by the pipeline: `pipeline_report.html`, `pipeline_report.txt` and `software_versions.yml`. The `pipeline_report*` files will only be present if the `--email` / `--email_on_fail` parameter's are used when running the pipeline.
-  - Reformatted samplesheet files used as input to the pipeline: `samplesheet.valid.csv`.
+## 6. Summary Reports
 
-</details>
+### Primary Report
 
-[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
+| Output        | Path                                |
+| ------------- | ----------------------------------- |
+| Final summary | `SUMMARY_REPORT/summary_report.tsv` |
+
+This file merges:
+
+* QC metrics
+* Typing results
+* IRMA consensus QC
+* Nextclade results
+* Segment coverage & depth metrics
+* Kraken2 summary (if enabled)
+
+The report is:
+
+* Deterministically merged by `Sample`
+* Column-order consistent
+* Suitable for downstream reporting or LIMS integration
+
+---
+
+### Additional Reports
+
+| Output                  | Path                                             |
+| ----------------------- | ------------------------------------------------ |
+| Nextclade report        | `reports/nextclade_report.tsv`                   |
+| Typing report           | `reports/typing_report.tsv`                      |
+| IRMA consensus QC       | `irma_consensus_qc/irma_consensus_qc_report.tsv` |
+| Kraken2 summary         | `reports/kraken2_report.tsv`                     |
+| Combined SnpSift report | `reports/combined_snpsift_report.tsv`            |
+
+---
+
+# QC Reports
+
+## QC Report (TSV)
+
+Generated from FaQCs outputs:
+
+| Metric                       | Source |
+| ---------------------------- | ------ |
+| Reads before trimming        | FaQCs  |
+| GC before trimming           | FaQCs  |
+| Mean Q score before trimming | FaQCs  |
+| Reads after trimming         | FaQCs  |
+| GC after trimming            | FaQCs  |
+| Mean Q score after trimming  | FaQCs  |
+
+---
+
+## FastQC
+
+Located in:
+
+```
+fastqc/
+```
+
+Files:
+
+* `*_fastqc.html`
+* `*_fastqc.zip`
+
+FastQC is run on filtered reads. Results are summarized in MultiQC.
+
+---
+
+## MultiQC
+
+Located in:
+
+```
+multiqc/
+```
+
+Includes:
+
+* `multiqc_report.html`
+* `multiqc_data/`
+* `multiqc_plots/`
+
+Provides an aggregated overview of QC and pipeline metrics.
+
+---
+
+# Wastewater (Freyja) Flow
+
+```
+INPUT → QC → Minimap2 Alignment → Freyja Variants
+      → Freyja Demix → Freyja Aggregate Report
+```
+
+Primary output:
+
+```
+freyja_aggregate_report.tsv
+```
+
+---
+
+# Pipeline Metadata
+
+Located in:
+
+```
+pipeline_info/
+```
+
+Includes:
+
+* `execution_report.html`
+* `execution_timeline.html`
+* `execution_trace.txt`
+* `pipeline_dag.svg`
+* `software_versions.yml`
+* `samplesheet.valid.csv`
+
+These files support traceability and reproducibility.
+
+---
+
+# Platform Differences
+
+* `flu_nanopore` and `rsv_illumina` generate similar structured outputs with platform-specific modules.
+* Wastewater platforms (`flu_ww_*`) produce Freyja lineage abundance reports instead of IRMA-based typing summaries.
+* Directory presence depends on selected `--platform`.
+
+---
+
+# Notes
+
+* All major reports are tab-delimited (`.tsv`) for compatibility with Excel, R, and downstream automation.
+* Column order is stable across runs.
+* Summary report merges are deterministic and keyed by `Sample`.
