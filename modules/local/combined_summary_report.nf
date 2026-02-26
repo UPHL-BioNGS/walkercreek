@@ -15,6 +15,7 @@ process COMBINED_SUMMARY_REPORT {
 
     output:
     path ("summary_report.tsv") , emit: summary_report_tsv
+    path ("summary_alerts.tsv") , optional:true, emit: summary_alerts_tsv
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,7 +24,15 @@ process COMBINED_SUMMARY_REPORT {
     def args = task.ext.args ?: ''
 
     """
-    python $projectDir/bin/merge_reports.py $qc_reportsheet_tsv $typing_report_tsv $irma_consensus_qc_tsv $nextclade_report_tsv $kraken2_reportsheet_tsv $merged_bam_coverage_results_tsv
+    python $projectDir/bin/merge_reports.py \
+    --qc $qc_reportsheet_tsv \
+    --typing $typing_report_tsv \
+    --irma-qc $irma_consensus_qc_tsv \
+    --nextclade $nextclade_report_tsv \
+    --kraken2 $kraken2_reportsheet_tsv \
+    --coverage $merged_bam_coverage_results_tsv \
+    --out summary_report.tsv \
+    --alerts-out summary_alerts.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

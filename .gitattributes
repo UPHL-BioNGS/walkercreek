@@ -2,3 +2,17 @@
 *.nf.test linguist-language=nextflow
 modules/nf-core/** linguist-generated
 subworkflows/nf-core/** linguist-generated
+
+# Reduce HTML impact on language stats
+*.html linguist-detectable=false
+*.htm  linguist-detectable=false
+
+# Treat docs and static assets as documentation
+docs/** linguist-documentation
+assets/** linguist-vendored
+README.md linguist-documentation
+
+# Treat examples, reports, and guides as non-source so they don’t skew stats
+examples/** linguist-vendored
+reports/** linguist-vendored
+*.md linguist-documentation

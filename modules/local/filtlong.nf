@@ -5,7 +5,7 @@ process FILTLONG {
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/filtlong:0.2.1--h9a82719_0' :
-        'biocontainers/filtlong:0.2.1--h9a82719_0' }"
+        'quay.io/biocontainers/filtlong:0.2.1--h9a82719_0' }"
 
     input:
     tuple val(meta), path(longreads)
@@ -13,19 +13,24 @@ process FILTLONG {
     output:
     tuple val(meta), path("*.fastq.gz"), emit: reads
     tuple val(meta), path("*.log")     , emit: log
-    path "versions.yml"                 , emit: versions
+    path "versions.yml"                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    if ("$longreads" == "${prefix}.fastq.gz") error "Longread FASTQ input and output names are the same, set prefix in module configuration to disambiguate!"
+    def args        = task.ext.args ?: ''
+    def prefix      = task.ext.prefix ?: "${meta.id}"
+    def min_length  = task.ext.min_length ?: 100
+    def keep_percent = task.ext.keep_percent ?: 98
+
+    if ("$longreads" == "${prefix}.fastq.gz")
+        error "Longread FASTQ input and output names are the same, set prefix in module configuration to disambiguate!"
+
     """
     filtlong \\
-        --min_length 100 \\
-        --keep_percent 98 \\
+        --min_length ${min_length} \\
+        --keep_percent ${keep_percent} \\
         $args \\
         $longreads \\
         2> >(tee ${prefix}.log >&2) \\

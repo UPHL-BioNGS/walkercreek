@@ -42,7 +42,7 @@ process IRMA {
     echo 'DOUBLE_LOCAL_PROC=${(task.cpus / 2).toInteger()}' >> irma_config.sh
 
     # Apply deletion type and alignment program configurations if applicable
-    if [ ${params.keep_ref_deletions} ]; then
+    if [[ "${params.keep_ref_deletions}" == "true" ]]; then
         echo 'DEL_TYPE="NNN"' >> irma_config.sh
         echo 'ALIGN_PROG="BLAT"' >> irma_config.sh
     fi
@@ -67,22 +67,37 @@ process IRMA {
         cat "${prefix}_IRMA_TYPE" > "${prefix}.irma_type.txt"
     fi
 
-    # Check for the presence of specific subtype files, process and consolidate as needed
-    if [ -d "${prefix}" ] && [ -n "\$(ls -A ${prefix}/*HA_H*.fasta)" ]; then
-        echo "\$(basename \$(find ${prefix} -name "*HA_H*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${prefix}_HA_SUBTYPE"
-    else
-        echo "NoIRMAsubtype " > "${prefix}_HA_SUBTYPE"
+    # Normalize IRMA subtype from HA and NA filenames (robust against missing one side)
+    ha_subtype=""
+    na_subtype=""
+
+    if [ -d "${prefix}" ]; then
+        # Grab first HA subtype token like H1, H3, H5 from filenames containing HA_H*.fasta
+        ha_file="\$(find "${prefix}" -maxdepth 1 -type f -name "*HA_H*.fasta" | head -n1)"
+        if [ -n "\${ha_file}" ]; then
+            ha_subtype="\$(basename "\${ha_file}" | grep -oE 'H[0-9]+' | head -n1)"
+        fi
+
+        # Grab first NA subtype token like N1, N2 from filenames containing NA_N*.fasta
+        na_file="\$(find "${prefix}" -maxdepth 1 -type f -name "*NA_N*.fasta" | head -n1)"
+        if [ -n "\${na_file}" ]; then
+            na_subtype="\$(basename "\${na_file}" | grep -oE 'N[0-9]+' | head -n1)"
+        fi
     fi
 
-    if [ -d "${prefix}" ] && [ -n "\$(ls -A ${prefix}/*NA_N*.fasta)" ]; then
-        echo "\$(basename \$(find ${prefix} -name "*NA_N*.fasta" | head -n1 | rev | cut -d_ -f1 | rev))" > "${prefix}_NA_SUBTYPE"
-    else
-        echo "-NoIRMAsubtype" > "${prefix}_NA_SUBTYPE"
-    fi
+    # Write normalized helper files (optional, for debugging/traceability)
+    echo "\${ha_subtype:-NoHA}" > "${prefix}_HA_SUBTYPE"
+    echo "\${na_subtype:-NoNA}" > "${prefix}_NA_SUBTYPE"
 
-    if [ -s "${prefix}_HA_SUBTYPE" ] && [ -s "${prefix}_NA_SUBTYPE" ]; then
-        cat "${prefix}_HA_SUBTYPE" "${prefix}_NA_SUBTYPE" > "${prefix}.subtype.txt"
-        awk '{sub(".fasta","",\$1); printf \$1}' "${prefix}.subtype.txt" | sed 's/NoIRMAsubtype-NoIRMAsubtype/No IRMA subtype/' > "${prefix}.irma_subtype.txt"
+    # Build final normalized subtype string
+    if [ -n "\${ha_subtype}" ] && [ -n "\${na_subtype}" ]; then
+        echo "\${ha_subtype}\${na_subtype}" > "${prefix}.irma_subtype.txt"
+    elif [ -n "\${ha_subtype}" ]; then
+        echo "\${ha_subtype}" > "${prefix}.irma_subtype.txt"
+    elif [ -n "\${na_subtype}" ]; then
+        echo "\${na_subtype}" > "${prefix}.irma_subtype.txt"
+    else
+        echo "No IRMA subtype" > "${prefix}.irma_subtype.txt"
     fi
 
     # Output IRMA typing tsv
