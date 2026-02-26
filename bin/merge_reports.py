@@ -175,7 +175,7 @@ def compute_alerts(row):
 
     # Tuneable thresholds for "decent" segment evidence (set at 50% coverage or 50x mean depth to reduce noise)
     def decent_segment(depth, cov):
-        return ((cov is not None and cov >= 50.0) or (depth is not None and depth >= 50.0))
+        return (cov is not None and cov >= 50.0) or (depth is not None and depth >= 50.0)
 
     a_evidence = (
         irma_type == "Type_A"
@@ -210,7 +210,9 @@ def compute_alerts(row):
             discordance_flag = f"ALERT_DISCORDANT_A_SUBTYPE_IRMA_{irma_sub}_ABR_{abr_sub}"
             review_recommended = "YES"
         # A vs B discordance
-        elif (is_seasonal_a_subtype(irma_sub) or is_nonseasonal_a_subtype(irma_sub)) and is_influenza_b_subtype(abr_sub):
+        elif (is_seasonal_a_subtype(irma_sub) or is_nonseasonal_a_subtype(irma_sub)) and is_influenza_b_subtype(
+            abr_sub
+        ):
             discordance_flag = f"ALERT_A_VS_B_SUBTYPE_IRMA_{irma_sub}_ABR_{abr_sub}"
             review_recommended = "YES"
         elif is_influenza_b_subtype(irma_sub) and (is_seasonal_a_subtype(abr_sub) or is_nonseasonal_a_subtype(abr_sub)):
@@ -218,7 +220,9 @@ def compute_alerts(row):
             review_recommended = "YES"
 
     # 3) Possible coinfection: A subtype call + B evidence (or B call + A evidence)
-    if (irma_type == "Type_A" and (is_seasonal_a_subtype(irma_sub) or is_nonseasonal_a_subtype(irma_sub))) and b_evidence:
+    if (
+        irma_type == "Type_A" and (is_seasonal_a_subtype(irma_sub) or is_nonseasonal_a_subtype(irma_sub))
+    ) and b_evidence:
         coinfection_flag = "ALERT_POSSIBLE_COINFECTION_A_PLUS_B"
         review_recommended = "YES"
 
@@ -261,24 +265,19 @@ def build_alert_rows(rows):
         "abricate_InsaFlu_type",
         "abricate_InsaFlu_subtype",
         "abricate_subtype_normalized",
-
         "priority_subtype_flag",
         "subtype_discordance_flag",
         "coininfection_flag",
         "nextclade_status_flag",
         "review_recommended",
-
         "Nextclade_qc.overallStatus",
         "Nextclade_seqName",
-
         "kraken2 Influenza A percentage",
         "kraken2 Influenza B percentage",
-
         "A_HA_mean_depth",
         "A_HA_percent_coverage",
         "A_NA_mean_depth",
         "A_NA_percent_coverage",
-
         "B_HA_mean_depth",
         "B_HA_percent_coverage",
         "B_NA_mean_depth",
@@ -287,10 +286,10 @@ def build_alert_rows(rows):
 
     out = []
     for r in rows:
-        priority = (r.get("priority_subtype_flag") or "NONE")
-        discord = (r.get("subtype_discordance_flag") or "NONE")
-        coinfect = (r.get("coininfection_flag") or "NONE")
-        review = (r.get("review_recommended") or "NO")
+        priority = r.get("priority_subtype_flag") or "NONE"
+        discord = r.get("subtype_discordance_flag") or "NONE"
+        coinfect = r.get("coininfection_flag") or "NONE"
+        review = r.get("review_recommended") or "NO"
 
         if priority != "NONE" or discord != "NONE" or coinfect != "NONE" or review == "YES":
             row = OrderedDict()
@@ -393,12 +392,10 @@ def main():
         "unpaired_reads_after_trimming",
         "GC_after_trimming",
         "average_Q_score_after_trimming",
-
         "IRMA_type",
         "IRMA_subtype",
         "abricate_InsaFlu_type",
         "abricate_InsaFlu_subtype",
-
         "IRMA_consensus_ACTG_count",
         "IRMA_consensus_degenerate_count",
         "IRMA_consensus_N_count",
@@ -406,7 +403,6 @@ def main():
         "IRMA_consensus_segment_count",
         "IRMA_consensus_N50",
         "IRMA_consensus_GC_content",
-
         "clade",
         "legacy_clade",
         "short_clade",
@@ -415,7 +411,6 @@ def main():
         "Nextclade_totalSubstitutions",
         "Nextclade_coverage",
         "Nextclade_seqName",
-
         "kraken2 Homo sapiens percentage",
         "kraken2 Influenza A percentage",
         "kraken2 Influenza B percentage",

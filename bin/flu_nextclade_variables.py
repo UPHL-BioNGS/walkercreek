@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 from typing import Tuple, List
 
-
 SEASONAL_DATASETS = {
     "H1N1": "flu_h1n1pdm_ha",
     "H3N2": "flu_h3n2_ha",
@@ -15,7 +14,7 @@ SEASONAL_DATASETS = {
     "BYAM": "flu_yam_ha",
 }
 
-# Add non-seasonal dataset routing names 
+# Add non-seasonal dataset routing names
 NONSEASONAL_DATASETS = {
     "H5": "flu_h5_ha",
     "H7": "flu_h7_ha",
@@ -43,9 +42,16 @@ def normalize_subtype(raw: str) -> str:
     s = s.replace("-", "")
 
     null_markers = {
-        "", "NOIRMASUBTYPE", "NOIRMASTUBTYPE", "NO_SUBTYPE",
-        "NOABRICATESUBTYPE", "NOIRMATYPE",
-        "NOABRICATETYPE", "NOIRMA", "NONE", "NA"
+        "",
+        "NOIRMASUBTYPE",
+        "NOIRMASTUBTYPE",
+        "NO_SUBTYPE",
+        "NOABRICATESUBTYPE",
+        "NOIRMATYPE",
+        "NOABRICATETYPE",
+        "NOIRMA",
+        "NONE",
+        "NA",
     }
     if s in null_markers or "NOIRMASUBTYPE" in s or "NOABRICATESUBTYPE" in s:
         m_n = re.search(r"(N\d+)", s)
@@ -141,7 +147,9 @@ def write_tsv(path: str, fieldnames: List[str], row: dict) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Route flu samples to Nextclade datasets and flag non-seasonal subtypes.")
+    parser = argparse.ArgumentParser(
+        description="Route flu samples to Nextclade datasets and flag non-seasonal subtypes."
+    )
     parser.add_argument("--sample", required=True)
     parser.add_argument("--irma_subtype", required=True)
     parser.add_argument("--abricate_subtype", required=True)
@@ -216,6 +224,6 @@ def main() -> None:
             },
         )
 
+
 if __name__ == "__main__":
     main()
-
