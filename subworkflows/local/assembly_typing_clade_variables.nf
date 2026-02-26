@@ -172,14 +172,26 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
         NEXTCLADE_VARIABLES(ch_nextclade_variables_input)
 
-        ch_dataset_H1N1_ha = NEXTCLADE_VARIABLES.out.dataset_H1N1_ha
-        ch_dataset_H3N2_ha = NEXTCLADE_VARIABLES.out.dataset_H3N2_ha
+        ch_dataset_H1N1_ha     = NEXTCLADE_VARIABLES.out.dataset_H1N1_ha
+        ch_dataset_H3N2_ha     = NEXTCLADE_VARIABLES.out.dataset_H3N2_ha
         ch_dataset_Victoria_ha = NEXTCLADE_VARIABLES.out.dataset_Victoria_ha
         ch_dataset_Yamagata_ha = NEXTCLADE_VARIABLES.out.dataset_Yamagata_ha
-        ch_dataset = ch_dataset_H1N1_ha.mix(ch_dataset_H3N2_ha,
-                                        ch_dataset_Victoria_ha,
-                                        ch_dataset_Yamagata_ha
-                                        )
+
+        // non-seasonal routes
+        ch_dataset_H5_ha       = NEXTCLADE_VARIABLES.out.dataset_H5_ha
+        ch_dataset_H7_ha       = NEXTCLADE_VARIABLES.out.dataset_H7_ha
+        ch_dataset_H9_ha       = NEXTCLADE_VARIABLES.out.dataset_H9_ha
+        ch_dataset_H10_ha      = NEXTCLADE_VARIABLES.out.dataset_H10_ha
+
+        ch_dataset = ch_dataset_H1N1_ha.mix(
+            ch_dataset_H3N2_ha,
+            ch_dataset_Victoria_ha,
+            ch_dataset_Yamagata_ha,
+            ch_dataset_H5_ha,
+            ch_dataset_H7_ha,
+            ch_dataset_H9_ha,
+            ch_dataset_H10_ha
+        )
 
         irma_fasta                      = IRMA.out.irma_fasta
         irma_vcf                        = IRMA.out.irma_vcf
@@ -313,14 +325,26 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
 
         NEXTCLADE_VARIABLES(ch_nextclade_variables_input)
 
-        ch_dataset_H1N1_ha = NEXTCLADE_VARIABLES.out.dataset_H1N1_ha
-        ch_dataset_H3N2_ha = NEXTCLADE_VARIABLES.out.dataset_H3N2_ha
+        ch_dataset_H1N1_ha     = NEXTCLADE_VARIABLES.out.dataset_H1N1_ha
+        ch_dataset_H3N2_ha     = NEXTCLADE_VARIABLES.out.dataset_H3N2_ha
         ch_dataset_Victoria_ha = NEXTCLADE_VARIABLES.out.dataset_Victoria_ha
         ch_dataset_Yamagata_ha = NEXTCLADE_VARIABLES.out.dataset_Yamagata_ha
-        ch_dataset = ch_dataset_H1N1_ha.mix(ch_dataset_H3N2_ha,
-                                        ch_dataset_Victoria_ha,
-                                        ch_dataset_Yamagata_ha
-                                        )
+
+        // non-seasonal routes
+        ch_dataset_H5_ha       = NEXTCLADE_VARIABLES.out.dataset_H5_ha
+        ch_dataset_H7_ha       = NEXTCLADE_VARIABLES.out.dataset_H7_ha
+        ch_dataset_H9_ha       = NEXTCLADE_VARIABLES.out.dataset_H9_ha
+        ch_dataset_H10_ha      = NEXTCLADE_VARIABLES.out.dataset_H10_ha
+
+        ch_dataset = ch_dataset_H1N1_ha.mix(
+            ch_dataset_H3N2_ha,
+            ch_dataset_Victoria_ha,
+            ch_dataset_Yamagata_ha,
+            ch_dataset_H5_ha,
+            ch_dataset_H7_ha,
+            ch_dataset_H9_ha,
+            ch_dataset_H10_ha
+        )
 
         irma_fasta                      = IRMA.out.irma_fasta
         irma_vcf                        = IRMA.out.irma_vcf
