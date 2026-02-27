@@ -9,6 +9,7 @@ include { NEXTCLADE_DATASETGET               } from '../../modules/local/nextcla
 include { NEXTCLADE_RUN                      } from '../../modules/local/nextclade_run.nf'
 include { NEXTCLADE_PARSER                   } from '../../modules/local/nextclade_parser.nf'
 include { NEXTCLADE_REPORT                   } from '../../modules/local/nextclade_report.nf'
+
 /*
 ====================================================================================================
     Run Nextclade Dataset and Analysis Subworkflow
@@ -24,8 +25,20 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
     ch_versions         = Channel.empty()
     ch_nextclade_report = Channel.empty()
     ch_aligned_fasta    = Channel.empty()
+    ch_nextclade_report_tsv = Channel.empty()
 
-    if (params.skip_nextclade) return
+    if (params.skip_nextclade) {
+        // Emit placeholder TSV so summary still runs
+        ch_nextclade_report_tsv = Channel.value(file("$projectDir/assets/empty_nextclade_report.tsv", checkIfExists: false))
+
+        emit:
+        fasta_aligned        = ch_aligned_fasta
+        parser_input         = Channel.empty()
+        nextclade_report     = ch_nextclade_report
+        nextclade_report_tsv = ch_nextclade_report_tsv
+        versions             = ch_versions
+        return
+    }
 
     dataset_keyed = dataset.map { meta, ds_file ->
         tuple(meta.id, meta, ds_file)
@@ -60,7 +73,7 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
         run_joined.map { meta, ds2, ha_fa -> tuple(meta, ha_fa) }
     )
 
-    ch_aligned_fasta  = ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
+    ch_aligned_fasta    = ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
     ch_nextclade_report = NEXTCLADE_RUN.out.csv
 
     NEXTCLADE_PARSER( NEXTCLADE_RUN.out.parser_input.filter { meta, f -> f } )
@@ -85,16 +98,23 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
                 header = header ?: lines[0]
                 rows.addAll(lines.drop(1))
             }
-            if (header == null) return ""
+
+            // If no parser output, emit a valid empty header-only table
+            if (header == null) {
+                header = "Sample\tclade\tlegacy_clade\tshort_clade\tsubclade\tNextclade_qc.overallStatus\tNextclade_totalSubstitutions\tNextclade_coverage\tNextclade_seqName"
+                return header + "\n"
+            }
+
             ([header] + rows.unique()).join("\n") + "\n"
         }
 
     NEXTCLADE_REPORT(ch_combined_parser_tsv_results)
+    ch_nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
 
     emit:
     fasta_aligned        = NEXTCLADE_RUN.out.fasta_aligned
     parser_input         = NEXTCLADE_RUN.out.parser_input
     nextclade_report     = ch_nextclade_report
-    nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
+    nextclade_report_tsv = ch_nextclade_report_tsv
     versions             = ch_versions
 }

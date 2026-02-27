@@ -2,9 +2,7 @@ process NEXTCLADE_RUN {
     tag "$meta.id"
     label 'process_high'
 
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/nextclade:3.1.0--h9ee0642_0' :
-        'quay.io/biocontainers/nextclade:3.1.0--h9ee0642_0' }"
+    container 'nextstrain/nextclade:latest'
 
     input:
     tuple val(meta), path(dataset_2)
