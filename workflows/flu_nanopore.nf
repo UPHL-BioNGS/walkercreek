@@ -33,7 +33,7 @@ workflow FLU_NANOPORE {
 
 ch_versions    = channel.empty()
     ch_all_reads   = channel.empty()
-    ch_for_summary = channel.empty()
+    _ch_for_summary = channel.empty()
 
     ch_input = NANOPORE_SAMPLESHEET_CHECK(channel.fromPath(params.input, checkIfExists: true))
 
@@ -85,7 +85,7 @@ ch_versions    = channel.empty()
 
     // Branch logic based on read count
     ch_input_sorted
-        .branch { sample, fqgz, fq, count ->
+        .branch { sample, _fqgz, _fq, count ->
             pass: count >= params.min_sample_reads
                 pass_sample_reads[sample] = count
                 return [ "$sample\t$count" ]
@@ -142,10 +142,10 @@ ch_versions    = channel.empty()
 
     ASSEMBLY_TYPING_CLADE_VARIABLES(LONGREAD_PREPROCESSING.out.filtered_reads, irma_module)
 
-    ch_assembly              = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
+    _ch_assembly             = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA                    = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
-    ch_NA                    = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
-    ch_irma_fasta            = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
+    _ch_NA                   = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
+    _ch_irma_fasta           = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
     ch_irma_vcf              = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_vcf
     ch_dataset               = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_typing_report_tsv     = ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
@@ -201,6 +201,6 @@ ch_versions    = channel.empty()
         ch_multiqc_logo.toList()
     )
 
-    multiqc_report    = MULTIQC.out.report.toList()
-    ch_multiqc_report = MULTIQC.out.report.toList()
+    _multiqc_report   = MULTIQC.out.report.toList()
+    _ch_multiqc_report = MULTIQC.out.report.toList()
 }

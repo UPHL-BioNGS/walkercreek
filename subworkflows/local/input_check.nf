@@ -39,7 +39,7 @@ def stage_fastq(ArrayList row) {
     def array       = []
     def filesarray  = []
 
-    row.drop(1).eachWithIndex { value, idx ->
+    row.drop(1).eachWithIndex { _value, idx ->
         def i = idx + 1
         if(row[i] == "")
         {

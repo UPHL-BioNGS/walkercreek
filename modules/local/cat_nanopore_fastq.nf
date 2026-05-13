@@ -18,8 +18,8 @@ process CAT_NANOPORE_FASTQ {
 
     script:
     merged_fqgz = "${meta.id}.merged.fastq.gz"
-    def fqList = fq.collect { it.toString() }
-    def fqgzList = fqgz.collect { it.toString() }
+    def fqList = fq.collect { item -> item.toString() }
+    def fqgzList = fqgz.collect { item -> item.toString() }
     """
     touch $merged_fqgz
     if [ ${fqList.size} -gt 0 ]; then

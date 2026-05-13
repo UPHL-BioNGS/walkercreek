@@ -57,8 +57,8 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
 
         ch_irma_consensus_qc_results = irma_consensus_qc_files
-            .unique { meta, file_path -> meta.id }
-            .map { meta, file_path -> file_path.text }
+            .unique { meta, _file_path -> meta.id }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -90,7 +90,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_seg_cov_results_files = IRMA_SEGMENT_COVERAGE.out.cov_results
 
         ch_combined_seg_cov_results = irma_seg_cov_results_files
-            .map { meta, file_path -> file_path.text }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -124,7 +124,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         bam_results_files = SAMTOOLS_MAPPED_READS.out.bam_results
 
         ch_combined_bam_results = bam_results_files
-            .map { meta, file_path -> file_path.text }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -154,8 +154,8 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         tsv_files = IRMA_ABRICATE_REPORT.out.tsv_combined
 
         ch_combined_results = tsv_files
-            .unique { meta, file_path -> meta.id }
-            .map { meta, file_path -> file_path.text }
+            .unique { meta, _file_path -> meta.id }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -210,8 +210,8 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
 
         ch_irma_consensus_qc_results = irma_consensus_qc_files
-            .unique { meta, file_path -> meta.id }
-            .map { meta, file_path -> file_path.text }
+            .unique { meta, _file_path -> meta.id }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -243,7 +243,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_seg_cov_results_files = IRMA_SEGMENT_COVERAGE.out.cov_results
 
         ch_combined_seg_cov_results = irma_seg_cov_results_files
-            .map { meta, file_path -> file_path.text }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -277,7 +277,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         bam_results_files = SAMTOOLS_MAPPED_READS.out.bam_results
 
         ch_combined_bam_results = bam_results_files
-            .map { meta, file_path -> file_path.text }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -307,8 +307,8 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         tsv_files = IRMA_ABRICATE_REPORT.out.tsv_combined
 
         ch_combined_results = tsv_files
-            .unique { meta, file_path -> meta.id }
-            .map { meta, file_path -> file_path.text }
+            .unique { meta, _file_path -> meta.id }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -360,8 +360,8 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_consensus_qc_files = IRMA_CONSENSUS_QC.out.irma_consensus_qc
 
         ch_irma_consensus_qc_results = irma_consensus_qc_files
-            .unique { meta, file_path -> meta.id }
-            .map { meta, file_path -> file_path.text }
+            .unique { meta, _file_path -> meta.id }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -389,7 +389,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         irma_seg_cov_results_files = IRMA_SEGMENT_COVERAGE.out.cov_results
 
         ch_combined_seg_cov_results = irma_seg_cov_results_files
-            .map { meta, file_path -> file_path.text }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -424,7 +424,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         bam_results_files = SAMTOOLS_MAPPED_READS.out.bam_results
 
         ch_combined_bam_results = bam_results_files
-            .map { meta, file_path -> file_path.text }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()
@@ -452,8 +452,8 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
         tsv_files = IRMA_RSV_REPORT.out.tsv_combined
 
         ch_combined_results = tsv_files
-            .unique { meta, file_path -> meta.id }
-            .map { meta, file_path -> file_path.text }
+            .unique { meta, _file_path -> meta.id }
+            .map { _meta, file_path -> file_path.text }
             .flatten()
             .filter { line -> line && line.trim() != '' }
             .collect()

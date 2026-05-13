@@ -78,9 +78,9 @@ workflow FLU_WW_ILLUMINA {
 
     ch_versions = channel.empty()
     ch_all_reads = channel.empty()
-    ch_sra_reads = channel.empty()
+    _ch_sra_reads = channel.empty()
     ch_sra_list = channel.empty()
-    ch_for_summary = channel.empty()
+    _ch_for_summary = channel.empty()
 
     // SRA inputs
     if (params.add_sra_file) {
@@ -140,7 +140,7 @@ workflow FLU_WW_ILLUMINA {
         ch_krakendb = krakenDbRoot
     }
 
-    db = ch_krakendb
+    _db = ch_krakendb
 
     // Ensure ref dir exists
     if (!file("${projectDir}/ref").exists()) {
@@ -221,7 +221,7 @@ workflow FLU_WW_ILLUMINA {
     }
 
     QC_REPORTSHEET(ch_qcreportsheet)
-    ch_qc_reportsheet_tsv = QC_REPORTSHEET.out.qc_reportsheet_tsv
+    _ch_qc_reportsheet_tsv = QC_REPORTSHEET.out.qc_reportsheet_tsv
 
     def refdir = "${projectDir}/ref"
 
@@ -265,18 +265,18 @@ workflow FLU_WW_ILLUMINA {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect { row -> row[1] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.stats.map { meta, stats -> [stats] }.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.adapters_stats.map { meta, stats -> [stats] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.stats.map { _meta, stats -> [stats] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING_READ_QC.out.adapters_stats.map { _meta, stats -> [stats] }.ifEmpty([]))
 
     ch_multiqc_files = ch_multiqc_files.mix(
         ALIGN_TO_REFS_AND_FREYJA.out.align_flagstats
-            .map { meta, f -> [f] }
+            .map { _meta, f -> [f] }
             .ifEmpty([])
     )
 
     ch_multiqc_files = ch_multiqc_files.mix(
         ALIGN_TO_REFS_AND_FREYJA.out.align_mapstats
-            .map { meta, f -> [f] }
+            .map { _meta, f -> [f] }
             .ifEmpty([])
     )
 
@@ -287,6 +287,6 @@ workflow FLU_WW_ILLUMINA {
         ch_multiqc_logo.toList()
     )
 
-    multiqc_report = MULTIQC.out.report.toList()
-    ch_multiqc_report = MULTIQC.out.report.toList()
+    _multiqc_report = MULTIQC.out.report.toList()
+    ch__multiqc_report = MULTIQC.out.report.toList()
 }

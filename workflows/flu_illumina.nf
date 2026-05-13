@@ -60,9 +60,9 @@ workflow FLU_ILLUMINA {
 
 ch_versions         = channel.empty()
     ch_all_reads        = channel.empty()
-    ch_sra_reads        = channel.empty()
+    _ch_sra_reads       = channel.empty()
     ch_sra_list         = channel.empty()
-    ch_for_summary      = channel.empty()
+    _ch_for_summary     = channel.empty()
 
 
     if (params.add_sra_file) {
@@ -117,7 +117,7 @@ ch_versions         = channel.empty()
             ch_krakendb = channel.value(file(params.krakendb))
         }
     }
-    db = ch_krakendb
+    _db = ch_krakendb
     adapters = params.adapters_fasta ? file(params.adapters_fasta) : []
     phix = params.phix_fasta ? file(params.phix_fasta) : []
     primers = params.illumina_primers_fasta ? file(params.illumina_primers_fasta) : []
@@ -152,10 +152,10 @@ ch_versions         = channel.empty()
         SUBWORKFLOW: ASSEMBLY_TYPING_CLADE_VARIABLES - assembly, flu typing/subtyping, and Nextclade variable determination based upon flu 'abricate_subtype'
     */
     ASSEMBLY_TYPING_CLADE_VARIABLES(PREPROCESSING_READ_QC.out.filtered_reads, irma_module)
-    ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
+    _ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
-    ch_NA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
-    ch_irma_fasta = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
+    _ch_NA = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
+    _ch_irma_fasta = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
     ch_irma_vcf = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_vcf
     ch_dataset = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_typing_report_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
@@ -187,7 +187,7 @@ ch_versions         = channel.empty()
     ch_versions = ch_versions.mix(NEXTCLADE_DATASET_AND_ANALYSIS.out.versions)
 
     // Initialize channel for multiqc report from Nextclade
-    ch_nextclade_multiqc = channel.empty()
+    _ch_nextclade_multiqc = channel.empty()
 
     //
     // MODULE: Run FastQC
@@ -244,7 +244,7 @@ ch_versions         = channel.empty()
         ch_multiqc_custom_config.toList(),
         ch_multiqc_logo.toList()
     )
-    multiqc_report = MULTIQC.out.report.toList()
-    ch_multiqc_report = MULTIQC.out.report.toList()
+    _multiqc_report = MULTIQC.out.report.toList()
+    ch__multiqc_report = MULTIQC.out.report.toList()
 
 }

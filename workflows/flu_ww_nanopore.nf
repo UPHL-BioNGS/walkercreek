@@ -32,7 +32,7 @@ workflow FLU_WW_NANOPORE {
 // Create empty channels for versions, reads, and SRA data
     ch_versions         = channel.empty()
     ch_all_reads        = channel.empty()
-    ch_for_summary      = channel.empty()
+    _ch_for_summary     = channel.empty()
 
     ch_input = NANOPORE_SAMPLESHEET_CHECK(channel.fromPath(params.input, checkIfExists: true))
 
@@ -85,7 +85,7 @@ workflow FLU_WW_NANOPORE {
         .set { ch_input_sorted }
 
     ch_input_sorted
-        .branch { sample, fqgz, fq, count  ->
+        .branch { sample, _fqgz, _fq, count ->
             pass: count >= params.min_sample_reads
                 pass_sample_reads[sample] = count
                 return [ "$sample\t$count" ]
@@ -112,7 +112,7 @@ workflow FLU_WW_NANOPORE {
     // Re-arrange channels to have meta map of information for sample
     ch_input_sorted
         .filter { row -> row[-1] >= params.min_sample_reads }
-        .map { sample, fqgz, fq, count -> tuple([id: sample], fqgz, fq) }
+        .map { sample, fqgz, fq, _count -> tuple([id: sample], fqgz, fq) }
         .set { ch_reads }
 
     CAT_NANOPORE_FASTQ(ch_reads)
@@ -239,8 +239,8 @@ workflow FLU_WW_NANOPORE {
         ch_multiqc_custom_config.toList(),
         ch_multiqc_logo.toList()
     )
-    multiqc_report = MULTIQC.out.report.toList()
-    ch_multiqc_report = MULTIQC.out.report.toList()
+    _multiqc_report = MULTIQC.out.report.toList()
+    ch__multiqc_report = MULTIQC.out.report.toList()
 }
 
 /*

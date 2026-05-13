@@ -35,10 +35,10 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
 
         joined = dataset_keyed
             .join(ha_keyed)
-            .map { id, meta1, ds_file, meta2, ha_fasta -> tuple(meta1, ds_file, ha_fasta) }
+            .map { _id, meta1, ds_file, _meta2, ha_fasta -> tuple(meta1, ds_file, ha_fasta) }
 
         NEXTCLADE_DATASETGET(
-            joined.map { meta, ds_file, ha_fasta -> tuple(meta, ds_file) }
+            joined.map { meta, ds_file, _ha_fasta -> tuple(meta, ds_file) }
         )
 
         ch_versions = ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
@@ -50,11 +50,11 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
 
         run_joined = dataset2_keyed
             .join(ha2_keyed)
-            .map { id, meta1, ds2, meta2, ha_fa -> tuple(meta1, ds2, ha_fa) }
+            .map { _id, meta1, ds2, _meta2, ha_fa -> tuple(meta1, ds2, ha_fa) }
 
         NEXTCLADE_RUN(
-            run_joined.map { meta, ds2, ha_fa -> tuple(meta, ds2) },
-            run_joined.map { meta, ds2, ha_fa -> tuple(meta, ha_fa) }
+            run_joined.map { meta, ds2, _ha_fa -> tuple(meta, ds2) },
+            run_joined.map { meta, _ds2, ha_fa -> tuple(meta, ha_fa) }
         )
 
         ch_aligned_fasta    = NEXTCLADE_RUN.out.fasta_aligned
@@ -62,7 +62,7 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
         ch_nextclade_report = NEXTCLADE_RUN.out.csv
 
         NEXTCLADE_PARSER(
-            NEXTCLADE_RUN.out.parser_input.filter { meta, f -> f }
+            NEXTCLADE_RUN.out.parser_input.filter { _meta, f -> f }
         )
 
         parser_tsv_files = NEXTCLADE_PARSER.out.nextclade_parser_tsv
@@ -75,7 +75,7 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
             }
 
         ch_combined_parser_tsv_results = parser_tsv_best
-            .map { meta, tsv -> tsv.text }
+            .map { _meta, tsv -> tsv.text }
             .collect()
             .map { texts ->
                 def header = null

@@ -46,11 +46,11 @@ workflow PREPROCESSING_READ_QC {
     ch_versions = ch_versions.mix(FAQCS.out.versions)
 
     BBMAP_BBDUK(FAQCS.out.reads, adapters, phix)
-    clean_reads = BBMAP_BBDUK.out.clean_reads
+    _clean_reads = BBMAP_BBDUK.out.clean_reads
     ch_versions = ch_versions.mix(BBMAP_BBDUK.out.versions)
 
     BBDUK_ILLUMINA_PRIMERS(BBMAP_BBDUK.out.clean_reads, primers)
-    filtered_reads = BBDUK_ILLUMINA_PRIMERS.out.filtered_reads
+    _filtered_reads = BBDUK_ILLUMINA_PRIMERS.out.filtered_reads
     ch_versions = ch_versions.mix(BBDUK_ILLUMINA_PRIMERS.out.versions)
 
     ch_qcreport_input = FAQCS.out.txt

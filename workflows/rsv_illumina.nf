@@ -157,8 +157,8 @@ workflow RSV_ILLUMINA {
     */
     ASSEMBLY_TYPING_CLADE_VARIABLES(PREPROCESSING_READ_QC.out.clean_reads, irma_module)
     ch_assembly = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
-    ch_irma_fasta = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
-    ch_irma_vcf = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_vcf
+    _ch_irma_fasta = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
+    _ch_irma_vcf = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_vcf
     ch_dataset = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_typing_report_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
     ch_irma_consensus_qc_tsv = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_consensus_qc_tsv
@@ -238,7 +238,7 @@ workflow RSV_ILLUMINA {
         ch_multiqc_custom_config.toList(),
         ch_multiqc_logo.toList()
     )
-    multiqc_report = MULTIQC.out.report.toList()
+    _multiqc_report = MULTIQC.out.report.toList()
 
 }
 
