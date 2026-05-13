@@ -34,16 +34,16 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
     irma_module
 
     main:
-    ch_versions                           = Channel.empty()
-    ch_assembly                           = Channel.empty()
-    ch_HA                                 = Channel.empty()
-    ch_NA                                 = Channel.empty()
-    irma_fasta                            = Channel.empty()
-    irma_vcf                              = Channel.empty()
-    typing_report_tsv                     = Channel.empty()
-    irma_consensus_qc_tsv                 = Channel.empty()
-    dataset                               = Channel.empty()
-    merged_bam_coverage_results_tsv       = Channel.empty()
+    ch_versions                           = channel.empty()
+    ch_assembly                           = channel.empty()
+    ch_HA                                 = channel.empty()
+    ch_NA                                 = channel.empty()
+    irma_fasta                            = channel.empty()
+    irma_vcf                              = channel.empty()
+    typing_report_tsv                     = channel.empty()
+    irma_consensus_qc_tsv                 = channel.empty()
+    dataset                               = channel.empty()
+    merged_bam_coverage_results_tsv       = channel.empty()
 
     if ( params.platform == "flu_illumina" ) {
         IRMA(filtered_reads, irma_module)
@@ -64,7 +64,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def qc_header = list[0].split("\n")[0]
-                def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != qc_header }
+                def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != qc_header }
                 return ([qc_header] + qc_contentWithoutHeaders).join("\n")
             }
 
@@ -96,7 +96,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
@@ -130,7 +130,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
@@ -161,7 +161,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 return ([header] + contentWithoutHeaders).join("\n")
             }
 
@@ -217,7 +217,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def qc_header = list[0].split("\n")[0]
-                def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != qc_header }
+                def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != qc_header }
                 return ([qc_header] + qc_contentWithoutHeaders).join("\n")
             }
 
@@ -249,7 +249,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
@@ -283,7 +283,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
@@ -314,7 +314,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 return ([header] + contentWithoutHeaders).join("\n")
             }
 
@@ -367,7 +367,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def qc_header = list[0].split("\n")[0]
-                def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != qc_header }
+                def qc_contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != qc_header }
                 return ([qc_header] + qc_contentWithoutHeaders).join("\n")
             }
 
@@ -395,7 +395,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
@@ -430,7 +430,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 def sortedContent = contentWithoutHeaders.sort { a, b ->
                     def sampleA = a.split('\t')[0]
                     def sampleB = b.split('\t')[0]
@@ -459,7 +459,7 @@ workflow ASSEMBLY_TYPING_CLADE_VARIABLES {
             .collect()
             .map { list ->
                 def header = list[0].split("\n")[0]
-                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { it != header }
+                def contentWithoutHeaders = list*.split("\n").flatten().unique().findAll { row -> row != header }
                 return ([header] + contentWithoutHeaders).join("\n")
             }
 

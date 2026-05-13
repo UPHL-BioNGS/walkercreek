@@ -22,9 +22,9 @@ workflow VARIANT_ANNOTATION {
     irma_vcf
 
     main:
-    ch_versions      = Channel.empty()
-    ch_snpeff_db     = Channel.empty()
-    ch_snpeff_config = Channel.empty()
+    ch_versions      = channel.empty()
+    ch_snpeff_db     = channel.empty()
+    ch_snpeff_config = channel.empty()
 
     irma_vcf
         .flatMap { item ->
@@ -62,14 +62,14 @@ workflow VARIANT_ANNOTATION {
                 }
                 def header = file_content[0]
                 def body = file_content[1..-1].collect { line -> "$sample_name\t$line" }
-                return ["Sample\t$header", *body].join("\n")
+                return (["Sample\t$header"] + body).join("\n")
             }
             .filter { it != null }
             .collect()
             .map { list ->
                 def allLines = list*.split("\n").flatten()
                 def header = allLines.find { it.startsWith("Sample\t") }
-                def contentWithoutHeaders = allLines.findAll { it != header }
+                def contentWithoutHeaders = allLines.findAll { row -> row != header }
                 return ([header] + contentWithoutHeaders).join("\n")
             }
 

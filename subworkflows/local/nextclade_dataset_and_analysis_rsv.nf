@@ -21,11 +21,11 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS_RSV {
     assembly
 
     main:
-    ch_versions              = Channel.empty()
-    ch_nextclade_report      = Channel.empty()
-    ch_aligned_fasta         = Channel.empty()
-    ch_nextclade_run_input   = Channel.empty()
-    nextclade_report_tsv     = Channel.empty()
+    ch_versions              = channel.empty()
+    ch_nextclade_report      = channel.empty()
+    ch_aligned_fasta         = channel.empty()
+    ch_nextclade_run_input   = channel.empty()
+    nextclade_report_tsv     = channel.empty()
 
     if (params.skip_nextclade) return
 
@@ -68,7 +68,7 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS_RSV {
             def header = null
             def rows = []
             texts.each { txt ->
-                def lines = txt?.readLines()?.findAll { it?.trim() }
+                def lines = txt?.readLines()?.findAll { line -> line?.trim() }
                 if (!lines) return
                 header = header ?: lines[0]
                 rows.addAll(lines.drop(1))

@@ -18,9 +18,9 @@ workflow INPUT_CHECK {
     samplesheet
 
     main:
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
-    Channel.fromPath(samplesheet)
+    channel.fromPath(samplesheet)
         .splitCsv( header:false, sep:',', skip:1 )
         .map { row -> stage_fastq(row) }
         .set{ precheck_reads }
@@ -39,8 +39,8 @@ def stage_fastq(ArrayList row) {
     def array       = []
     def filesarray  = []
 
-    for(int i = 1; i < row.size(); i++)
-    {
+    row.drop(1).eachWithIndex { value, idx ->
+        def i = idx + 1
         if(row[i] == "")
         {
         } else if (!file(row[i]).exists()) {

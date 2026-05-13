@@ -5,7 +5,7 @@ process NEXTCLADE_RUN {
     container 'nextstrain/nextclade:latest'
 
     input:
-    tuple val(meta), path(dataset_2)
+    tuple val(dataset_meta), path(dataset_2)
     tuple val(meta), path(fasta)
 
     output:
