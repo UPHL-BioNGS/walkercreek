@@ -40,9 +40,6 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
         NEXTCLADE_DATASETGET(
             joined.map { meta, ds_file, _ha_fasta -> tuple(meta, ds_file) }
         )
-
-        ch_versions = ch_versions.mix(NEXTCLADE_DATASETGET.out.versions)
-
         dataset_2 = NEXTCLADE_DATASETGET.out.dataset_2
 
         dataset2_keyed = dataset_2.map { meta, ds2 -> tuple(meta.id, meta, ds2) }
@@ -100,10 +97,7 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS {
         NEXTCLADE_REPORT(ch_combined_parser_tsv_results)
 
         ch_nextclade_report_tsv = NEXTCLADE_REPORT.out.nextclade_report_tsv
-        ch_versions             = ch_versions.mix(NEXTCLADE_RUN.out.versions)
-        ch_versions             = ch_versions.mix(NEXTCLADE_PARSER.out.versions)
-        ch_versions             = ch_versions.mix(NEXTCLADE_REPORT.out.versions)
-    }
+}
 
     emit:
     fasta_aligned         = ch_aligned_fasta

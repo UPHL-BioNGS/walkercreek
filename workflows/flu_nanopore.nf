@@ -1,7 +1,7 @@
-include { LONGREAD_PREPROCESSING          } from '../subworkflows/local/longread_preprocessing'
-include { ASSEMBLY_TYPING_CLADE_VARIABLES } from '../subworkflows/local/assembly_typing_clade_variables'
-include { VARIANT_ANNOTATION              } from '../subworkflows/local/variant_annotation'
-include { NEXTCLADE_DATASET_AND_ANALYSIS  } from '../subworkflows/local/nextclade_dataset_and_analysis'
+include { LONGREAD_PREPROCESSING                       } from '../subworkflows/local/longread_preprocessing'
+include { ASSEMBLY_TYPING_CLADE_VARIABLES              } from '../subworkflows/local/assembly_typing_clade_variables'
+include { VARIANT_ANNOTATION                           } from '../subworkflows/local/variant_annotation'
+include { NEXTCLADE_DATASET_AND_ANALYSIS               } from '../subworkflows/local/nextclade_dataset_and_analysis'
 include { MULTIQC_TSV_FROM_LIST as READ_COUNT_FAIL_TSV } from '../modules/local/multiqc_tsv_from_list.nf'
 include { MULTIQC_TSV_FROM_LIST as READ_COUNT_PASS_TSV } from '../modules/local/multiqc_tsv_from_list.nf'
 include { CAT_NANOPORE_FASTQ                           } from '../modules/local/cat_nanopore_fastq.nf'
@@ -16,10 +16,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                  } from '../modules/nf-cor
 
 workflow FLU_NANOPORE {
 
-    
     main:
-
-    // nf26 pass2 scoped setup
     def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
     WorkflowWalkercreek.initialise(params, log)
 
@@ -31,14 +28,13 @@ workflow FLU_NANOPORE {
     def ch_multiqc_logo          = params.multiqc_logo ? channel.fromPath(params.multiqc_logo, checkIfExists: true) : channel.empty()
     def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
-ch_versions    = channel.empty()
+    ch_versions    = channel.empty()
     ch_all_reads   = channel.empty()
     _ch_for_summary = channel.empty()
 
     ch_input = NANOPORE_SAMPLESHEET_CHECK(channel.fromPath(params.input, checkIfExists: true))
 
     // Split input csv (skip header), map each row to [sample,reads], then group by sample
-    // Taken from https://github.com/peterk87/nf-flu/blob/master/workflows/nanopore.nf
     ch_input
         .splitCsv(header: ['sample', 'reads'], sep: ',', skip: 1)
         .map { row -> [row.sample, row.reads] }

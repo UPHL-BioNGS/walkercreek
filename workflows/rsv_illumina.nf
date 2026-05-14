@@ -1,8 +1,8 @@
-include { SRA_FASTQ_SRATOOLS                 } from '../subworkflows/local/sra_fastq_sratools'
-include { INPUT_CHECK                        } from '../subworkflows/local/input_check'
-include { PREPROCESSING_READ_QC              } from '../subworkflows/local/preprocessing_read_qc'
-include { ASSEMBLY_TYPING_CLADE_VARIABLES    } from '../subworkflows/local/assembly_typing_clade_variables'
-include { NEXTCLADE_DATASET_AND_ANALYSIS_RSV } from '../subworkflows/local/nextclade_dataset_and_analysis_rsv'
+include { SRA_FASTQ_SRATOOLS                          } from '../subworkflows/local/sra_fastq_sratools'
+include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
+include { PREPROCESSING_READ_QC                       } from '../subworkflows/local/preprocessing_read_qc'
+include { ASSEMBLY_TYPING_CLADE_VARIABLES             } from '../subworkflows/local/assembly_typing_clade_variables'
+include { NEXTCLADE_DATASET_AND_ANALYSIS_RSV          } from '../subworkflows/local/nextclade_dataset_and_analysis_rsv'
 include { FASTQC                                      } from '../modules/local/fastqc.nf'
 include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
 include { FILTER_BAM_COVERAGE_RESULTS                 } from '../modules/local/filter_bam_coverage_results.nf'
@@ -13,13 +13,8 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                 } from '../modules/nf-core
 
 workflow RSV_ILLUMINA {
 
-    
     main:
-
-
-
     def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
-    // nf26 pass2 scoped setup
     def sra_list = []
     def sra_ids = [:]
     def ch_input = null
@@ -57,7 +52,7 @@ workflow RSV_ILLUMINA {
     def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 
-// Create empty channels for versions, reads, and SRA data
+    // Create empty channels for versions, reads, and SRA data
     ch_versions                   = channel.empty()
     ch_all_reads                  = channel.empty()
 
@@ -66,9 +61,9 @@ workflow RSV_ILLUMINA {
         // Convert the list of SRA IDs to a channel and map it with its corresponding meta-data
         ch_sra_list = channel.fromList(sra_list).map{valid -> [ ['id':sra_ids[valid],single_end:false], valid ]}
 
-        /*
-        SUBWORKFLOW: SRA_FASTQ_SRATOOLS - Extract FASTQ files from the SRA files
-        */
+    /*
+    SUBWORKFLOW: SRA_FASTQ_SRATOOLS - Extract FASTQ files from the SRA files
+    */
         SRA_FASTQ_SRATOOLS(ch_sra_list)
 
         // Mix the outputs of the SRA extraction with the main reads channel
@@ -239,18 +234,4 @@ workflow RSV_ILLUMINA {
         ch_multiqc_logo.toList()
     )
     _multiqc_report = MULTIQC.out.report.toList()
-
 }
-
-/*
-============================================================================================================================
-    COMPLETION EMAIL AND SUMMARY
-============================================================================================================================
-*/
-
-// Actions to be taken upon the completion of the workflow
-/*
-============================================================================================================================
-    THE END
-============================================================================================================================
-*/

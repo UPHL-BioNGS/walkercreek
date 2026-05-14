@@ -1,17 +1,10 @@
-/*
-====================================================================================================
-    FLU WW ILLUMINA WORKFLOW
-====================================================================================================
-*/
-
-include { SRA_FASTQ_SRATOOLS }       from '../subworkflows/local/sra_fastq_sratools'
-include { INPUT_CHECK }              from '../subworkflows/local/input_check'
-include { PREPROCESSING_READ_QC }    from '../subworkflows/local/preprocessing_read_qc'
-include { ALIGN_TO_REFS_AND_FREYJA } from '../subworkflows/local/align_to_refs_and_freyja'
-
-include { FASTQC }                   from '../modules/local/fastqc.nf'
-include { QC_REPORTSHEET }           from '../modules/local/qc_reportsheet.nf'
-include { MULTIQC }                  from '../modules/nf-core/multiqc/main'
+include { SRA_FASTQ_SRATOOLS }          from '../subworkflows/local/sra_fastq_sratools'
+include { INPUT_CHECK }                 from '../subworkflows/local/input_check'
+include { PREPROCESSING_READ_QC }       from '../subworkflows/local/preprocessing_read_qc'
+include { ALIGN_TO_REFS_AND_FREYJA }    from '../subworkflows/local/align_to_refs_and_freyja'
+include { FASTQC }                      from '../modules/local/fastqc.nf'
+include { QC_REPORTSHEET }              from '../modules/local/qc_reportsheet.nf'
+include { MULTIQC }                     from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 def resolveKrakenDbRoot(baseDir) {

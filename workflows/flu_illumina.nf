@@ -1,9 +1,9 @@
-include { SRA_FASTQ_SRATOOLS                } from '../subworkflows/local/sra_fastq_sratools'
-include { INPUT_CHECK                       } from '../subworkflows/local/input_check'
-include { PREPROCESSING_READ_QC             } from '../subworkflows/local/preprocessing_read_qc'
-include { ASSEMBLY_TYPING_CLADE_VARIABLES   } from '../subworkflows/local/assembly_typing_clade_variables'
-include { VARIANT_ANNOTATION                } from '../subworkflows/local/variant_annotation'
-include { NEXTCLADE_DATASET_AND_ANALYSIS    } from '../subworkflows/local/nextclade_dataset_and_analysis'
+include { SRA_FASTQ_SRATOOLS                          } from '../subworkflows/local/sra_fastq_sratools'
+include { INPUT_CHECK                                 } from '../subworkflows/local/input_check'
+include { PREPROCESSING_READ_QC                       } from '../subworkflows/local/preprocessing_read_qc'
+include { ASSEMBLY_TYPING_CLADE_VARIABLES             } from '../subworkflows/local/assembly_typing_clade_variables'
+include { VARIANT_ANNOTATION                          } from '../subworkflows/local/variant_annotation'
+include { NEXTCLADE_DATASET_AND_ANALYSIS              } from '../subworkflows/local/nextclade_dataset_and_analysis'
 include { FASTQC                                      } from '../modules/local/fastqc.nf'
 include { QC_REPORTSHEET                              } from '../modules/local/qc_reportsheet.nf'
 include { FILTER_BAM_COVERAGE_RESULTS                 } from '../modules/local/filter_bam_coverage_results.nf'
@@ -14,11 +14,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                 } from '../modules/nf-core
 
 workflow FLU_ILLUMINA {
 
-    
     main:
-
-
-
     def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
     // nf26 pass2 scoped setup
     def sra_list = []
@@ -58,7 +54,7 @@ workflow FLU_ILLUMINA {
     def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 
-ch_versions         = channel.empty()
+    ch_versions         = channel.empty()
     ch_all_reads        = channel.empty()
     _ch_sra_reads       = channel.empty()
     ch_sra_list         = channel.empty()

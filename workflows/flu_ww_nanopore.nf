@@ -1,5 +1,5 @@
-include { LONGREAD_PREPROCESSING            } from '../subworkflows/local/longread_preprocessing'
-include { ALIGN_TO_REFS_AND_FREYJA          } from '../subworkflows/local/align_to_refs_and_freyja'
+include { LONGREAD_PREPROCESSING                              } from '../subworkflows/local/longread_preprocessing'
+include { ALIGN_TO_REFS_AND_FREYJA                            } from '../subworkflows/local/align_to_refs_and_freyja'
 include { MULTIQC_TSV_FROM_LIST as READ_COUNT_FAIL_TSV        } from '../modules/local/multiqc_tsv_from_list.nf'
 include { MULTIQC_TSV_FROM_LIST as READ_COUNT_PASS_TSV        } from '../modules/local/multiqc_tsv_from_list.nf'
 include { CAT_NANOPORE_FASTQ                                  } from '../modules/local/cat_nanopore_fastq.nf'
@@ -14,10 +14,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS                         } from '../modules
 
 workflow FLU_WW_NANOPORE {
 
-    
     main:
-
-    // nf26 pass2 scoped setup
     def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
     WorkflowWalkercreek.initialise(params, log)
 
@@ -118,10 +115,10 @@ workflow FLU_WW_NANOPORE {
     CAT_NANOPORE_FASTQ(ch_reads)
     ch_all_reads = ch_all_reads.mix(CAT_NANOPORE_FASTQ.out.reads)
 
-    
+
 
     def nanopore_primers = params.nanopore_primers_fasta ? file(params.nanopore_primers_fasta, checkIfExists: true) : file(params.illumina_primers_fasta, checkIfExists: true)
-/*
+    /*
         SUBWORKFLOW: LONGREAD_PREPROCESSING - preprocessing and quality control on read data
     */
 
@@ -242,16 +239,3 @@ workflow FLU_WW_NANOPORE {
     _multiqc_report = MULTIQC.out.report.toList()
     ch__multiqc_report = MULTIQC.out.report.toList()
 }
-
-/*
-============================================================================================================================
-    COMPLETION EMAIL AND SUMMARY
-============================================================================================================================
-*/
-
-// Actions to be taken upon the completion of the workflow
-/*
-============================================================================================================================
-    THE END
-============================================================================================================================
-*/

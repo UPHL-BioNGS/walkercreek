@@ -30,7 +30,11 @@ process SEQKIT_PAIR {
         --threads $task.cpus
 
     # gzip fastq
-    find . -maxdepth 1 -name "*.fastq" -exec gzip {} \;
+    # gzip any uncompressed FASTQ files produced by seqkit pair
+    for fastq in *.fastq; do
+        [ -e "\$fastq" ] || continue
+        gzip "\$fastq"
+    done
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
