@@ -20,7 +20,7 @@ workflow SRA_FASTQ_SRATOOLS {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     SRATOOLS_PREFETCH ( sra_ids )
     ch_versions = ch_versions.mix( SRATOOLS_PREFETCH.out.versions.first() )

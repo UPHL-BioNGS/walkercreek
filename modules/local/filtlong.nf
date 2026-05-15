@@ -19,8 +19,8 @@ process FILTLONG {
     task.ext.when == null || task.ext.when
 
     script:
-    def args        = task.ext.args ?: ''
-    def prefix      = task.ext.prefix ?: "${meta.id}"
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def min_length  = task.ext.min_length ?: 100
     def keep_percent = task.ext.keep_percent ?: 98
 

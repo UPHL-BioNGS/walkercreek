@@ -24,7 +24,7 @@ process FASTQC {
     // Make list of old name and new name pairs to use for renaming in the bash while loop
     def old_new_pairs = reads instanceof Path || reads.size() == 1 ? [[ reads, "${prefix}.${reads.extension}" ]] : reads.withIndex().collect { entry, index -> [ entry, "${prefix}_${index + 1}.${entry.extension}" ] }
     def rename_to = old_new_pairs*.join(' ').join(' ')
-    def renamed_files = old_new_pairs.collect{ old_name, new_name -> new_name }.join(' ')
+    def renamed_files = old_new_pairs.collect{ _old_name, new_name -> new_name }.join(' ')
 
     def memory_in_mb = MemoryUnit.of("${task.memory}").toUnit('MB')
     // FastQC memory value allowed range (100 - 10000)

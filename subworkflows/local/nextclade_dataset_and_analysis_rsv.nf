@@ -21,11 +21,11 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS_RSV {
     assembly
 
     main:
-    ch_versions              = Channel.empty()
-    ch_nextclade_report      = Channel.empty()
-    ch_aligned_fasta         = Channel.empty()
-    ch_nextclade_run_input   = Channel.empty()
-    nextclade_report_tsv     = Channel.empty()
+    ch_versions              = channel.empty()
+    ch_nextclade_report      = channel.empty()
+    ch_aligned_fasta         = channel.empty()
+    _ch_nextclade_run_input  = channel.empty()
+    nextclade_report_tsv     = channel.empty()
 
     if (params.skip_nextclade) return
 
@@ -39,19 +39,19 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS_RSV {
 
     run_joined = dataset2_keyed
         .join(asm_keyed)
-        .map { id, meta1, ds2, meta2, asm_fa ->
+        .map { _id, meta1, ds2, _meta2, asm_fa ->
             tuple(meta1, ds2, asm_fa)
     }
 
     NEXTCLADE_RUN(
-        run_joined.map { meta, ds2, asm_fa -> tuple(meta, ds2) },
-        run_joined.map { meta, ds2, asm_fa -> tuple(meta, asm_fa) }
+        run_joined.map { meta, ds2, _asm_fa -> tuple(meta, ds2) },
+        run_joined.map { meta, _ds2, asm_fa -> tuple(meta, asm_fa) }
     )
 
     ch_aligned_fasta.mix(NEXTCLADE_RUN.out.fasta_aligned)
     ch_nextclade_report = NEXTCLADE_RUN.out.csv
 
-    NEXTCLADE_PARSER( NEXTCLADE_RUN.out.parser_input.filter { meta, f -> f } )
+    NEXTCLADE_PARSER( NEXTCLADE_RUN.out.parser_input.filter { _meta, f -> f } )
     parser_tsv_files = NEXTCLADE_PARSER.out.nextclade_parser_tsv
 
     parser_tsv_best = parser_tsv_files
@@ -62,13 +62,13 @@ workflow NEXTCLADE_DATASET_AND_ANALYSIS_RSV {
         }
 
     ch_combined_parser_tsv_results = parser_tsv_best
-        .map { meta, tsv -> tsv.text }
+        .map { _meta, tsv -> tsv.text }
         .collect()
         .map { texts ->
             def header = null
             def rows = []
             texts.each { txt ->
-                def lines = txt?.readLines()?.findAll { it?.trim() }
+                def lines = txt?.readLines()?.findAll { line -> line?.trim() }
                 if (!lines) return
                 header = header ?: lines[0]
                 rows.addAll(lines.drop(1))

@@ -34,6 +34,13 @@ process SUMMARY_REPORT_NANOPORE {
         --alerts-out summary_alerts.tsv \
         $args
 
+    
+    # Generate summary alerts from all staged/generated TSVs.
+    # This always writes summary_alerts.tsv with a header, even when no alerts are found.
+    python ${projectDir}/bin/generate_summary_alerts.py --out summary_alerts.tsv || {
+        echo -e "sample\talert_type\tseverity\tmessage\tevidence\tsource_files" > summary_alerts.tsv
+    }
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')

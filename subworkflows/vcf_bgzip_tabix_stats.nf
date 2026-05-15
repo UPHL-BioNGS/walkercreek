@@ -16,7 +16,7 @@ workflow VCF_BGZIP_TABIX_STATS {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     TABIX_BGZIP (
         snpeff_vcf

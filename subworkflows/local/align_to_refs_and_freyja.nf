@@ -20,6 +20,13 @@ include { FREYJA_BOOT_H5NX                     } from '../../modules/local/freyj
 include { FREYJA_BOOT_B_VIC                    } from '../../modules/local/freyja_boot_b_vic.nf'
 include { FREYJA_AGGREGATE_REPORT              } from '../../modules/local/freyja_aggregate_report.nf'
 
+def extractPath(x) {
+    if (x instanceof List) {
+        return x[1]
+    }
+    return x
+}
+
 workflow ALIGN_TO_REFS_AND_FREYJA {
 
     take:
@@ -34,19 +41,14 @@ workflow ALIGN_TO_REFS_AND_FREYJA {
     b_vic_freyja_barcodes
 
     main:
-    ch_versions               = Channel.empty()
-    ch_freyja_demix_tsvs      = Channel.empty()
-    ch_freyja_lineages        = Channel.empty()
-    ch_freyja_summarized      = Channel.empty()
-    ch_freyja_aggregate       = Channel.empty()
-    ch_align_flagstats        = Channel.empty()
-    ch_align_mapstats         = Channel.empty()
-
-    def extractPath = { x ->
-        (x instanceof List || x instanceof Tuple) ? x[1] : x
-    }
-
-    if ( params.platform == "flu_ww_illumina" ) {
+    ch_versions               = channel.empty()
+    ch_freyja_demix_tsvs      = channel.empty()
+    ch_freyja_lineages        = channel.empty()
+    ch_freyja_summarized      = channel.empty()
+    ch_freyja_aggregate       = channel.empty()
+    ch_align_flagstats        = channel.empty()
+    ch_align_mapstats         = channel.empty()
+if ( params.platform == "flu_ww_illumina" ) {
 
         ALIGN_TO_REFS(reads, h1n1_freyja_ref, h3n2_freyja_ref, h5nx_freyja_ref, b_vic_freyja_ref)
         ch_versions = ch_versions.mix(ALIGN_TO_REFS.out.versions)

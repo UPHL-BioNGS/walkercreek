@@ -1,49 +1,7 @@
-def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
-
-// Validate input parameters
-WorkflowWalkercreek.initialise(params, log)
-
-// Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta, params.krakendb ]
-for (param in checkPathParamList) {
-    if (param) {
-        file(param, checkIfExists: true)
-    }
-}
-
-
-/*
-============================================================================================================================
-    CONFIG FILES
-============================================================================================================================
-*/
-
-ch_multiqc_config                     = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config              = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
-ch_multiqc_logo                       = params.multiqc_logo   ? Channel.fromPath(params.multiqc_logo, checkIfExists: true) : Channel.empty()
-ch_multiqc_custom_methods_description = params.multiqc_methods_description \
-    ? file(params.multiqc_methods_description, checkIfExists: true) \
-    : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-
-
-/*
-============================================================================================================================
-    IMPORT SUBWORKFLOWS
-============================================================================================================================
-*/
-
-include { LONGREAD_PREPROCESSING          } from '../subworkflows/local/longread_preprocessing'
-include { ASSEMBLY_TYPING_CLADE_VARIABLES } from '../subworkflows/local/assembly_typing_clade_variables'
-include { VARIANT_ANNOTATION              } from '../subworkflows/local/variant_annotation'
-include { NEXTCLADE_DATASET_AND_ANALYSIS  } from '../subworkflows/local/nextclade_dataset_and_analysis'
-
-
-/*
-============================================================================================================================
-    IMPORT MODULES
-============================================================================================================================
-*/
-
+include { LONGREAD_PREPROCESSING                       } from '../subworkflows/local/longread_preprocessing'
+include { ASSEMBLY_TYPING_CLADE_VARIABLES              } from '../subworkflows/local/assembly_typing_clade_variables'
+include { VARIANT_ANNOTATION                           } from '../subworkflows/local/variant_annotation'
+include { NEXTCLADE_DATASET_AND_ANALYSIS               } from '../subworkflows/local/nextclade_dataset_and_analysis'
 include { MULTIQC_TSV_FROM_LIST as READ_COUNT_FAIL_TSV } from '../modules/local/multiqc_tsv_from_list.nf'
 include { MULTIQC_TSV_FROM_LIST as READ_COUNT_PASS_TSV } from '../modules/local/multiqc_tsv_from_list.nf'
 include { CAT_NANOPORE_FASTQ                           } from '../modules/local/cat_nanopore_fastq.nf'
@@ -56,30 +14,30 @@ include { MERGE_NANO_RAW_FILT                          } from '../modules/local/
 include { MULTIQC                                      } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                  } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
-
-/*
-============================================================================================================================
-    RUN MAIN WORKFLOW
-============================================================================================================================
-*/
-
-def multiqc_report    = []
-def pass_sample_reads = [:]
-def fail_sample_reads = [:]
-
 workflow FLU_NANOPORE {
 
-    ch_versions    = Channel.empty()
-    ch_all_reads   = Channel.empty()
-    ch_for_summary = Channel.empty()
+    main:
+    def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
+    WorkflowWalkercreek.initialise(params, log)
 
-    ch_input = NANOPORE_SAMPLESHEET_CHECK(Channel.fromPath(params.input, checkIfExists: true))
+    def pass_sample_reads = [:]
+    def fail_sample_reads = [:]
+
+    def ch_multiqc_config        = channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    def ch_multiqc_custom_config = params.multiqc_config ? channel.fromPath(params.multiqc_config, checkIfExists: true) : channel.empty()
+    def ch_multiqc_logo          = params.multiqc_logo ? channel.fromPath(params.multiqc_logo, checkIfExists: true) : channel.empty()
+    def ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
+
+    ch_versions    = channel.empty()
+    ch_all_reads   = channel.empty()
+    _ch_for_summary = channel.empty()
+
+    ch_input = NANOPORE_SAMPLESHEET_CHECK(channel.fromPath(params.input, checkIfExists: true))
 
     // Split input csv (skip header), map each row to [sample,reads], then group by sample
-    // Taken from https://github.com/peterk87/nf-flu/blob/master/workflows/nanopore.nf
     ch_input
         .splitCsv(header: ['sample', 'reads'], sep: ',', skip: 1)
-        .map { [it.sample, it.reads] }
+        .map { row -> [row.sample, row.reads] }
         .groupTuple(by: 0)
         .map { sample, reads ->
             def fq    = []
@@ -87,8 +45,8 @@ workflow FLU_NANOPORE {
             def count = 0
 
             // Identify valid fastq files or directories
-            for (f in reads) {
-                f = file(f)
+            reads.each { f_raw ->
+                def f = file(f_raw)
 
                 if (f.isFile() && f.getName() ==~ /.*\.(fastq|fq)(\.gz)?/) {
                     if (f.getName() ==~ /.*\.gz/) {
@@ -96,12 +54,12 @@ workflow FLU_NANOPORE {
                     } else {
                         fq << f
                     }
-                    continue
+                    return
                 }
 
                 // If directory, only search first-level files
                 if (f.isDirectory()) {
-                    for (x in f.listFiles()) {
+                    f.listFiles().each { x ->
                         if (x.isFile() && x.getName() ==~ /.*\.(fastq|fq)(\.gz)?/) {
                             if (x.getName() ==~ /.*\.gz/) {
                                 fqgz << x
@@ -114,8 +72,8 @@ workflow FLU_NANOPORE {
             }
 
             // Count reads in each uncompressed/compressed FASTQ
-            for (x in fq)   { count += x.countFastq() }
-            for (x in fqgz) { count += x.countFastq() }
+            fq.each { x -> count += x.countFastq() }
+            fqgz.each { x -> count += x.countFastq() }
 
             return [ sample, fqgz, fq, count ]
         }
@@ -123,7 +81,7 @@ workflow FLU_NANOPORE {
 
     // Branch logic based on read count
     ch_input_sorted
-        .branch { sample, fqgz, fq, count ->
+        .branch { sample, _fqgz, _fq, count ->
             pass: count >= params.min_sample_reads
                 pass_sample_reads[sample] = count
                 return [ "$sample\t$count" ]
@@ -150,7 +108,7 @@ workflow FLU_NANOPORE {
 
     // Keep samples which have reads count >= min_sample_reads for downstream analysis
     ch_input_sorted
-        .filter { it[-1] >= params.min_sample_reads }
+        .filter { row -> row[-1] >= params.min_sample_reads }
         .map { sample, fqgz, fq, count -> [ [id: sample], fqgz, fq ] }
         .set { ch_reads }
 
@@ -180,10 +138,10 @@ workflow FLU_NANOPORE {
 
     ASSEMBLY_TYPING_CLADE_VARIABLES(LONGREAD_PREPROCESSING.out.filtered_reads, irma_module)
 
-    ch_assembly              = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
+    _ch_assembly             = ASSEMBLY_TYPING_CLADE_VARIABLES.out.assembly
     ch_HA                    = ASSEMBLY_TYPING_CLADE_VARIABLES.out.HA
-    ch_NA                    = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
-    ch_irma_fasta            = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
+    _ch_NA                   = ASSEMBLY_TYPING_CLADE_VARIABLES.out.NA
+    _ch_irma_fasta           = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_fasta
     ch_irma_vcf              = ASSEMBLY_TYPING_CLADE_VARIABLES.out.irma_vcf
     ch_dataset               = ASSEMBLY_TYPING_CLADE_VARIABLES.out.dataset
     ch_typing_report_tsv     = ASSEMBLY_TYPING_CLADE_VARIABLES.out.typing_report_tsv
@@ -221,16 +179,16 @@ workflow FLU_NANOPORE {
     CUSTOM_DUMPSOFTWAREVERSIONS(ch_versions.unique().collectFile(name: 'collated_versions.yml'))
 
     workflow_summary    = WorkflowWalkercreek.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    ch_workflow_summary = channel.value(workflow_summary)
 
     methods_description    = WorkflowWalkercreek.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description)
-    ch_methods_description = Channel.value(methods_description)
+    ch_methods_description = channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect { it[1] }.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect { row -> row[1] }.ifEmpty([]))
 
     MULTIQC(
         ch_multiqc_files.collect(),
@@ -239,16 +197,6 @@ workflow FLU_NANOPORE {
         ch_multiqc_logo.toList()
     )
 
-    multiqc_report    = MULTIQC.out.report.toList()
-    ch_multiqc_report = MULTIQC.out.report.toList()
-}
-
-workflow.onComplete {
-    if (params.email || params.email_on_fail) {
-        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
-    }
-    NfcoreTemplate.summary(workflow, params, log)
-    if (params.hook_url) {
-        NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
-    }
+    _multiqc_report   = MULTIQC.out.report.toList()
+    _ch_multiqc_report = MULTIQC.out.report.toList()
 }
